@@ -1,0 +1,511 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+-->
+
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CaptionZWaveProgrammer" xml:space="preserve">
+    <value>Z-Wave Programmer</value>
+  </data>
+  <data name="ErrorCantCompareEEPROM" xml:space="preserve">
+    <value>Could not compare External NVM content with the HEX file.</value>
+    <comment>..</comment>
+  </data>
+  <data name="ErrorCantCompareFlash" xml:space="preserve">
+    <value>Could not compare Flash content with the HEX file</value>
+  </data>
+  <data name="ErrorCantCompareMtp" xml:space="preserve">
+    <value>Could not compare MTP content with the HEX file</value>
+  </data>
+  <data name="ErrorCantCompareSRAM" xml:space="preserve">
+    <value>Could not compare SRAM content with the HEX file</value>
+  </data>
+  <data name="ErrorCantDectDeviceSignature" xml:space="preserve">
+    <value>Could not decode the Z-Wave device signature. Check that the device is connected to the programmer. Note that ZW010x devices can't be programmed on a ZDP03A board.</value>
+  </data>
+  <data name="ErrorCantDetectDevice" xml:space="preserve">
+    <value>Could not detect the Z-Wave device</value>
+  </data>
+  <data name="ErrorCantEraseEEPROM" xml:space="preserve">
+    <value>Could not erase the External NVM content</value>
+  </data>
+  <data name="ErrorCantEraseFlash" xml:space="preserve">
+    <value>Could not erase the Flash content</value>
+  </data>
+  <data name="ErrorCantEraseMtp" xml:space="preserve">
+    <value>Could not erase the MTP content</value>
+  </data>
+  <data name="ErrorCantGetFirmwareVersion" xml:space="preserve">
+    <value>Could not get the firmware version</value>
+  </data>
+  <data name="ErrorCantInitEEPROM" xml:space="preserve">
+    <value>Could not initialize External NVM</value>
+  </data>
+  <data name="ErrorCantInitMtp" xml:space="preserve">
+    <value>Could not initialize MTP</value>
+  </data>
+  <data name="ErrorCantLockBitsRead" xml:space="preserve">
+    <value>Could not read the Lock Bits</value>
+  </data>
+  <data name="ErrorCantLockBitsSet" xml:space="preserve">
+    <value>Could not set the Lock Bits. If you are trying to write lock bits not for the first time - erase device first. If the device is not erasable - replace it by a new one.</value>
+  </data>
+  <data name="ErrorCantProgramMtp" xml:space="preserve">
+    <value>Could not program MTP</value>
+  </data>
+  <data name="ErrorCantReadAppRfSettings" xml:space="preserve">
+    <value>Could not read the application RF settings from Flash</value>
+  </data>
+  <data name="ErrorCantReadEEPROM" xml:space="preserve">
+    <value>Could not read the External NVM content</value>
+  </data>
+  <data name="ErrorCantReadEEPROMOptions" xml:space="preserve">
+    <value>Could not read the External NVM options</value>
+  </data>
+  <data name="ErrorCantReadFlash" xml:space="preserve">
+    <value>Could not read the Flash content</value>
+  </data>
+  <data name="ErrorCantReadFlashOptions" xml:space="preserve">
+    <value>Could not read the Flash options</value>
+  </data>
+  <data name="ErrorCantReadGeneralRfSettings" xml:space="preserve">
+    <value>Could not read the general options from Flash</value>
+  </data>
+  <data name="ErrorCantReadHomeId" xml:space="preserve">
+    <value>Could not read the Home ID</value>
+  </data>
+  <data name="ErrorCantReadMtp" xml:space="preserve">
+    <value>Could not read the MTP content</value>
+  </data>
+  <data name="ErrorCantReadNvr" xml:space="preserve">
+    <value>Could not read the NVR content</value>
+  </data>
+  <data name="ErrorCantReadSram" xml:space="preserve">
+    <value>Could not read the SRAM content</value>
+  </data>
+  <data name="ErrorCantReadSramOptions" xml:space="preserve">
+    <value>Could not read the SRAM Options</value>
+  </data>
+  <data name="ErrorCantResetZWaveModule" xml:space="preserve">
+    <value>Cannot reset connected Z-Wave Module</value>
+  </data>
+  <data name="ErrorCantSetBootLoaderMode" xml:space="preserve">
+    <value>Could not switch the device to BootLoader mode.</value>
+  </data>
+  <data name="ErrorCantSetChipWorkingMode" xml:space="preserve">
+    <value>Could not switch the chip operation mode. Required operation mode may be disabled by a lock bit.</value>
+  </data>
+  <data name="ErrorCantSetProgrammingMode" xml:space="preserve">
+    <value>Could not switch the chip to Programming mode</value>
+  </data>
+  <data name="ErrorCantUpgradeFirmware" xml:space="preserve">
+    <value>Could not upgrade the firmware of the device</value>
+  </data>
+  <data name="ErrorCantWriteAppRfSettings" xml:space="preserve">
+    <value>Could not write the application RF settings to Flash</value>
+  </data>
+  <data name="ErrorCantWriteEEPROM" xml:space="preserve">
+    <value>Could not write content of the HEX file to External NVM</value>
+  </data>
+  <data name="ErrorCantWriteFlash" xml:space="preserve">
+    <value>Could not write content of the HEX file to Flash</value>
+  </data>
+  <data name="ErrorCantWriteFlashOptions" xml:space="preserve">
+    <value>Could not write the application RF settings to Flash</value>
+  </data>
+  <data name="ErrorCantWriteGeneralRfSettings" xml:space="preserve">
+    <value>Could not write the general options to Flash</value>
+  </data>
+  <data name="ErrorCantWriteHomeId" xml:space="preserve">
+    <value>Could not write the Home ID</value>
+  </data>
+  <data name="ErrorCantWriteNvr" xml:space="preserve">
+    <value>Could not write the NVR content</value>
+  </data>
+  <data name="ErrorCantWriteSram" xml:space="preserve">
+    <value>Could not write content of the HEX file to SRAM</value>
+  </data>
+  <data name="ErrorCantWriteSramOptions" xml:space="preserve">
+    <value>Could not write the application RF settings to SRAM</value>
+  </data>
+  <data name="ErrorCompareEepromFailed" xml:space="preserve">
+    <value>Comparison of External NVM content with the HEX file failed.</value>
+  </data>
+  <data name="ErrorCompareMtpFailed" xml:space="preserve">
+    <value>Comparison of MTP content with the HEX file failed</value>
+  </data>
+  <data name="ErrorCompareSRAMFailed" xml:space="preserve">
+    <value>Comparison of SRAM content with the HEX file failed</value>
+  </data>
+  <data name="ErrorEEPROMHexFileNotSpecified" xml:space="preserve">
+    <value>The HEX file for External NVM is not specified or specified file does not exist.</value>
+  </data>
+  <data name="ErrorFirmwareIsOutOfDate" xml:space="preserve">
+    <value>Firmware of the Z-Wave Programmer board is out of date. Update it to be compatible with this PC application.</value>
+  </data>
+  <data name="ErrorFlashHexFileNotSpecified" xml:space="preserve">
+    <value>The HEX file for Flash is not specified or specified file does not exist.</value>
+  </data>
+  <data name="ErrorHexFileDataOutOfRange" xml:space="preserve">
+    <value>Hex file not valid. Address out of range.</value>
+  </data>
+  <data name="ErrorHexFileNotValid" xml:space="preserve">
+    <value>Hex file not valid</value>
+  </data>
+  <data name="ErrorHexFileReadingFailed" xml:space="preserve">
+    <value>Reading the HEX file failed</value>
+  </data>
+  <data name="ErrorInvalidEndHomeId" xml:space="preserve">
+    <value>End value for Home ID must be greater than Start value</value>
+  </data>
+  <data name="ErrorMtpHexFileNotSpecified" xml:space="preserve">
+    <value>HEX file for MTP not specified</value>
+  </data>
+  <data name="ErrorProgramMtpFailed" xml:space="preserve">
+    <value>Programming of MTP failed</value>
+  </data>
+  <data name="ErrorProgramROMFailed" xml:space="preserve">
+    <value>Verification of programmed data failed. Try to write again or replace the chip by a new one.</value>
+  </data>
+  <data name="ErrorRfFrequencyNotSelected" xml:space="preserve">
+    <value>RF frequency was not selected</value>
+  </data>
+  <data name="ErrorStartEndHomeIdEmpty" xml:space="preserve">
+    <value>'Start Home Id' or 'End Home Id' was not specified</value>
+  </data>
+  <data name="ErrorUndefinedRfSettings" xml:space="preserve">
+    <value>Undefined general option was encountered</value>
+  </data>
+  <data name="MsgAutoIncrementHomeIdFromStart" xml:space="preserve">
+    <value>The end value for auto-incremental Home ID has been reached.
+Would you like to begin from the start value?</value>
+  </data>
+  <data name="MsgCalibrationProgress" xml:space="preserve">
+    <value>Please wait until the chip is calibrated. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgCompareEEPROMProgress" xml:space="preserve">
+    <value>Please wait while the content of EEPROM is being compared with the HEX file.
+This may take a minute.</value>
+  </data>
+  <data name="MsgCompareEepromSuccesful" xml:space="preserve">
+    <value>The content of External NVM is identical to the HEX file.</value>
+  </data>
+  <data name="MsgCompareFlashFailed" xml:space="preserve">
+    <value>The content of Flash is different from the HEX file.</value>
+  </data>
+  <data name="MsgCompareFlashProgress" xml:space="preserve">
+    <value>Please wait while the content of Flash is being compared with the HEX file. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgCompareFlashSuccesful" xml:space="preserve">
+    <value>The content of Flash is identical to the HEX file</value>
+  </data>
+  <data name="MsgCompareMtpSuccesful" xml:space="preserve">
+    <value>The content of the MTP Memory is identical to the HEX file</value>
+  </data>
+  <data name="MsgCompareSramProgress" xml:space="preserve">
+    <value>Please wait while the content of SRAM is being compared with the HEX file. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgCompareSRAMSuccesful" xml:space="preserve">
+    <value>The content of SRAM is identical to the HEX file.</value>
+  </data>
+  <data name="MsgDetectDeviceProgress" xml:space="preserve">
+    <value>Please wait while the available serial ports are being checked if any Z-Wave devices are connected. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgEraseEEPROMProgress" xml:space="preserve">
+    <value>Please wait until the External NVM is erased. This may take a minute.</value>
+  </data>
+  <data name="MsgEraseFlashProgress" xml:space="preserve">
+    <value>Please wait until the Flash is erased. This may take a minute.</value>
+  </data>
+  <data name="MsgEraseMtpProgress" xml:space="preserve">
+    <value>Please wait until the MTP is erased. This may take a minute.</value>
+  </data>
+  <data name="MsgEraseROMDone" xml:space="preserve">
+    <value>Erasing operation completed successfully.</value>
+  </data>
+  <data name="MsgFinished" xml:space="preserve">
+    <value>The last operation has been completed.</value>
+  </data>
+  <data name="MsgFirmwareUpdateConfirmation" xml:space="preserve">
+    <value>Firmware of the Z-Wave Programmer board is out of date and will be updated automatically.</value>
+  </data>
+  <data name="MsgFirmwareUpgradedSuccesful" xml:space="preserve">
+    <value>The Atmel Firmware upgrade has been successfully completed.</value>
+  </data>
+  <data name="MsgFirmwareUpgradeNotNeeded" xml:space="preserve">
+    <value>The Atmel Firmware is already up-to-date. Firmware upgrade is not needed.</value>
+  </data>
+  <data name="MsgFirmwareVersionLabel" xml:space="preserve">
+    <value>Atmel Firmware: </value>
+  </data>
+  <data name="MsgGetFirmwareVersionProgress" xml:space="preserve">
+    <value>Please wait a moment until reading the version of the current Firmware.</value>
+  </data>
+  <data name="MsgIncorrectChipType" xml:space="preserve">
+    <value>Incorrect Chip Type.</value>
+  </data>
+  <data name="MsgIncorrectSerialPort" xml:space="preserve">
+    <value>Incorrect Serial Port.</value>
+  </data>
+  <data name="MsgInterfaceNotSelected" xml:space="preserve">
+    <value>The operation was cancelled because no communication interface had been selected.
+Use the Settings dialog to select the correct COM port and then try again.</value>
+  </data>
+  <data name="MsgLockBitsReadProgress" xml:space="preserve">
+    <value>Please wait while the Lock Bits are being read. This may take a minute.</value>
+  </data>
+  <data name="MsgLockBitsSetProgress" xml:space="preserve">
+    <value>Please wait while the Lock Bits are being set. This may take a minute.</value>
+  </data>
+  <data name="MsgMtpAutoEraseNote" xml:space="preserve">
+    <value>Note that in Normal working mode of the ZW040x chip, any operation with MTP memory will leave ZW040x chip in the reset state. You need to cycle the power of the chip to switch its working mode to Normal and start execution of the embedded application from OTP.</value>
+  </data>
+  <data name="MsgMtpEraseFinished" xml:space="preserve">
+    <value>MTP Memory has been erased</value>
+  </data>
+  <data name="MsgMtpProgramFinished" xml:space="preserve">
+    <value>MTP Memory has been programmed</value>
+  </data>
+  <data name="MsgMtpReadFinished" xml:space="preserve">
+    <value>MTP Memory has been read</value>
+  </data>
+  <data name="MsgNoCommInterfaces" xml:space="preserve">
+    <value>There are no Communication Interfaces available.</value>
+  </data>
+  <data name="MsgNVMChipType" xml:space="preserve">
+    <value>External NVM Chip Type: </value>
+  </data>
+  <data name="MsgNVMEraseFinished" xml:space="preserve">
+    <value>External NVM has been erased.</value>
+  </data>
+  <data name="MsgNVMReadFinished" xml:space="preserve">
+    <value>External NVM has been read.</value>
+  </data>
+  <data name="MsgNVMWriteFinished" xml:space="preserve">
+    <value>External NVM has been written.</value>
+  </data>
+  <data name="MsgParameterNotSpecified" xml:space="preserve">
+    <value>Parameter was not specified.</value>
+  </data>
+  <data name="MsgProgramFlashProgress" xml:space="preserve">
+    <value>Please wait until the Flash is programmed. This may take a minute.</value>
+  </data>
+  <data name="MsgProgramMtpProgress" xml:space="preserve">
+    <value>Please wait until the MTP Memory is programmed. This may take a minute.</value>
+  </data>
+  <data name="MsgProgramROMDone" xml:space="preserve">
+    <value>Programming operation completed successfully.</value>
+  </data>
+  <data name="MsgReadEEPROMOptionsProgress" xml:space="preserve">
+    <value>Please wait a moment while the External NVM options are being read</value>
+  </data>
+  <data name="MsgReadEEPROMProgress" xml:space="preserve">
+    <value>Please wait a moment while the External NVM is being read</value>
+  </data>
+  <data name="MsgReadFlashOptionsProgress" xml:space="preserve">
+    <value>Please wait a moment while the general options from the Flash are being read</value>
+  </data>
+  <data name="MsgReadFlashProgress" xml:space="preserve">
+    <value>Please wait a moment while the Flash is being read</value>
+  </data>
+  <data name="MsgReadHomeIdProgress" xml:space="preserve">
+    <value>Please wait a moment while the Home ID is being read</value>
+  </data>
+  <data name="MsgReadMtpProgress" xml:space="preserve">
+    <value>Please wait a moment while the MTP Memory is being read</value>
+  </data>
+  <data name="MsgReadNvrProgress" xml:space="preserve">
+    <value>Please wait a moment while the NVR is being read</value>
+  </data>
+  <data name="MsgReadROMDone" xml:space="preserve">
+    <value>Reading operation completed successfully.</value>
+  </data>
+  <data name="MsgReadSramOptionsProgress" xml:space="preserve">
+    <value>Please wait a moment while the general options from the SRAM are being read</value>
+  </data>
+  <data name="MsgReadSramProgress" xml:space="preserve">
+    <value>Please wait a moment while the SRAM is being read</value>
+  </data>
+  <data name="MsgResetZWaveModuleProgress" xml:space="preserve">
+    <value>Please wait until Z-Wave module is reset</value>
+  </data>
+  <data name="MsgStatusDetectedDevice" xml:space="preserve">
+    <value>Target type in socket is </value>
+  </data>
+  <data name="MsgStatusLabel" xml:space="preserve">
+    <value>Status: </value>
+  </data>
+  <data name="MsgUpgradeFirmwareCheckProgress" xml:space="preserve">
+    <value>Please wait while the firmware of device is being checked. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgUpgradeFirmwareProgress" xml:space="preserve">
+    <value>Please wait while the firmware of device is being upgraded. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgWriteEEPROMProgress" xml:space="preserve">
+    <value>Please wait until the HEX file is written to External NVM. 
+This may take a minute.</value>
+  </data>
+  <data name="MsgWriteFlashAlreadyProgrammed" xml:space="preserve">
+    <value>OTP already programmed. Can't write new hex file to it.</value>
+  </data>
+  <data name="MsgWriteFlashAlreadyProgrammedIsOverwrite" xml:space="preserve">
+    <value>OTP already programmed. Do you really want to program OTP?</value>
+  </data>
+  <data name="MsgWriteFlashAreYouSureToProgram" xml:space="preserve">
+    <value>Are you sure to write the OTP?</value>
+  </data>
+  <data name="MsgWriteFlashOptionsProgress" xml:space="preserve">
+    <value>Please wait a moment until writing the application RF settings to Flash.</value>
+  </data>
+  <data name="MsgWriteFlashProgress" xml:space="preserve">
+    <value>Please wait until the HEX file is written to Flash.
+This may take a minute.</value>
+  </data>
+  <data name="MsgWriteHomeIdProgress" xml:space="preserve">
+    <value>Please wait a moment until the Home ID is written.</value>
+  </data>
+  <data name="MsgWriteNvrProgress" xml:space="preserve">
+    <value>New values are written to the NVR.</value>
+  </data>
+  <data name="MsgWriteRfSettingsNoErrors" xml:space="preserve">
+    <value>Application RF settings have been successfully written to the Flash.</value>
+  </data>
+  <data name="MsgWriteRfSettingsNone" xml:space="preserve">
+    <value>Could not write the application RF settings to the Flash.</value>
+  </data>
+  <data name="MsgWriteROMDone" xml:space="preserve">
+    <value>Writting operation completed successfully.</value>
+  </data>
+  <data name="MsgWriteSramOptionsProgress" xml:space="preserve">
+    <value>Please wait a moment until writing the application RF settings to SRAM.</value>
+  </data>
+  <data name="MsgWriteSramProgress" xml:space="preserve">
+    <value>Please wait until the HEX file is written to SRAM. 
+This may take a minute.</value>
+  </data>
+</root>

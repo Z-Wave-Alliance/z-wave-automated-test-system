@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{130D9CE8-C5BD-442A-BE42-1F93655A2F7A}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ZatsProgrammer</RootNamespace>
+    <AssemblyName>ZatsProgrammer</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Actions\ProgrammerActions.cs" />
+    <Compile Include="Actions\ZW050xFormActions.cs" />
+    <Compile Include="Classes\ActionCollection.cs" />
+    <Compile Include="Classes\BaseAction.cs" />
+    <Compile Include="Classes\CommandLineValidationHelper.cs" />
+    <Compile Include="Classes\HexFileHelper.cs" />
+    <Compile Include="Classes\NVMData.cs" />
+    <Compile Include="Classes\NVRData.cs" />
+    <Compile Include="Classes\ProgrammerConsole.cs" />
+    <Compile Include="Classes\ProgrammerSettings.cs" />
+    <Compile Include="Controllers\ControllerManager.cs" />
+    <Compile Include="Models\DocumentModel.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs" />
+    <Compile Include="Properties\Settings.Designer.cs" />
+    <Compile Include="Properties\Settings1.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Utils\WinBased\BaseWin32DeviceClass.cs" />
+    <Compile Include="Utils\WinBased\ComputerSystemHardwareHelper.cs" />
+    <Compile Include="Utils\ConsumerList.cs" />
+    <Compile Include="Utils\Tools.cs" />
+    <Compile Include="Utils\WinBased\Win32PnPEntityClass.cs" />
+    <Compile Include="Utils\WinBased\Win32SerialPortClass.cs" />
+    <Compile Include="Utils\WinBased\Win32Usb.cs" />
+    <Compile Include="ZWave\Devices\IDevice.cs" />
+    <Compile Include="ZWave\Devices\IDeviceFlash.cs" />
+    <Compile Include="ZWave\Devices\IDeviceMemory.cs" />
+    <Compile Include="ZWave\Devices\IFlashPage.cs" />
+    <Compile Include="ZWave\Devices\IFlashSettings.cs" />
+    <Compile Include="ZWave\Devices\IProgrammableDevice.cs" />
+    <Compile Include="ZWave\Devices\MemoryLayout.cs" />
+    <Compile Include="ZWave\Devices\NodeBitmask.cs" />
+    <Compile Include="ZWave\Devices\NodeMask.cs" />
+    <Compile Include="ZWave\Enums\ConnectionStatuses.cs" />
+    <Compile Include="ZWave\Enums\Constants.cs" />
+    <Compile Include="ZWave\Enums\EepromSize.cs" />
+    <Compile Include="ZWave\Enums\FlashProgrammingStates.cs" />
+    <Compile Include="ZWave\Enums\FlashProgrammingStatuses.cs" />
+    <Compile Include="ZWave\Enums\FrameTypes.cs" />
+    <Compile Include="ZWave\Enums\HeaderTypes.cs" />
+    <Compile Include="ZWave\Enums\LedStates.cs" />
+    <Compile Include="ZWave\Enums\LedTypes.cs" />
+    <Compile Include="ZWave\Enums\ManagerStatus.cs" />
+    <Compile Include="ZWave\Enums\NVMTypes.cs" />
+    <Compile Include="ZWave\Enums\ProgrammerCommandTypes.cs" />
+    <Compile Include="ZWave\Enums\ProgressStatuses.cs" />
+    <Compile Include="ZWave\Enums\WorkingModes.cs" />
+    <Compile Include="ZWave\Enums\WriteRfOptionsStatuses.cs" />
+    <Compile Include="ZWave\Events\DataRecievedEventArgs.cs" />
+    <Compile Include="ZWave\Events\DataRecievedEventHandler.cs" />
+    <Compile Include="ZWave\Events\DeviceAppCommandHandlerEventArgs.cs" />
+    <Compile Include="ZWave\Events\DeviceAppCommandHandlerEventHandler.cs" />
+    <Compile Include="ZWave\Events\ExceptionRecievedEventArgs.cs" />
+    <Compile Include="ZWave\Events\ExceptionRecievedEventHandler.cs" />
+    <Compile Include="ZWave\Events\FrameRecievedEventArgs.cs" />
+    <Compile Include="ZWave\Events\FrameRecievedEventHandler.cs" />
+    <Compile Include="ZWave\Events\ProgressChangedEventArgs.cs" />
+    <Compile Include="ZWave\Events\ProgressChangedEventHandler.cs" />
+    <Compile Include="ZWave\Events\ResponseRecievedEventArgs.cs" />
+    <Compile Include="ZWave\Events\ResponseRecievedEventHandler.cs" />
+    <Compile Include="ZWave\Events\StatusChangedArgs.cs" />
+    <Compile Include="ZWave\Events\StatusChangedEventHandler.cs" />
+    <Compile Include="ZWave\Exceptions\ApplicationLayerException.cs" />
+    <Compile Include="ZWave\Exceptions\FrameLayerException.cs" />
+    <Compile Include="ZWave\Exceptions\RequestTimeoutException.cs" />
+    <Compile Include="ZWave\Exceptions\SessionLayerException.cs" />
+    <Compile Include="ZWave\Exceptions\TransportLayerException.cs" />
+    <Compile Include="ZWave\IApplicationLayer.cs" />
+    <Compile Include="ZWave\IDataFrame.cs" />
+    <Compile Include="ZWave\IFrameLayer.cs" />
+    <Compile Include="ZWave\ISessionLayer.cs" />
+    <Compile Include="ZWave\ITransportLayer.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\ApplicationLayer.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\Devices\Device.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\Devices\DeviceFlash.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\Devices\DeviceMemory.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\Devices\FlashPage.cs" />
+    <Compile Include="ZWave\Layers\ApplicationLayer\Devices\FlashSettings.cs" />
+    <Compile Include="ZWave\Layers\FrameLayer\DataFrame.cs" />
+    <Compile Include="ZWave\Layers\FrameLayer\FrameLayer.cs" />
+    <Compile Include="ZWave\Layers\FrameLayer\FrameReceiveState.cs" />
+    <Compile Include="ZWave\Layers\SessionLayer\SessionLayer.cs" />
+    <Compile Include="ZWave\Layers\TransportLayer\CommPort.cs" />
+    <Compile Include="ZWave\Layers\TransportLayer\TransportLayer.cs" />
+    <Compile Include="ZWave\Layers\TransportLayer\UsbPort.cs" />
+    <Compile Include="ZWave\Logging\LogPacket.cs" />
+    <Compile Include="ZWave\Logging\SerialApiParser.cs" />
+    <Compile Include="ZWave\ZWaveManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\z-wave-tools-core\lib\CryptoLibraryS2\win\s2crypto32.dll">
+      <Link>s2crypto32.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\z-wave-tools-core\lib\CryptoLibraryS2\win\s2crypto64.dll">
+      <Link>s2crypto64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings1.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave.csproj">
+      <Project>{b214d482-57eb-42be-aec7-d64850f56514}</Project>
+      <Name>ZWave</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+-->
+
+<zw_classes version="1.0.0">
+  <cmd_class key="0x67" version="2" name="COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE" help="Command Class Network Management Installation and Maintenance">
+    <cmd key="0x01" name="PRIORITY_ROUTE_SET" help="Priority Route Set">
+      <param key="0x00" name="NodeID" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x01" name="Repeater 1" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x02" name="Repeater 2" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x03" name="Repeater 3" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x04" name="Repeater 4" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x05" name="Speed" type="CONST">
+        <const key="0x00" flagname="9.6 kbit/sec" flagmask="0x01" />
+        <const key="0x01" flagname="40 kbit/sec" flagmask="0x02" />
+        <const key="0x02" flagname="100 kbit/sec" flagmask="0x03" />
+      </param>
+    </cmd>
+    <cmd key="0x02" name="PRIORITY_ROUTE_GET" help="Priority Route Get">
+      <param key="0x00" name="NodeID" type="BYTE" encaptype="NODE_NUMBER" />
+    </cmd>
+    <cmd key="0x03" name="PRIORITY_ROUTE_REPORT" help="Priority Route Report">
+      <param key="0x00" name="NodeID" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x01" name="Type" type="CONST">
+        <const key="0x00" flagname="None" flagmask="0x00" />
+        <const key="0x01" flagname="ZW_PRIORITY_ROUTE_ZW_LWR" flagmask="0x01" />
+        <const key="0x02" flagname="ZW_PRIORITY_ROUTE_ZW_NLWR" flagmask="0x02" />
+        <const key="0x03" flagname="ZW_PRIORITY_ROUTE_APP_PR" flagmask="0x10" />
+      </param>
+      <param key="0x02" name="Repeater 1" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x03" name="Repeater 2" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x04" name="Repeater 3" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x05" name="Repeater 4" type="BYTE" encaptype="NODE_NUMBER" />
+      <param key="0x06" name="Speed" type="CONST">
+        <const key="0x00" flagname="9.6 kbit/sec" flagmask="0x01" />
+        <const key="0x01" flagname="40 kbit/sec" flagmask="0x02" />
+        <const key="0x02" flagname="100 kbit/sec" flagmask="0x03" />
+      </param>
+    </cmd>
+    <cmd key="0x04" name="STATISTICS_GET" help="Statistics Get" support_mode="RX">
+      <param key="0x00" name="NodeID" type="BYTE" encaptype="NODE_NUMBER" />
+    </cmd>
+    <cmd key="0x05" name="STATISTICS_REPORT" help="Statistics Report" support_mode="TX">
+      <param key="0x00" name="NodeID" type="BYTE" encaptype="NODE_NUMBER" />
+      <variant_group key="0x01" name="Statistics" paramOffs="0xFF" sizemask="0x00" sizeoffs="0x00">
+        <param key="0x00" name="Type" type="CONST">
+          <const key="0x00" flagname="Route Changes (RC)" flagmask="0x00" />
+          <const key="0x01" flagname="Transmission Count (TC)" flagmask="0x01" />
+          <const key="0x02" flagname="Neighbors (NB)" flagmask="0x02" />
+          <const key="0x03" flagname="Packet Error Count (PEC)" flagmask="0x03" />
+          <const key="0x04" flagname="Sum of transmission times (TS)" flagmask="0x04" />
+          <const key="0x05" flagname="Sum of transmission times squrared (TS2)" flagmask="0x05" />
+        </param>
+        <param key="0x01" name="Length" type="BYTE" />
+        <param key="0x02" name="Value" type="VARIANT">
+          <variant paramoffs="1" sizemask="0xFF" />
+        </param>
+      </variant_group>
+    </cmd>
+    <cmd key="0x06" name="STATISTICS_CLEAR" help="Statistics Clear" support_mode="RX" />
+    <cmd key="0x07" name="RSSI_GET" help="RSSI Get" support_mode="RX" />
+    <cmd key="0x08" name="RSSI_REPORT" help="RSSI Report" support_mode="TX">
+      <param key="0x00" name="Channel 1 RSSI" type="BYTE" />
+      <param key="0x01" name="Channel 2 RSSI" type="BYTE" />
+      <param key="0x02" name="Channel 3 RSSI" type="BYTE" />
+    </cmd>
+    <cmd key="0x09" name="S2_RESYNCHRONIZATION_EVENT" help="S2 Resynchronization Event">
+      <param key="0x00" name="Node ID" type="BYTE" />
+      <param key="0x01" name="Rx Seq Number" type="BYTE" />
+    </cmd>
+  </cmd_class>
+</zw_classes>

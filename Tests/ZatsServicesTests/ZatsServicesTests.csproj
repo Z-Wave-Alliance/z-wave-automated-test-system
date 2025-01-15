@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D6FE8C4D-1479-436D-849D-1AFA2BFAAAF5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ZatsServicesTests</RootNamespace>
+    <AssemblyName>ZatsServicesTests</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AutoProfile.cs" />
+    <Compile Include="CmdExtensionsTests.cs" />
+    <Compile Include="ZatsUtilsTests.cs" />
+    <Compile Include="CmdLineArgumentSetTests.cs" />
+    <Compile Include="ZatsEnvironmentTestsTIAppend.cs" />
+    <Compile Include="ZatsEnvironmentTestsPlusTI.cs" />
+    <Compile Include="ZatsEnvironmentTests.cs" />
+    <Compile Include="DeviceManagerTest.cs" />
+    <Compile Include="MappingTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Dtls1ClientTransportClientTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication.csproj">
+      <Project>{2e351174-ed53-4e8a-a065-3e15a7e228b5}</Project>
+      <Name>BasicApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
+      <Project>{8ACFB772-98F3-48FE-85AE-3F06DA2EA60B}</Project>
+      <Name>ZipApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils.csproj">
+      <Project>{6C298CDF-2B64-4BE7-B9D4-449D5F30E57F}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication.csproj">
+      <Project>{1467d879-7794-4a41-a5ff-e8d16dc4eee4}</Project>
+      <Name>ZnifferApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj">
+      <Project>{feb030f9-a44a-4c72-9c28-c8fa186995fb}</Project>
+      <Name>ZWaveXml</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave.csproj">
+      <Project>{B214D482-57EB-42BE-AEC7-D64850F56514}</Project>
+      <Name>ZWave</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\AutomaticTest\ZatsServices\ZatsServices.csproj">
+      <Project>{A0198FE9-C736-43B6-B2DB-5906C9519242}</Project>
+      <Name>ZatsServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\AutomaticTest\ZatsTestConsole\ZatsTestConsole.csproj">
+      <Project>{60a8aea6-eb6e-457d-b941-e16754ea6261}</Project>
+      <Name>ZatsTestConsole</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Castle.Core">
+      <Version>5.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Moq">
+      <Version>4.18.4</Version>
+    </PackageReference>
+    <PackageReference Include="NUnit">
+      <Version>3.13.3</Version>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter">
+      <Version>4.4.2</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

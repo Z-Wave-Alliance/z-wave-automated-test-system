@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>ZWaveProgrammer</AssemblyName>
+    <TargetFrameworks>net6.0;net48</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
+    <PackageReference Include="System.Reflection" Version="4.3.0" />
+    <Compile Remove="Utils\WinBased\**" />
+    <Compile Remove="ZWave\Layers\TransportLayer\UsbPort.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Management" />
+  </ItemGroup>
+</Project>

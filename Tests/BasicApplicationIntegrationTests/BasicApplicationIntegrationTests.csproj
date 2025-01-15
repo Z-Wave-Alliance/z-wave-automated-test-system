@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3FD71BAC-88A6-451B-89A4-CB94B4EB7D34}</ProjectGuid>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BasicApplicationIntegrationTests</RootNamespace>
+    <AssemblyName>BasicApplicationIntegrationTests</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddNode.cs" />
+    <Compile Include="AddNodeBridge.cs" />
+    <Compile Include="AddNodeBridgeSlaveSecure.cs" />
+    <Compile Include="AddNodeSIS.cs" />
+    <Compile Include="AddNodeSISBridgeSlave.cs" />
+    <Compile Include="AddNodeTimeoutsSecureS0.cs" />
+    <Compile Include="ConfigLoader.cs" />
+    <Compile Include="LearnModeSecure.cs" />
+    <Compile Include="ResponseDataBridge.cs" />
+    <Compile Include="ExpectDataBridge.cs" />
+    <Compile Include="SendDataBridge.cs" />
+    <Compile Include="BasicTestsBase.cs" />
+    <Compile Include="CommandClassesExamples.cs" />
+    <Compile Include="AddNodeBridgeSlave.cs" />
+    <Compile Include="FirmwareUpdateV3Client.cs" />
+    <Compile Include="NoiseData.cs" />
+    <Compile Include="SendDataSecureStress.cs" />
+    <Compile Include="ResponseData.cs" />
+    <Compile Include="ExpectData.cs" />
+    <Compile Include="GetVersion.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RequestData.cs" />
+    <Compile Include="Retransmittion.cs" />
+    <Compile Include="AddNodeSecure.cs" />
+    <Compile Include="SendDataSecure3xStress.cs" />
+    <Compile Include="SendData.cs" />
+    <Compile Include="SetDefault.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\z-wave-tools-core\BasicApplication\BasicApplication.csproj">
+      <Project>{2E351174-ED53-4E8A-A065-3E15A7E228B5}</Project>
+      <Name>BasicApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils.csproj">
+      <Project>{6C298CDF-2B64-4BE7-B9D4-449D5F30E57F}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj">
+      <Project>{FEB030F9-A44A-4C72-9C28-C8FA186995FB}</Project>
+      <Name>ZWaveXml</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave.csproj">
+      <Project>{B214D482-57EB-42BE-AEC7-D64850F56514}</Project>
+      <Name>ZWave</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\XmlFiles\IntegrationTestsSources.config">
+      <Link>IntegrationTestsSources.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
