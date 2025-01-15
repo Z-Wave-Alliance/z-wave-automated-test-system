@@ -1,16 +1,11 @@
 # News
 
-**Full Changelog**: https://github.com/Z-Wave-Alliance/oswg-template-repo/commits/v0.0.0
-
-TODO: Please update URL for related repo and tag, and remove this comment.
 
 All notable changes to this project will be documented in this file.
 
-## {YY}.{MM}.{Micro}{Modifier} or {MAJOR}.{MINOR}.{PATCH}
+## 25.1.0
 
-TODO: Please update title matching conventions
-https://semver.org/ or https://calver.org/
-and remote this comment
+**Full Changelog**: https://github.com/Z-Wave-Alliance/z-wave-automated-test-system/commits/v25.1.0
 
 ### Added
 
@@ -23,6 +18,6 @@ and remote this comment
 
 SPDX-License-Identifier: BSD-3-Clause
 
-SPDX-FileCopyrightText: 2025 Z-Wave Alliance
+SPDX-FileCopyrightText: 2025 Silicon Laboratories Inc. https://www.silabs.com
 
-TODO: Please align to project origin
+

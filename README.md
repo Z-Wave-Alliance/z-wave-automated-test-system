@@ -1,10 +1,9 @@
-# oswg-template-repo
-Repository that can be used as a template for new repositories owned by OSWG.
+# z-wave-automated-test-system
 
-https://github.com/Z-Wave-Alliance/oswg-template-repo
+https://github.com/Z-Wave-Alliance/z-wave-automated-test-system
 
 ## Legal info
 
 SPDX-License-Identifier: BSD-3-Clause
 
-SPDX-FileCopyrightText: 2024 Z-Wave Alliance
+SPDX-FileCopyrightText: 2025 Silicon Laboratories Inc. https://www.silabs.com
