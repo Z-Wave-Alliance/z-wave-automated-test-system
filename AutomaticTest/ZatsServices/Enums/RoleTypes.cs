@@ -1,0 +1,14 @@
+﻿// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+public enum RoleTypes
+{
+    None = ZWave.Enums.RoleTypes.None,
+    CONTROLLER_CENTRAL_STATIC = ZWave.Enums.RoleTypes.CONTROLLER_CENTRAL_STATIC,
+    CONTROLLER_SUB_STATIC = ZWave.Enums.RoleTypes.CONTROLLER_SUB_STATIC,
+    CONTROLLER_PORTABLE = ZWave.Enums.RoleTypes.CONTROLLER_PORTABLE,
+    CONTROLLER_PORTABLE_REPORTING = ZWave.Enums.RoleTypes.CONTROLLER_PORTABLE_REPORTING,
+    END_NODE_PORTABLE = ZWave.Enums.RoleTypes.END_NODE_PORTABLE,
+    END_NODE_ALWAYS_ON = ZWave.Enums.RoleTypes.END_NODE_ALWAYS_ON,
+    END_NODE_SLEEPING_REPORTING = ZWave.Enums.RoleTypes.END_NODE_SLEEPING_REPORTING,
+    END_NODE_SLEEPING_LISTENING = ZWave.Enums.RoleTypes.END_NODE_SLEEPING_LISTENING
+}

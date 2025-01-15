@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace ZWave.Enums
+{
+    /// <summary>
+    /// Led Types enumeration.
+    /// </summary>
+    public enum LedTypes : int
+    {
+        /// <summary>
+        /// Pass Led.
+        /// </summary>
+        Pass = 0,
+        /// <summary>
+        /// Error Led.
+        /// </summary>
+        Error = 1,
+        /// <summary>
+        /// Busy Led.
+        /// </summary>
+        Busy = 2,
+    }
+}

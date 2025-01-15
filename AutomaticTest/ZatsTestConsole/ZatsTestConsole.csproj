@@ -1,0 +1,391 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{60A8AEA6-EB6E-457D-B941-E16754EA6261}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ZatsTestConsole</RootNamespace>
+    <AssemblyName>ZatsTestConsole</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;NET45</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <DocumentationFile>
+    </DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;NET45</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CmdLineArgs.cs" />
+    <Compile Include="ConsoleCustomOutput.cs" />
+    <Compile Include="DeviceHostsDetector.cs" />
+    <Compile Include="IManagersContainer.cs" />
+    <Compile Include="Logging\LogBuilder.cs">
+      <DependentUpon>LogBuilder.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="ManagersContainer.cs" />
+    <Compile Include="ConsoleOutputDecorator.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServicesContainer.cs" />
+    <Compile Include="TestRunner.cs" />
+    <Compile Include="ZatsUtils.cs" />
+    <Compile Include="ZatsEnvironment.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication.csproj">
+      <Project>{2E351174-ED53-4E8A-A065-3E15A7E228B5}</Project>
+      <Name>BasicApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\UicApplication\UicApplication.csproj">
+      <Project>{b8a46ab2-e8eb-4249-8c73-87d028b1428d}</Project>
+      <Name>UicApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
+      <Project>{8ACFB772-98F3-48FE-85AE-3F06DA2EA60B}</Project>
+      <Name>ZipApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication.csproj">
+      <Project>{1467D879-7794-4A41-A5FF-E8D16DC4EEE4}</Project>
+      <Name>ZnifferApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils.csproj">
+      <Project>{6C298CDF-2B64-4BE7-B9D4-449D5F30E57F}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj">
+      <Project>{FEB030F9-A44A-4C72-9C28-C8FA186995FB}</Project>
+      <Name>ZWaveXml</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave.csproj">
+      <Project>{B214D482-57EB-42BE-AEC7-D64850F56514}</Project>
+      <Name>ZWave</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZatsInteractiveServices\ZatsInteractiveServices.csproj">
+      <Project>{F0A03F7D-1A9E-4E3B-98C8-D32B99A19C1C}</Project>
+      <Name>ZatsInteractiveServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZatsServices\ZatsServices.csproj">
+      <Project>{A0198FE9-C736-43B6-B2DB-5906C9519242}</Project>
+      <Name>ZatsServices</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28AnyCPU%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28AnyCPU%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\z-wave-tools-core\XmlFiles\FrameDefinition.xml">
+      <Link>Libraries\ZWaveDll\XmlFiles\FrameDefinition.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\z-wave-tools-core\XmlFiles\ZWave_cmd_classes.xml">
+      <Link>Libraries\ZWaveDll\XmlFiles\ZWave_cmd_classes.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\custom_sign.key-tokens.txt">
+      <Link>Resources\custom_sign.key-tokens.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\sample_sign.key-tokens.txt">
+      <Link>Resources\sample_sign.key-tokens.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zg14_sign.key-tokens.txt">
+      <Link>Resources\zg14_sign.key-tokens.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\XmlFiles\FilePatternDefinition.xml">
+      <Link>XmlFiles\FilePatternDefinition.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="..\..\XmlFiles\ZatsDefinition.xml">
+      <Link>XmlFiles\ZatsDefinition.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\App.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\s2crypto32.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\s2crypto64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZWaveFramework.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZWaveProgrammer.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZWaveProgrammerUI.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\zxing.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\Resources\sample_encrypt.key">
+      <Link>Resources\sample_encrypt.key</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\custom_encrypt.key">
+      <Link>Resources\custom_encrypt.key</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\custom_sign.key">
+      <Link>Resources\custom_sign.key</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\atmel\prog.hex">
+      <Link>Resources\prog.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac713us.hex">
+      <Link>Resources\sac713us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac713_32us.hex">
+      <Link>Resources\sac713_32us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac714us.hex">
+      <Link>Resources\sac714us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sacs3us.hex">
+      <Link>Resources\sacs3us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sacs5uus.hex">
+      <Link>Resources\sacs5uus.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sacss5eu.hex">
+      <Link>Resources\sacss5eu.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zniffer\s5.hex">
+      <Link>Resources\s5.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zniffer\s5u.hex">
+      <Link>Resources\s5u.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sact713us.hex">
+      <Link>Resources\sact713us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zg14_encrypt.key">
+      <Link>Resources\zg14_encrypt.key</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\railtest\rt713.hex">
+      <Link>Resources\rt713.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\railtest\rt714.hex">
+      <Link>Resources\rt714.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zniffer\spti713.hex">
+      <Link>Resources\spti713.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\zniffer\spti823.hex">
+      <Link>Resources\spti823.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sacss5us.hex">
+      <Link>Resources\sacss5us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac823us.hex">
+      <Link>Resources\sac823us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\railtest\rt823B.hex">
+      <Link>Resources\rt823B.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac8230sbus.hex">
+      <Link>Resources\sac8230sbus.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\railtest\rt8230.hex">
+      <Link>Resources\rt8230.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\sac8230saus.hex">
+      <Link>Resources\sac8230saus.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\serial-api\zwave_ncp_serial_api_controller-brd2603a-us.hex">
+      <Link>Resources\zwave_ncp_serial_api_controller-brd2603a-us.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_EFR32RZ13_brd4209a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_EFR32RZ13_brd4209a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4204c.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4204c.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4204d.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4204d.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4210a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_EFR32ZG23_brd4210a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM130S_brd4200a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM130S_brd4200a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM130S_brd4202a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM130S_brd4202a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM130S_brd4203a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM130S_brd4203a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM130S_brd4207a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM130S_brd4207a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM230S_brd4205a.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM230S_brd4205a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.18.0_1_ZGM230S_brd4205b.hex">
+      <Link>Resources\ZW_Manipulator_7.18.0_1_ZGM230S_brd4205b.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400a.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400b.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400b.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400c.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4400c.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401a.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401a.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401b.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401b.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\Resources\manipulator\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401c.hex">
+      <Link>Resources\ZW_Manipulator_7.19.0_5_EFR32FG28_brd4401c.hex</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="app.config" />
+    <None Include="Logging\LogBuilder.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Logging\LogBuilder.ps1" />
+    <Content Include="Programmer\calibration.hex">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZW050x_calibration_en_JTCK_ref_auto.hex">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZWaveProgrammer.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Programmer\ZWaveProgrammerUI.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Telnet">
+      <Version>0.11.3</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if exist "$(ProjectDir)..\..\XmlFiles\*Profile.xml" copy "$(ProjectDir)..\..\XmlFiles\*Profile.xml" "$(TargetDir)XmlFiles\"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

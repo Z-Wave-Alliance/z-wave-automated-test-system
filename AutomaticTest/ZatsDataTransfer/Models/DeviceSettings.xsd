@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified" >
+  <xs:annotation>
+    <xs:documentation xml:lang="en">
+      Scheme for Device Settings
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:simpleType name="SecurityScheme">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="S2_UNAUTHENTICATED"/>
+      <xs:enumeration value="S2_AUTHENTICATED"/>
+      <xs:enumeration value="S2_ACCESS"/>
+      <xs:enumeration value="S0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TestCaseDeviceTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="None" />
+      <xs:enumeration value="StaticController" />
+      <xs:enumeration value="DeviceUnderTest" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ControllerRoles">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="None">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">0</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SUC">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">1</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="RealPrimary">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">2</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SIS">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">4</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="Secondary">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">8</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="Inclusion">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">16</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="NodeIdServerPresent">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">32</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="OtherNetwork">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">64</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name ="TestCaseStaticController">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="IncludedNodes" type="IncludedNodes"></xs:element>
+        <xs:element name="NetworkKeys" type="xs:hexBinary" maxOccurs="unbounded"></xs:element>
+      </xs:sequence>
+      <xs:attribute name="Name" type="xs:string"></xs:attribute>
+      <xs:attribute name="SerialPortName" type="xs:string"></xs:attribute>
+      <xs:attribute name="SocketConnectionString" type="xs:string"></xs:attribute>
+      <xs:attribute name="HomeId" use="required" type="xs:hexBinary"></xs:attribute>
+      <xs:attribute name="NodeId" use="required" type="xs:unsignedByte"></xs:attribute>
+      <xs:attribute name="NetworkRole" type="ControllerRoles"></xs:attribute>
+      <xs:attribute name="IsConnected" type="xs:boolean"></xs:attribute>
+      <xs:attribute name="SucNodeId" type="xs:unsignedByte"></xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name ="TestCaseDeviceUnderTest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Name" type="xs:string"></xs:element>
+        <xs:element name="Node" type="NodeItem"></xs:element>
+        <xs:element name="ZWavePlusNode" type="xs:boolean"></xs:element>
+        <xs:element name="ZWavePlusVersion" type="xs:unsignedByte"></xs:element>
+        <xs:element name="ActiveSecurityScheme" type ="SecurityScheme"></xs:element>
+        <xs:element name="SecuritySchemes" type="SecuritySchemes"></xs:element>
+        <xs:element name="SecureNode" type="xs:boolean"></xs:element>
+        <xs:element name="DeviceType" type="TestCaseDeviceTypes"></xs:element>
+        <xs:element name="RoleType" type="xs:string"></xs:element>
+        <xs:element name="SupportedCommandClasses" type="SupportedCommandClasses"></xs:element>
+        <xs:element name="ApplicationVersion" type="xs:string"></xs:element>
+        <xs:element name="ProtocolVersion" type="xs:string"></xs:element>
+        <xs:element name="ManufacturerID" type="xs:string"></xs:element>
+        <xs:element name="ProductTypeID" type="xs:string"></xs:element>
+        <xs:element name="ProductID" type="xs:string"></xs:element>
+        <xs:element name="Flir" type="xs:boolean"></xs:element>
+        <xs:element name="Beam250" type="xs:boolean"></xs:element>
+        <xs:element name="Beam1000" type="xs:boolean"></xs:element>
+        <xs:element name="Listening" type="xs:boolean"></xs:element>
+        <xs:element name="Optional" type="xs:boolean"></xs:element>
+        <xs:element name="AssocGroups" type="AssocGroups"></xs:element>
+        <xs:element name="EndPoints" type="EndPoints"></xs:element>
+        <xs:element name="SupportedNotificationTypes" type="SupportedNotificationTypes"></xs:element>
+        <xs:element name="SupportedSensorTypes" type="SupportedSensorTypes"></xs:element>
+        <xs:element name="SupportedScenes" type="SupportedScenes"></xs:element>
+        <xs:element name="DSK" type="xs:string"></xs:element>
+        <xs:element name="QRData" type="xs:string"></xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name ="EndPoints">
+    <xs:sequence>
+      <xs:element name="TestCaseDeviceEndPoint" type="TestCaseDeviceEndPoint" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="TestCaseDeviceEndPoint">
+    <xs:sequence>
+      <xs:element name="EndPointId" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Dynamic" type="xs:boolean"></xs:element>
+      <xs:element name="Generic" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Specific" type="xs:unsignedByte"></xs:element>
+      <xs:element name="SupportedCommandClasses" type="SupportedCommandClasses"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="IncludedNodes">
+    <xs:sequence>
+      <xs:element name="NodeItem" type="NodeItem" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name ="NodeItem">
+    <xs:sequence>
+      <xs:element name="Capability" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Security" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Reserved"></xs:element>
+      <xs:element name="Basic" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Generic" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Specific" type="xs:unsignedByte"></xs:element>
+      <xs:element name="CommandClasses" type="xs:hexBinary"></xs:element>
+      <xs:element name="SecureCommandClasses" type="xs:hexBinary"></xs:element>
+    </xs:sequence>
+    <xs:attribute name="NodeId" use="required" type="xs:unsignedByte"></xs:attribute>
+    <xs:attribute name="NodeType" use="required" type="xs:string"></xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="SupportedNotificationTypes">
+    <xs:sequence>
+      <xs:element name="item" type="NotificationType" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="NotificationType">
+    <xs:sequence>
+      <xs:element name="Type" type="xs:unsignedByte"></xs:element>
+      <xs:element name="SupportedEvents" type="xs:hexBinary"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SupportedSensorTypes">
+    <xs:sequence>
+      <xs:element name="item" type="SensorType" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SensorType">
+    <xs:sequence>
+      <xs:element name="Type" type="xs:unsignedByte"></xs:element>
+      <xs:element name="SupportedScales" type="xs:hexBinary"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SupportedScenes">
+    <xs:sequence>
+      <xs:element name="Scene" type="Scene" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="Scene">
+    <xs:sequence>
+      <xs:element name="SceneNumber" type="xs:unsignedByte"></xs:element>
+      <xs:element name="SupportedKeys" type="xs:hexBinary"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SecuritySchemes">
+    <xs:sequence>
+      <xs:element name="SecurityScheme" type="SecurityScheme" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SupportedCommandClasses">
+    <xs:sequence>
+      <xs:element name="SupportedCommandClass" type="SupportedCommandClass" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+    
+  <xs:complexType name="SupportedCommandClass">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Version" type="xs:unsignedByte"></xs:element>
+      <xs:element name="Secure" type="xs:boolean"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="AssocGroups">
+    <xs:sequence>
+      <xs:element name="AssocGroup" type="AssocGroup" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="AssocGroup">
+    <xs:sequence>
+      <xs:element name="GroupId" type="xs:unsignedByte"></xs:element>
+      <xs:element name="MaxNodesSupported" type="xs:unsignedByte"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+</xs:schema>

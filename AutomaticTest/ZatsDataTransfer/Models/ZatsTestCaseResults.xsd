@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   elementFormDefault="qualified"
+   attributeFormDefault="unqualified">
+  <xs:annotation>
+    <xs:documentation xml:lang="en">
+      Test result schema for the CTT. Each Test Case can have multiple results assigned to ZATS Result Keys
+    </xs:documentation>
+  </xs:annotation>
+  <xs:element name="ZatsTestCaseResults">
+    <xs:annotation>
+      <xs:documentation xml:lang="en">Contains the global test case result</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="KeyResult" type="KeyResult" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="Name" use="required">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">Full class name of the test</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Result" use="required" type="CttTestCaseResult">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">The global test case result (a string for now).</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="TestRunFolder" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">The folder where the logs and results are saved.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required">
+        <xs:annotation>
+          <xs:documentation xml:lang="en">The timestamp of test execution.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="KeyResult">
+    <xs:annotation>
+      <xs:documentation xml:lang="en">Contains the individual key results</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="Key" use="required">
+      <xs:annotation>
+        <xs:documentation xml:lang="en">The result key</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:minLength value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Value">
+      <xs:annotation>
+        <xs:documentation xml:lang="en">Option value for assigning a result to a key/value pair</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:minLength value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Result" use="required" type="CttTestCaseResult">
+      <xs:annotation>
+        <xs:documentation xml:lang="en">The key result string.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:simpleType name="CttTestCaseResult">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Pass" />
+      <xs:enumeration value="Fail" />
+      <xs:enumeration value="Skip" />
+      <xs:enumeration value="Abort" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+</xs:schema>

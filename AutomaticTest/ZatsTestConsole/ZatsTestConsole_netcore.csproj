@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>ZatsTestConsole</AssemblyName>
+    <TargetFrameworks>net6.0;net48</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Programmer\**" />
+    <EmbeddedResource Remove="Programmer\**" />
+    <None Remove="Programmer\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
+    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
+    <ProjectReference Include="..\ZatsServices\ZatsServices_netcore.csproj" />
+    <ProjectReference Include="..\ZatsInteractiveServices\ZatsInteractiveServices_netcore.csproj" />
+    <PackageReference Include="Telnet" Version="0.11.3" />
+    <Content Include="..\..\..\z-wave-tools-core\XmlFiles\*.xml" CopyToOutputDirectory="PreserveNewest">
+      <Link>Libraries\ZWaveDll\XmlFiles\%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\XmlFiles\*.xml" CopyToOutputDirectory="PreserveNewest">
+      <Link>XmlFiles\%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\Resources\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <Link>Resources\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+</Project>

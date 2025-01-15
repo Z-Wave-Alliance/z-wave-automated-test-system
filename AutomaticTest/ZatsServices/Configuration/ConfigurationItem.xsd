@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" >
+
+  <!-- **** ConfigurationItem *********************************************** -->
+  <xs:element name="ConfigurationItem">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SecuritySettings" maxOccurs="1" minOccurs="0"/>
+        <xs:element name="Node" type="xs:string" maxOccurs="unbounded" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** SecuritySettings *********************************************** -->
+  <xs:element name="SecuritySettings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="NetworkKey" type="xs:string" maxOccurs="unbounded" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attribute name="IsCsaEnabled" type="xs:boolean" use="optional"/>
+      <xs:attribute name="IsPaused" type="xs:boolean" use="optional" />
+      <xs:attribute name="CommandClasses" type="xs:hexBinary" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
