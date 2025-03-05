@@ -54,13 +54,13 @@ jobs:
         shell: bash
 
       # TODO: https://github.com/Z-Wave-Alliance/z-wave-tools-core/issues/5
+      # TODO: Requires a new release containing https://github.com/Z-Wave-Alliance/z-wave-tools-core/commit/1796a91b2b8390a1e9c44967d16d1c50194afe8c
       - name: Checkout z-wave-tools-core
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           repository: 'Z-Wave-Alliance/z-wave-tools-core'
           path: 'z-wave-tools-core'
-          ref: 'v25.1.0'
 
       # TODO: https://github.com/Z-Wave-Alliance/z-wave-pc-zniffer/issues/6
       - name: Checkout z-wave-blobs
