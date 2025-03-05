@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2024 Z-Wave Alliance
 # Demo copied from https://docs.github.com/en/actions/quickstart
 ---
-name: Build Z-Wave Automatit Test System (ZATS)
+name: Build Z-Wave Automatic Test System (ZATS)
 
 on:
   pull_request:
