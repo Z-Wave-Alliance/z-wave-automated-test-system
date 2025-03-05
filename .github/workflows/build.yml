@@ -82,7 +82,7 @@ jobs:
         env:
           Configuration: Debug
         run: |
-          MSBuild.exe ${{env.Solution_Path}} -property:Platform="${{env.TargetPlatform}}" -property:Configuration=${{env.Configuration}} -verbosity:minimal
+          MSBuild.exe ${{env.Solution_Path}} -property:Platform="${{env.TargetPlatform}}" -property:Configuration=${{env.Configuration}} -verbosity:minimal -p:OutputPath=${{env.Artifact_Path}} -p:DebugType=None -p:DebugSymbols=false
 
       - name: Upload published artifacts
         uses: actions/upload-artifact@v4
