@@ -27,6 +27,10 @@ jobs:
       - name: Legal check
         run: reuse lint
 
+      - name: Linter check
+        run: find . -iname "*.yml" -exec yamllint "{}" \;
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+
   build_zats:
     runs-on: windows-latest
     needs: legal-check
