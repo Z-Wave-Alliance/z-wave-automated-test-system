@@ -29,6 +29,7 @@ jobs:
 
   build_zats:
     runs-on: windows-latest
+    needs: legal-check
     defaults:
       run:
         shell: powershell
@@ -36,7 +37,7 @@ jobs:
       Configuration: Release
       TargetPlatform: "Any CPU"
       Solution_Path: ${{ github.workspace}}\z-wave-automated-test-system\ZatsBuild.sln
-      Artifact_Path: ${{ github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts\ # MSBuild does not support relative paths
+      Artifact_Path: ${{ github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts # MSBuild does not support relative paths
 
     steps:
       - name: Checkout z-wave-automated-test-system
@@ -45,19 +46,30 @@ jobs:
           token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           path: 'z-wave-automated-test-system'
 
+      - id: describe
+        name: Describe HEAD
+        run: |
+          git config --system --add safe.directory ${PWD}
+          echo "describe=$(git -C ${{ github.event.repository.name }} describe --tags --always)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      # TODO: https://github.com/Z-Wave-Alliance/z-wave-tools-core/issues/5
       - name: Checkout z-wave-tools-core
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           repository: 'Z-Wave-Alliance/z-wave-tools-core'
           path: 'z-wave-tools-core'
+          ref: 'v25.1.0'
 
+      # TODO: https://github.com/Z-Wave-Alliance/z-wave-pc-zniffer/issues/6
       - name: Checkout z-wave-blobs
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           repository: 'Z-Wave-Alliance/z-wave-blobs'
           path: 'z-wave-blobs'
+          ref: 'v0.1.0'
 
       - name: Add MSBuild.exe to Path
         uses: microsoft/setup-msbuild@v1.1
@@ -75,7 +87,7 @@ jobs:
       - name: Upload published artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ZWavePCController
+          name: ZatsTestConsole
           # Windows only tool
           # Explicitly specify the path to the artifacts because the default is the working directory
           path: ${{ env.Artifact_Path }}/*
