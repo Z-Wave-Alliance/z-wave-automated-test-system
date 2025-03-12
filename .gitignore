@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: 2025 Z-Wave-Alliance <https://z-wavealliance.org/>
+
+# Mac OS
+.DS_Store*
+
+# Nuget packages
+packages/
+
+# PyCharm
+.idea
+
+# Visual Studio
+*_i.c
+*_p.c
+*.aps
+*.bak
+*.cache
+*.exe
+*.ilk
+*.lib
+*.log
+*.ncb
+*.obj
+*.pch
+*.pdb
+*.sbr
+*.suo
+*.tlb
+*.tlh
+*.user
+*.vspscc
+.vs/
+_[Rr]e[Ss]harper*/
+[Bb]in
+[Dd]ebug*/
+[Oo]bj/
+[Rr]elease*/
+[Tt]est[Rr]esult*
+
+# Windows
+Thumbs.db
