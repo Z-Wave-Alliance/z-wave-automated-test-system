@@ -19,7 +19,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ${{  env.debian_packages }}
         env:
-          debian_packages: reuse
+          debian_packages: reuse yamllint
 
       - name: Check out repository code
         uses: actions/checkout@v4
