@@ -5,7 +5,7 @@
 ---
 name: Build Z-Wave Automatic Test System (ZATS)
 
-on:
+on:  # yamllint disable-line rule:truthy
   pull_request:
   push:
   workflow_dispatch:
