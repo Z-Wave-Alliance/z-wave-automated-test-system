@@ -42,7 +42,7 @@ jobs:
       TargetPlatform: "Any CPU"
       Solution_Path: ${{github.workspace}}\z-wave-automated-test-system\ZatsBuild.sln
       # MSBuild does not support relative paths
-      Artifact_Path: ${{github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts 
+      Artifact_Path: ${{github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts
 
     steps:
       - name: Checkout z-wave-automated-test-system
