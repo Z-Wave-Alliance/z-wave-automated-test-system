@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="FilePatternDefinition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="LibTokens" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="LibToken" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="PathFilters" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="PathFilter" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="BinaryPatterns" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="BinaryPattern" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** BinaryPattern *********************************************************************** -->
+  <xs:element name="BinaryPattern">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="PathFilters" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="PathFilter" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="LibTokens" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="LibToken" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="RegexFilters" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="RegexFilter" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="PriorityRegexFilters" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="PriorityRegexFilter" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+
+      <xs:attribute name="ChipSeries" type="xs:string" use="required" />
+      <xs:attribute name="IncludeUsbVcpRegexFilter" type="xs:string" use="optional" />
+      <xs:attribute name="ExcludeUsbVcpRegexFilter" type="xs:string" use="optional" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** LibToken *********************************************************************** -->
+  <xs:element name="LibToken">
+    <xs:complexType>
+      <xs:attribute name="Library" type="xs:string" use="required" />
+      <xs:attribute name="Token" type="xs:string" use="required" />
+      <xs:attribute name="SkipFrequency" type="xs:boolean" use="optional" default="false" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** PathFilter *********************************************************************** -->
+  <xs:element name="PathFilter">
+    <xs:complexType>
+      <xs:attribute name="Pattern" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

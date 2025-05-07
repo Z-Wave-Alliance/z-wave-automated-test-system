@@ -1,0 +1,1338 @@
+[
+    {
+        "Name": "Air temperature",
+        "Id": 1,
+        "MinVersion": 1,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 1
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 1
+            }
+        ]
+    },
+    {
+        "Name": "General purpose",
+        "Id": 2,
+        "MinVersion": 1,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 1
+            },
+            {
+                "Name": "Dimensionless value",
+                "Id": 1,
+                "MinVersion": 1
+            }
+        ]
+    },
+    {
+        "Name": "Illuminance",
+        "Id": 3,
+        "MinVersion": 1,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 1
+            },
+            {
+                "Name": "Lux",
+                "Id": 1,
+                "MinVersion": 1
+            }
+        ]
+    },
+    {
+        "Name": "Power",
+        "Id": 4,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Watt (W)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Btu/h",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Humidity",
+        "Id": 5,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Absolute humidity (g/m3)",
+                "Id": 1,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Velocity",
+        "Id": 6,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "m/s",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Mph",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Direction",
+        "Id": 7,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "0 to 360 degrees",
+                "Id": 2,
+                "MinVersion": 0
+            }
+        ]
+    },
+    {
+        "Name": "Atmospheric pressure",
+        "Id": 8,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Kilopascal (kPa)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Inches of Mercury",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Barometric pressure",
+        "Id": 9,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Kilopascal (kPa)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Inches of Mercury",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Solar radiation",
+        "Id": 10,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Watt per square meter (W/m2)",
+                "Id": 0,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Dew point",
+        "Id": 11,
+        "MinVersion": 1,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 1
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 1
+            }
+        ]
+    },
+    {
+        "Name": "Rain rate",
+        "Id": 12,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Millimeter/hour (mm/h)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Inches per hour (in/h)",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Tide level",
+        "Id": 13,
+        "MinVersion": 2,
+        "Scales": [
+            {
+                "Name": "Meter (m)",
+                "Id": 0,
+                "MinVersion": 2
+            },
+            {
+                "Name": "Feet (ft)",
+                "Id": 1,
+                "MinVersion": 2
+            }
+        ]
+    },
+    {
+        "Name": "Weight",
+        "Id": 14,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Kilogram (kg)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Pounds (lb)",
+                "Id": 1,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Voltage",
+        "Id": 15,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Volt (V)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Millivolt (mV)",
+                "Id": 1,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Current",
+        "Id": 16,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Ampere (A)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Milliampere (mA)",
+                "Id": 1,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Carbon dioxide CO2-level",
+        "Id": 17,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Parts/million (ppm)",
+                "Id": 0,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Air flow",
+        "Id": 18,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Cubic meter per hour (m3/h)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Cubic feet per minute (cfm)",
+                "Id": 1,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Tank capacity",
+        "Id": 19,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Liter (l)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Cubic meter (m3)",
+                "Id": 1,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Gallons",
+                "Id": 2,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Distance",
+        "Id": 20,
+        "MinVersion": 3,
+        "Scales": [
+            {
+                "Name": "Meter (m)",
+                "Id": 0,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Centimeter (cm)",
+                "Id": 1,
+                "MinVersion": 3
+            },
+            {
+                "Name": "Feet (ft)",
+                "Id": 2,
+                "MinVersion": 3
+            }
+        ]
+    },
+    {
+        "Name": "Angle position",
+        "Id": 21,
+        "MinVersion": 4,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 4
+            },
+            {
+                "Name": "Degrees relative to north pole of standing eye view",
+                "Id": 1,
+                "MinVersion": 4
+            },
+            {
+                "Name": "Degrees relative to north pole of standing eye view",
+                "Id": 2,
+                "MinVersion": 4
+            }
+        ]
+    },
+    {
+        "Name": "Rotation",
+        "Id": 22,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Revolutions per minute (rpm)",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Hertz (Hz)",
+                "Id": 1,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Water temperature",
+        "Id": 23,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Soil temperature",
+        "Id": 24,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Seismic Intensity",
+        "Id": 25,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Mercalli",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "European Macroseismic",
+                "Id": 1,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Liedu",
+                "Id": 2,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Shindo",
+                "Id": 3,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Seismic magnitude",
+        "Id": 26,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Local",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Moment",
+                "Id": 1,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Surface wave",
+                "Id": 2,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Body wave",
+                "Id": 3,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Ultraviolet",
+        "Id": 27,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "UV index",
+                "Id": 0,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Electrical resistivity",
+        "Id": 28,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Ohm meter (\u03A9m)",
+                "Id": 0,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Electrical conductivity",
+        "Id": 29,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Siemens per meter (S/m)",
+                "Id": 0,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Loudness",
+        "Id": 30,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Decibel (dB)",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "A-weighted decibels (dBA)",
+                "Id": 1,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Moisture",
+        "Id": 31,
+        "MinVersion": 5,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Volume water content (m3/m3)",
+                "Id": 1,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Impedance (k\u03A9)",
+                "Id": 2,
+                "MinVersion": 5
+            },
+            {
+                "Name": "Water activity (aw)",
+                "Id": 3,
+                "MinVersion": 5
+            }
+        ]
+    },
+    {
+        "Name": "Frequency",
+        "Id": 32,
+        "MinVersion": 6,
+        "Scales": [
+            {
+                "Name": "Hertz (Hz)",
+                "Id": 0,
+                "MinVersion": 6
+            },
+            {
+                "Name": "Kilohertz (kHz)",
+                "Id": 1,
+                "MinVersion": 6
+            }
+        ]
+    },
+    {
+        "Name": "Time",
+        "Id": 33,
+        "MinVersion": 6,
+        "Scales": [
+            {
+                "Name": "Second (s)",
+                "Id": 0,
+                "MinVersion": 6
+            }
+        ]
+    },
+    {
+        "Name": "Target temperature",
+        "Id": 34,
+        "MinVersion": 0,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 0
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 0
+            }
+        ]
+    },
+    {
+        "Name": "Particulate Matter 2.5",
+        "Id": 35,
+        "MinVersion": 6,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 6
+            },
+            {
+                "Name": "Microgram per cubic meter (\u00B5g/m3)",
+                "Id": 1,
+                "MinVersion": 6
+            }
+        ]
+    },
+    {
+        "Name": "Formaldehyde CH2O-level",
+        "Id": 36,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Radon concentration",
+        "Id": 37,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Becquerel per cubic meter (bq/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            },
+            {
+                "Name": "Picocuries per liter (pCi/l)",
+                "Id": 1,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Methane (CH4) density",
+        "Id": 38,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Volatile Organic Compound level",
+        "Id": 39,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            },
+            {
+                "Name": "Parts/million (ppm)",
+                "Id": 1,
+                "MinVersion": 10
+            }
+        ]
+    },
+    {
+        "Name": "Carbon monoxide (CO) level",
+        "Id": 40,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            },
+            {
+                "Name": "Parts/million (ppm)",
+                "Id": 1,
+                "MinVersion": 10
+            }
+        ]
+    },
+    {
+        "Name": "Soil humidity",
+        "Id": 41,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Soil reactivity",
+        "Id": 42,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Acidity (pH)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Soil salinity",
+        "Id": 43,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Heart rate",
+        "Id": 44,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Beats per minute (bpm)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Blood pressure",
+        "Id": 45,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Systolic (mmHg) (upper #)",
+                "Id": 0,
+                "MinVersion": 7
+            },
+            {
+                "Name": "Diastolic (mmHg) (lower #)",
+                "Id": 1,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Muscle mass",
+        "Id": 46,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Kilogram (kg)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Fat mass",
+        "Id": 47,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Kilogram (kg)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Bone mass",
+        "Id": 48,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Kilogram (kg)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Total body water (TBW)",
+        "Id": 49,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Kilogram (kg)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Basis metabolic rate (BMR)",
+        "Id": 50,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "Joule (J)",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Body Mass Index (BMI)",
+        "Id": 51,
+        "MinVersion": 7,
+        "Scales": [
+            {
+                "Name": "BMI Index",
+                "Id": 0,
+                "MinVersion": 7
+            }
+        ]
+    },
+    {
+        "Name": "Acceleration X-axis",
+        "Id": 52,
+        "MinVersion": 8,
+        "Scales": [
+            {
+                "Name": "Meter per square second (m/s2)",
+                "Id": 0,
+                "MinVersion": 8
+            }
+        ]
+    },
+    {
+        "Name": "Acceleration Y-axis",
+        "Id": 53,
+        "MinVersion": 8,
+        "Scales": [
+            {
+                "Name": "Meter per square second (m/s2)",
+                "Id": 0,
+                "MinVersion": 8
+            }
+        ]
+    },
+    {
+        "Name": "Acceleration Z-axis",
+        "Id": 54,
+        "MinVersion": 8,
+        "Scales": [
+            {
+                "Name": "Meter per square second (m/s2)",
+                "Id": 0,
+                "MinVersion": 8
+            }
+        ]
+    },
+    {
+        "Name": "Smoke density",
+        "Id": 55,
+        "MinVersion": 8,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 8
+            }
+        ]
+    },
+    {
+        "Name": "Water flow",
+        "Id": 56,
+        "MinVersion": 0,
+        "Scales": [
+            {
+                "Name": "Liter per hour (l/h)",
+                "Id": 0,
+                "MinVersion": 0
+            }
+        ]
+    },
+    {
+        "Name": "Water pressure",
+        "Id": 57,
+        "MinVersion": 9,
+        "Scales": [
+            {
+                "Name": "Kilopascal (kPa)",
+                "Id": 0,
+                "MinVersion": 9
+            }
+        ]
+    },
+    {
+        "Name": "RF signal strength",
+        "Id": 58,
+        "MinVersion": 9,
+        "Scales": [
+            {
+                "Name": "RSSI (percentage value)",
+                "Id": 0,
+                "MinVersion": 9
+            },
+            {
+                "Name": "dBm",
+                "Id": 1,
+                "MinVersion": 9
+            }
+        ]
+    },
+    {
+        "Name": "Particulate Matter 10",
+        "Id": 59,
+        "MinVersion": 10,
+        "Scales": [
+            {
+                "Name": "Mole per cubic meter (mol/m3)",
+                "Id": 0,
+                "MinVersion": 10
+            },
+            {
+                "Name": "Microgram per cubic meter (\u00B5g/m3)",
+                "Id": 1,
+                "MinVersion": 10
+            }
+        ]
+    },
+    {
+        "Name": "Respiratory rate",
+        "Id": 60,
+        "MinVersion": 10,
+        "Scales": [
+            {
+                "Name": "Breaths per minute (bpm)",
+                "Id": 0,
+                "MinVersion": 10
+            }
+        ]
+    },
+    {
+        "Name": "Relative Modulation level",
+        "Id": 61,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Percentage value (%)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Boiler water temperature",
+        "Id": 62,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Domestic Hot Water (DHW) temperature",
+        "Id": 63,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Outside temperature",
+        "Id": 64,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Exhaust temperature",
+        "Id": 65,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Water Chlorine level",
+        "Id": 66,
+        "MinVersion": 0,
+        "Scales": [
+            {
+                "Name": "Milligram per liter (mg/l)",
+                "Id": 0,
+                "MinVersion": 0
+            }
+        ]
+    },
+    {
+        "Name": "Water acidity",
+        "Id": 67,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Acidity (pH)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Water Oxidation reduction potential",
+        "Id": 68,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "MilliVolt (mV)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Heart Rate LF/HF ratio",
+        "Id": 69,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Unitless",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Motion Direction",
+        "Id": 70,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "0 to 360 degrees",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Applied force on the sensor",
+        "Id": 71,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Newton (N)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Return Air temperature",
+        "Id": 72,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Supply Air temperature",
+        "Id": 73,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Condenser Coil temperature",
+        "Id": 74,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Evaporator Coil temperature",
+        "Id": 75,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Liquid Line temperature",
+        "Id": 76,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Discharge Line temperature",
+        "Id": 77,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Suction (input pump/compressor) Pressure",
+        "Id": 78,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Kilopascal (kPa)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Pound per square inch (psi)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Discharge (output pump/compressor) Pressure",
+        "Id": 79,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Kilopascal (kPa)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Pound per square inch (psi)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Defrost temperature (sensor used to decide when to defrost)",
+        "Id": 80,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Celcius (C)",
+                "Id": 0,
+                "MinVersion": 11
+            },
+            {
+                "Name": "Fahrenheit (F)",
+                "Id": 1,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Ozone (O3)",
+        "Id": 81,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Sulfur dioxide (SO2)",
+        "Id": 82,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Nitrogen dioxide (NO2)",
+        "Id": 83,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Ammonia (NH3)",
+        "Id": 84,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Lead (Pb)",
+        "Id": 85,
+        "MinVersion": 0,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 0
+            }
+        ]
+    },
+    {
+        "Name": "Particulate Matter 1",
+        "Id": 86,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Person counter (entering)",
+        "Id": 87,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Unitless",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    },
+    {
+        "Name": "Person counter (exiting)",
+        "Id": 88,
+        "MinVersion": 11,
+        "Scales": [
+            {
+                "Name": "Unitless",
+                "Id": 0,
+                "MinVersion": 11
+            }
+        ]
+    }
+]

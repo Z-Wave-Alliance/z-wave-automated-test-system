@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{F0A03F7D-1A9E-4E3B-98C8-D32B99A19C1C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Zats.Services</RootNamespace>
+    <AssemblyName>ZatsInteractiveServices</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="INodesListObserver.cs" />
+    <Compile Include="PCController\AutomationServiceBase.cs" />
+    <Compile Include="PCController\NodeInfo.cs" />
+    <Compile Include="PCController\PCControllerAssociations.cs" />
+    <Compile Include="PCController\PCControllerProvisioningList.cs" />
+    <Compile Include="PCController\LogRecordParser.cs" />
+    <Compile Include="PCController\PCControllerActionResult.cs" />
+    <Compile Include="PCController\PCControllerActionToken.cs" />
+    <Compile Include="PCController\PCControllerApplicationService.cs" />
+    <Compile Include="PCController\PCControllerAsyncService.cs" />
+    <Compile Include="PCController\PCControllerComplianceService.cs" />
+    <Compile Include="PCController\PCControllerIdMap.cs" />
+    <Compile Include="PCController\PCControllerDeviceManager.cs" />
+    <Compile Include="PCController\PCControllerInstantAsyncService.cs" />
+    <Compile Include="PCController\PCControllerManager.cs" />
+    <Compile Include="PCController\PCControllerManualService.cs" />
+    <Compile Include="PCController\PCControllerParallelService.cs" />
+    <Compile Include="PCController\PCControllerSecurityTestSettings.cs" />
+    <Compile Include="PCController\PCControllerSendDataSettings.cs" />
+    <Compile Include="PCController\PCControllerService.cs" />
+    <Compile Include="PCController\PCControllerTestInterfaceService.cs" />
+    <Compile Include="PCController\PCControllerTransportServiceTestSettings.cs" />
+    <Compile Include="PCController\PCControllerZipApplicationService.cs" />
+    <Compile Include="PCController\PCControllerZipAsyncService.cs" />
+    <Compile Include="PCController\PCControllerZipService.cs" />
+    <Compile Include="PCController\UIInstance.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="IZatsAutomationDialog.cs" />
+    <Compile Include="UIAutomation\NodesListObserver.cs" />
+    <Compile Include="UIAutomation\WaitElementBase.cs" />
+    <Compile Include="UIAutomation\WaitForElementIsVisible.cs" />
+    <Compile Include="UIAutomation\WaitElementReady.cs" />
+    <Compile Include="UIAutomation\WaitForElementNotVisible.cs" />
+    <Compile Include="UIAutomation\WaitPropertyChanged.cs" />
+    <Compile Include="UIAutomation\WaitWindow.cs" />
+    <Compile Include="UIAutomation\ZatsAutomation.cs" />
+    <Compile Include="IZatsAutomation.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication.csproj">
+      <Project>{2E351174-ED53-4E8A-A065-3E15A7E228B5}</Project>
+      <Name>BasicApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils.csproj">
+      <Project>{6C298CDF-2B64-4BE7-B9D4-449D5F30E57F}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
+      <Project>{8ACFB772-98F3-48FE-85AE-3F06DA2EA60B}</Project>
+      <Name>ZipApplication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj">
+      <Project>{FEB030F9-A44A-4C72-9C28-C8FA186995FB}</Project>
+      <Name>ZWaveXml</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave.csproj">
+      <Project>{B214D482-57EB-42BE-AEC7-D64850F56514}</Project>
+      <Name>ZWave</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZatsServices\ZatsServices.csproj">
+      <Project>{A0198FE9-C736-43B6-B2DB-5906C9519242}</Project>
+      <Name>ZatsServices</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

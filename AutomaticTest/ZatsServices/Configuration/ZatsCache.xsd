@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- **** Profile *********************************************************************** -->
+  <xs:element name="ZatsCache">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="ProgrammingResults" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="ProgrammingResult" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** ProgrammingResult ************************************************************* -->
+  <xs:element name="ProgrammingResult">
+    <xs:complexType>
+      <xs:attribute name="PName" type="xs:string" use="required"/>
+      <xs:attribute name="RetValue" type="xs:string" use="required"/>
+      <xs:attribute name="AppName" type="xs:string" use="required"/>
+      <xs:attribute name="Frequency" type="xs:string" use="optional"/>
+      <xs:attribute name="DevKit" type="xs:string" use="optional"/>
+      <xs:attribute name="CmdLine" type="xs:string" use="required"/>
+      <xs:attribute name="ModifiedAt" type="xs:dateTime" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+

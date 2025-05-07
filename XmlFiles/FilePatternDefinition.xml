@@ -1,0 +1,140 @@
+<FilePatternDefinition>
+  <LibTokens>
+    <LibToken Library="ControllerStaticLib" Token="SerialAPI_Controller,zwave_ncp_serial_api_controller" />
+    <LibToken Library="ControllerPortableLib" Token="SerialAPI_ControllerPortable" />
+    <LibToken Library="EndDeviceSysTestLib" Token="SerialAPI_SysTest_Slave" />
+    <LibToken Library="EndDeviceLib" Token="SerialAPI_Slave,zwave_ncp_serial_api_end_device" />
+    <LibToken Library="ControllerBridgeLib" Token="SerialAPI_Controller,zwave_ncp_serial_api_controller" />
+    <LibToken Library="TestController" Token="SerialAPI_TestController,zwave_ncp_serial_api_testcontroller,zwave_ncp_serial_api_test_controller" />
+    <LibToken Library="DoorLockKeyPad" Token="DoorLockKeyPad,zwave_soc_door_lock_keypad" />
+    <LibToken Library="LEDBulb" Token="LEDBulb,zwave_soc_led_bulb" />
+    <LibToken Library="PowerStrip" Token="PowerStrip,zwave_soc_power_strip" />
+    <LibToken Library="SensorPIR" Token="SensorPIR,zwave_soc_sensor_pir" />
+    <LibToken Library="SwitchOnOff" Token="SwitchOnOff,zwave_soc_switch_on_off" />
+    <LibToken Library="WallController" Token="WallController,zwave_soc_wall_controller" />
+    <LibToken Library="ZnifferPTI" Token="ZnifferPTI,zwave_ncp_zniffer_pti" />
+    <LibToken Library="MultilevelSensor" Token="MultilevelSensor,zwave_soc_multilevel_sensor" />
+    <LibToken Library="KeyFob" Token="KeyFob,zwave_soc_key_fob" />
+    <LibToken Library="RAILTest" Token="railtest" SkipFrequency="true"/>
+  </LibTokens>
+  <PathFilters>
+    <PathFilter Pattern="*{Lib}*{Brd1}*{Freq}{End}.*"/>
+    <PathFilter Pattern="*{Lib}*{Brd1}{End}.*"/>
+    <PathFilter Pattern="*{Lib}*{Brd0}*{Freq}{End}.*"/>
+  </PathFilters>
+  <BinaryPatterns>
+    <BinaryPattern ChipSeries="ZGM230S_BRD4205A">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4205A*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4205A{End}.*"/>
+        <PathFilter Pattern="*{Lib}*ZGM230SA*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*ZGM230S*{Freq}{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="ZGM230S_BRD4205B">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4205B*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4205B{End}.*"/>
+        <PathFilter Pattern="*{Lib}*ZGM230SB*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*ZGM230S*{Freq}{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4400A">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4400A*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4400A{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4401A">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4401A*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4401A{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4400B">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4400B*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4400B{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4401B">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4401B*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4401B{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4400C">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4400C*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4400C{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="xG28_BRD4401C">
+      <PathFilters>
+        <PathFilter Pattern="*{Lib}*BRD4401C*{Freq}{End}.*"/>
+        <PathFilter Pattern="*{Lib}*BRD4401C{End}.*"/>
+      </PathFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="ZW050x" IncludeUsbVcpRegexFilter="USBVCP" ExcludeUsbVcpRegexFilter="^(?!.*USBVCP).*$">
+      <PathFilters>
+        <PathFilter Pattern="{Lib}_*ZW050x_*{Freq}*"/>
+      </PathFilters>
+      <LibTokens>
+        <LibToken Library="ControllerStaticLib" Token="serialapi_controller_static" />
+        <LibToken Library="ControllerPortableLib" Token="serialapi_controller_portable" />
+        <LibToken Library="EndDeviceLib" Token="ser*_slave_enhanced_232" />
+        <LibToken Library="EndDeviceLegacyRoutingLib" Token="serialapi_slave_routing" />
+        <LibToken Library="ControllerBridgeLib" Token="serialapi_controller_bridge" />
+        <LibToken Library="DoorLockKeyPad" Token="DoorLockKeyPad" />
+        <LibToken Library="PowerStrip" Token="PowerStrip_slave_enhanced_232" />
+        <LibToken Library="SensorPIR" Token="SensorPIR_Battery" />
+        <LibToken Library="SwitchOnOff" Token="SwitchOnOff_slave_enhanced_232" />
+        <LibToken Library="WallController" Token="WallController_slave_enhanced_232" />
+      </LibTokens>
+      <RegexFilters>
+        <RegexFilter>^(?!.*Single).*$</RegexFilter>
+      </RegexFilters>
+      <PriorityRegexFilters>
+        <PriorityRegexFilter>_BOOTLOADER</PriorityRegexFilter>
+        <PriorityRegexFilter>_OTA_SSA_</PriorityRegexFilter>
+        <PriorityRegexFilter>_OTA_</PriorityRegexFilter>
+        <PriorityRegexFilter>_OTW_</PriorityRegexFilter>
+        <PriorityRegexFilter>^(?!.*SCHEME_0).*$</PriorityRegexFilter>
+      </PriorityRegexFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="ZW030x">
+      <PathFilters>
+        <PathFilter Pattern="{Lib}_*ZW030x_*{Freq}*"/>
+      </PathFilters> <LibTokens>
+        <LibToken Library="ControllerStaticLib" Token="serialapi_controller_static" />
+        <LibToken Library="ControllerPortableLib" Token="serialapi_controller_portable" />
+        <LibToken Library="EndDeviceLib" Token="serialapi_slave_enhanced_232" />
+        <LibToken Library="EndDeviceLegacyRoutingLib" Token="serialapi_slave_routing" />
+        <LibToken Library="ControllerBridgeLib" Token="serialapi_controller_bridge" />
+      </LibTokens>
+      <PriorityRegexFilters>
+        <PriorityRegexFilter>^(?!.*_nomr_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter> ^(?!.*_noflirs_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter> ^(?!.*_nosuc_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter>^(?!.*_norep_).*$</PriorityRegexFilter>
+      </PriorityRegexFilters>
+    </BinaryPattern>
+    <BinaryPattern ChipSeries="ZW020x">
+      <PathFilters>
+        <PathFilter Pattern="{Lib}_*ZW020x_*{Freq}*"/>
+      </PathFilters> <LibTokens>
+        <LibToken Library="ControllerStaticLib" Token="serialapi_controller_static" />
+        <LibToken Library="ControllerPortableLib" Token="serialapi_controller_portable" />
+        <LibToken Library="EndDeviceLib" Token="serialapi_slave_enhanced_232" />
+        <LibToken Library="EndDeviceLegacyRoutingLib" Token="serialapi_slave_routing" />
+        <LibToken Library="ControllerBridgeLib" Token="serialapi_controller_bridge" />
+      </LibTokens>
+      <PriorityRegexFilters>
+        <PriorityRegexFilter>^(?!.*_nomr_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter> ^(?!.*_noflirs_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter> ^(?!.*_nosuc_).*$</PriorityRegexFilter>
+        <PriorityRegexFilter>^(?!.*_norep_).*$</PriorityRegexFilter>
+      </PriorityRegexFilters>
+    </BinaryPattern>
+  </BinaryPatterns>
+</FilePatternDefinition>

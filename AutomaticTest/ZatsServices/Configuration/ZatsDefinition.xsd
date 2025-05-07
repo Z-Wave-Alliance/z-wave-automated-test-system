@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="ZatsDefinition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Profiles" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="Profile" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- **** Profile *********************************************************************** -->
+  <xs:element name="Profile">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="DeviceHosts" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="DeviceHost" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Name" type="xs:string" use="required" />
+      <xs:attribute name="Reports" type="xs:string" use="optional" />
+      <xs:attribute name="ZName" type="xs:string" use="required" />
+      <xs:attribute name="BasePath" type="xs:string" use="optional" />
+      <xs:attribute name="ProgrammerAppPath" type="xs:string" use="optional" />
+      <xs:attribute name="CommanderAppPath" type="xs:string" use="optional" />
+      <xs:attribute name="PCControllerAppPath" type="xs:string" use="optional" />
+      <xs:attribute name="ZType" type="InterfaceTypes" use="optional" default="COM" />
+      <xs:attribute name="IsAddS2Keys" type="xs:boolean" use="optional" default="false" />
+      <xs:attribute name="PrivateS2Key" type="xs:string" use="optional" />
+      <xs:attribute name="PublicS2Key" type="xs:string" use="optional" />
+      <xs:attribute name="CertS2AccessKey" type="xs:string" use="optional" />
+      <xs:attribute name="CertS2AuthKey" type="xs:string" use="optional" />
+      <xs:attribute name="CertS2UnAuthKey" type="xs:string" use="optional" />
+      <xs:attribute name="CertS2S0key" type="xs:string" use="optional" />
+      <xs:attribute name="CertS2Dsk" type="xs:string" use="optional" />
+      <xs:attribute name="TempNetKey" type="xs:string" use="optional" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- **** DeviceHost *********************************************************************** -->
+  <xs:element name="DeviceHost">
+    <xs:complexType>
+      <xs:attribute name="Alias" type="xs:string" use="optional" />
+      <xs:attribute name="PName" type="xs:string" use="optional" />
+      <xs:attribute name="SName" type="xs:string" use="optional" />
+      <xs:attribute name="SPort" type="xs:int" use="optional" default="0" />
+      <xs:attribute name="SType" type="InterfaceTypes" use="optional" default="COM" />
+      <xs:attribute name="RApiType" type="RemoteApiTypes" use="optional" default="None" />
+      <xs:attribute name="SArgs" type="xs:string" use="optional" />
+      <xs:attribute name="JName" type="xs:string" use="optional" />
+      <xs:attribute name="IsUZB" type="xs:boolean" use="optional" default="false" />
+      <xs:attribute name="IsVirtual" type="xs:boolean" use="optional" default="false" />
+      <xs:attribute name="ChipSeries" type="xs:string" use="required" />
+      <xs:attribute name="Dsk" type="xs:hexBinary" use="optional" />
+      <xs:attribute name="Hop" type="xs:string" use="optional" />
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- **** InterfaceTypes ******************************************************************* -->
+  <xs:simpleType name="InterfaceTypes">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="COM" />
+      <xs:enumeration value="UDP" />
+      <xs:enumeration value="TCP" />
+      <xs:enumeration value="DTLS1" />
+      <xs:enumeration value="HTTP" />
+      <xs:enumeration value="MQTT" />
+      <xs:enumeration value="ZIGBEE" />
+      <xs:enumeration value="SSH" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- **** RemoteApiTypes ******************************************************************* -->
+  <xs:simpleType name="RemoteApiTypes">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="None" />
+      <xs:enumeration value="WebAppliance" />
+      <xs:enumeration value="MeshRouter" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

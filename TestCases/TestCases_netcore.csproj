@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TestCases</AssemblyName>
+    <TargetFrameworks>net6.0;net48</TargetFrameworks>
+    <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+  </PropertyGroup>
+	<ItemGroup>
+	  <EmbeddedResource Remove="obj\**" />
+	  <None Remove="obj\**" />
+	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AutomaticTest\ZatsServices\ZatsServices_netcore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="_Development\*.cs" />
+    <Compile Include="_SYSTEM\**\*.cs" />
+  </ItemGroup>
+</Project>
