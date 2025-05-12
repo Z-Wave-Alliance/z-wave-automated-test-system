@@ -402,7 +402,7 @@ namespace Zats.Services
             {
                 string port;
                 znifferPorts.TryTake(out port);
-                ret = InitDevice(port, rfRegion, lrChannel);
+                ret = InitDevice(port, false, rfRegion, lrChannel);
             }
             else
             {
