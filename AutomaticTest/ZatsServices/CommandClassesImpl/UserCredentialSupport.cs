@@ -1041,26 +1041,25 @@ namespace Zats.Services
             rpt = null;
 
             var credentialType = (CredentialType)associationSetCmd.credentialType.Value;
-            ushort srcCredentialSlot = Tools.ByteArrayToUInt16(associationSetCmd.sourceCredentialSlot);
+            ushort credentialSlot = Tools.ByteArrayToUInt16(associationSetCmd.credentialSlot);
             ushort dstUserUniqueId = Tools.ByteArrayToUInt16(associationSetCmd.destinationUserUniqueIdentifier);
-            ushort dstCredentialSlot = Tools.ByteArrayToUInt16(associationSetCmd.destinationCredentialSlot);
 
             var dstUser = UserCredentialSupportData.UserSlots.Find(x => x.UserUniqeId == dstUserUniqueId);
 
-            var srcCredential = UserCredentialSupportData.UserCredentials.Find(x => x.SlotId == srcCredentialSlot && x.Type == credentialType);
+            var srcCredential = UserCredentialSupportData.UserCredentials.Find(x => x.SlotId == credentialSlot && x.Type == credentialType);
             var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == credentialType);
 
             var srcUser = UserCredentialSupportData.UserSlots.Find(x => x.UserUniqeId == srcCredential?.UserUniqeId);
 
             if (credentialTypeSettings == null)
             {
-                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.SourceCredentialTypeInvalid);
+                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.CredentialTypeInvalid);
                 return SvResultNames.Failed;
             }
 
-            if (srcCredentialSlot == 0 || srcCredentialSlot > credentialTypeSettings.NoOfSupportedSlots)
+            if (credentialSlot == 0 || credentialSlot > credentialTypeSettings.NoOfSupportedSlots)
             {
-                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.SourceCredentialSlotInvalid);
+                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.CredentialSlotInvalid);
                 return SvResultNames.Failed;
             }
 
@@ -1072,7 +1071,7 @@ namespace Zats.Services
 
             if (srcCredential == null)
             {
-                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.SourceCredentialSlotEmpty);
+                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.CredentialSlotEmpty);
                 return SvResultNames.Failed;
             }
 
@@ -1082,19 +1081,7 @@ namespace Zats.Services
                 return SvResultNames.Failed;
             }
 
-            if (dstCredentialSlot == 0 || dstCredentialSlot > credentialTypeSettings.NoOfSupportedSlots)
-            {
-                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.DestinationCredentialSlotInvalid);
-                return SvResultNames.Failed;
-            }
-
-            if (srcCredentialSlot != dstCredentialSlot && UserCredentialSupportData.UserCredentials.FirstOrDefault(x => x.SlotId == dstCredentialSlot && x.Type == credentialType) != null)
-            {
-                rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.DestinationCredentialSlotOccupied);
-                return SvResultNames.Failed;
-            }
-
-            if (srcUser != null && srcUser.UserUniqeId == dstUserUniqueId && srcCredentialSlot == dstCredentialSlot)
+            if (srcUser != null && srcUser.UserUniqeId == dstUserUniqueId)
             {
                 // Nothing has changed
                 rpt = SetupCredentialAssociationReport(associationSetCmd, UserCredentialAssociationStatus.Success);
@@ -1102,7 +1089,7 @@ namespace Zats.Services
             }
 
             srcCredential.UserUniqeId = dstUserUniqueId;
-            srcCredential.SlotId = dstCredentialSlot;
+            srcCredential.SlotId = credentialSlot;
             srcCredential.ModifierType = ModifierType.ZWave;
             srcCredential.ModifierNodeId = srcNode.Id;
 
@@ -1408,9 +1395,8 @@ namespace Zats.Services
             var credentialAssociationReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_REPORT()
             {
                 credentialType = associationSetCmd.credentialType,
-                sourceCredentialSlot = associationSetCmd.sourceCredentialSlot,
+                credentialSlot = associationSetCmd.credentialSlot,
                 destinationUserUniqueIdentifier = associationSetCmd.destinationUserUniqueIdentifier,
-                destinationCredentialSlot = associationSetCmd.destinationCredentialSlot,
                 userCredentialAssociationStatus = (byte)status
             };
             return credentialAssociationReport;
@@ -2843,7 +2829,7 @@ namespace Zats.Services
 
     public class SupportedCredentialType : INestedItem
     {
-        // only used for EDE UI. see interface for useage notes.
+        // Only used for EDE UI. See interface for usage notes.
         public int NestedId { get; set; }
 
         [CustomDataParameter(1, "Credential Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config | EditType.Edit, ItemsSource = typeof(CredentialType))]
@@ -2963,13 +2949,13 @@ namespace Zats.Services
     public enum UserCredentialAssociationStatus
     {
         Success = 0x00,
-        SourceCredentialTypeInvalid = 0x01,
-        SourceCredentialSlotInvalid = 0x02,
-        SourceCredentialSlotEmpty = 0x03,
+        CredentialTypeInvalid = 0x01,
+        CredentialSlotInvalid = 0x02,
+        CredentialSlotEmpty = 0x03,
         DestinationUserUniqueIdentifierInvalid = 0x04,
         DestinationUserUniqueIdentifierNonexistent = 0x05,
-        DestinationCredentialSlotInvalid = 0x06,
-        DestinationCredentialSlotOccupied = 0x07
+        //DestinationCredentialSlotInvalid = 0x06, // OBSOLETED
+        //DestinationCredentialSlotOccupied = 0x07 // OBSOLETED
     }
 
     public static class UserCredentialExtensions
