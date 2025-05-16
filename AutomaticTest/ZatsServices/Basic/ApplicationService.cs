@@ -795,73 +795,124 @@ namespace Zats.Services
         public TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, 
             bool transportService, bool overwriteConfig = false)
         {
-            var associationSupportData = new AssociationSupportData()
-            {
-                AssociationGroups = new List<AssociationGroupEx>
-                    {
-                        new AssociationGroupEx(1, 5, "Lifeline", 0x0001, 
-                        new byte[] { COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID, COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION.ID }),
-                    },
-            };
-            var controllerDevice = DeviceManager.GetDevice(deviceNumber);
+            Device controllerDevice = DeviceManager.GetDevice(deviceNumber);
             if (overwriteConfig)
             {
                 DeviceManager.ConfigurationClear(deviceNumber);
             }
-                
+
+            // Prepare NIF
+            var deviceOptions = DeviceOptions.Listening; // for CSC Role Type [RT:01.11.0004.1]
+            // Generic Controller DT (ZWPv2) [DT:32.11.0001.1]
+            byte genericType = (byte)GenericTypes.GENERIC_CONTROLLER;
+            byte specificType = SpecificTypes.NOT_USED;
+
+            // Prepare CC Support Data
+            var assocSuppData = new AssociationSupportData()
+            {
+                AssociationGroups = new List<AssociationGroupEx>
+                    {
+                        new AssociationGroupEx(1, 5, "Lifeline", 0x0001,
+                        new byte[] { COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID, COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION.ID }),
+                    },
+            };
+            var zwpInfoSuppData = new ZWavePlusInfoSupportData()
+            {
+                RoleType = ZPIRoleTypes.ControllerCentralStatic,
+                NodeType = ZPINodeTypes.ZWavePlusNode,
+                InstallerIconType = new byte[] { 0x01, 0x00 },
+                UserIconType = new byte[] { 0x01, 0x00 }
+            };
+
+            // Prepare Supported CCs
+            var zwpInfoSupp = new ZWavePlusInfoSupport(zwpInfoSuppData)     { Version = 2, Secure = false };
+            var agiSupp = new AssociationGroupInfoSupport(assocSuppData)    { Version = 3, Secure = true };
+            var assocSupp = new AssociationSupport(assocSuppData)           { Version = 2, Secure = true };
+            var mcaSupp = new MultiChannelAssociationSupport(assocSuppData) { Version = 3, Secure = true };
+            var basicSupp = new BasicSupport()                              { Version = 2, Secure = true };
+            var deviceResetLocallySupp = new DeviceResetLocallySupport()    { Version = 1, Secure = true };
+            var manSpecSupp = new ManufacturerSpecificSupport()             { Version = 2, Secure = true };
+            byte versionSuppVersion = 3;
+            bool isVersionSuppSecure = true;
+
+            // Setup Controller Device
             if (overwriteConfig || DeviceManager.ConfigurationIsEmpty(deviceNumber))
             {
                 var supportedCCs = new List<CommandClassSupport>();
                 supportedCCs.AddRange(new CommandClassSupport[]
                 {
-                    new BasicSupport() { Version = 2, Secure = true},
-                    new ManufacturerSpecificSupport() { Version = 2, Secure = true },
-                    new VersionSupport(supportedCCs) { Version = 3, Secure = true },
-                    new AssociationSupport(associationSupportData)  { Version = 2, Secure = true },
-                    new AssociationGroupInfoSupport(associationSupportData) { Version = 3, Secure = true },
-                    new ZWavePlusInfoSupport(new ZWavePlusInfoSupportData()
-                    {
-                        RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                        NodeType = ZPINodeTypes.ZWavePlusNode,
-                        InstallerIconType = new byte[] { 0x01, 0x00 },
-                        UserIconType = new byte[] { 0x01, 0x00 }
-                    }) { Version = 2, Secure = false },
+                    zwpInfoSupp,
+                    agiSupp,
+                    assocSupp,
+                    //basicSupp, // Do not add Basic CC. [DT:32.11.0004.1]
+                    deviceResetLocallySupp,
+                    manSpecSupp,
+                    new VersionSupport(supportedCCs)                        { Version = versionSuppVersion, Secure = isVersionSuppSecure },
                 });
-                SetupRootDevice(deviceNumber, DeviceOptions.Listening, (byte)GenericTypes.STATIC_CONTROLLER, SpecificTypes.PC_CONTROLLER,
-                    multiChannel, supervision, crc16, securityVersions, transportService, supportedCCs);
-                controllerDevice.Network.SetRoleType((ZWave.Enums.RoleTypes)RoleTypes.CONTROLLER_CENTRAL_STATIC);
+                if (multiChannel)
+                {
+                    supportedCCs.Add(mcaSupp);
+                }
+
+                SetupRootDevice(deviceNumber,
+                    deviceOptions,
+                    genericType,
+                    specificType,
+                    multiChannel,
+                    supervision,
+                    crc16,
+                    securityVersions,
+                    transportService,
+                    supportedCCs);
+
+                controllerDevice.Network.SetRoleType(ZWave.Enums.RoleTypes.CONTROLLER_CENTRAL_STATIC);
                 controllerDevice.Network.SetNodeType(ZWave.Enums.NodeTypes.ZWAVEPLUS_NODE);
             }
             else
             {
                 var configuration = DeviceManager.GetConfiguration(deviceNumber);
+
                 var supportedCCs = new List<CommandClassSupport>();
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_BASIC.ID))
-                    supportedCCs.Add(new BasicSupport() { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
-                    supportedCCs.Add(new ManufacturerSpecificSupport() { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
-                    supportedCCs.Add(new VersionSupport(supportedCCs) { Version = 3, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION.ID))
-                    supportedCCs.Add(new AssociationSupport(associationSupportData) { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID))
-                    supportedCCs.Add(new AssociationGroupInfoSupport(associationSupportData) { Version = 3, Secure = true });
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_ZWAVEPLUS_INFO.ID))
-                    supportedCCs.Add(new ZWavePlusInfoSupport(new ZWavePlusInfoSupportData()
-                    {
-                        RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                        NodeType = ZPINodeTypes.ZWavePlusNode,
-                        InstallerIconType = new byte[] { 0x01, 0x00 },
-                        UserIconType = new byte[] { 0x01, 0x00 }
-                    })
-                    { Version = 2, Secure = false });
+                { 
+                    supportedCCs.Add(zwpInfoSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID))
+                { 
+                    supportedCCs.Add(agiSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_V2.ID))
+                { 
+                    supportedCCs.Add(assocSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID)
+                    && multiChannel)
+                {
+                    supportedCCs.Add(mcaSupp);
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_BASIC.ID))
+                {
+                    supportedCCs.Add(basicSupp);
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID))
+                { 
+                    supportedCCs.Add(deviceResetLocallySupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
+                { 
+                    supportedCCs.Add(manSpecSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
+                {
+                    supportedCCs.Add(new VersionSupport(supportedCCs)           { Version = versionSuppVersion, Secure = isVersionSuppSecure }); 
+                }
 
                 if (securityVersions != SecurityVersions.None)
                 {
                     SetupRootDevice(deviceNumber, 
-                        DeviceOptions.Listening, 
-                        (byte)GenericTypes.STATIC_CONTROLLER, 
-                        SpecificTypes.PC_CONTROLLER,
+                        deviceOptions,
+                        genericType,
+                        specificType,
                         multiChannel, 
                         supervision, 
                         configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID), 
@@ -873,9 +924,9 @@ namespace Zats.Services
                 else
                 {
                     SetupRootDevice(deviceNumber,
-                        DeviceOptions.Listening,
-                        (byte)GenericTypes.STATIC_CONTROLLER,
-                        SpecificTypes.PC_CONTROLLER,
+                        deviceOptions,
+                        genericType,
+                        specificType,
                         configuration.Network.HasCommandClass(COMMAND_CLASS_MULTI_CHANNEL_V2.ID),
                         configuration.Network.HasCommandClass(COMMAND_CLASS_SUPERVISION.ID),
                         configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID),
