@@ -309,14 +309,8 @@ namespace Zats.Services
                         },
                         new COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET() { requestedCommandClass = COMMAND_CLASS_CRC_16_ENCAP.ID }, 3);
 
-            if (genericDeviceClass == (byte)GenericTypes.STATIC_CONTROLLER || genericDeviceClass == (byte)GenericTypes.GENERIC_CONTROLLER)
-            {
-                beforeInclusionCCs = beforeInclusionCCs.Union(new[] { COMMAND_CLASS_INCLUSION_CONTROLLER.ID }).ToList();
-                unsecureCCs = unsecureCCs.Union(new[] { COMMAND_CLASS_INCLUSION_CONTROLLER.ID }).ToList(); // fixing after-inclusion-NIF
-            }
-            AddOrModifySecurityConfigured(deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray());
-            // includes CreateInclusionControllerSupportTask
-            // Device will return Version 0 for Inclusion Controller CC but adding another response would cause two different responses.
+            AddOrModifySecurityConfigured( // includes CreateInclusionControllerSupportTask
+                deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray()); 
 
             byte s0Version = 0;
             if (securityVersions.HasFlag(SecurityVersions.S0))
@@ -832,6 +826,7 @@ namespace Zats.Services
             var basicSupp = new BasicSupport()                              { Version = 2, Secure = true };
             var deviceResetLocallySupp = new DeviceResetLocallySupport()    { Version = 1, Secure = true };
             var manSpecSupp = new ManufacturerSpecificSupport()             { Version = 2, Secure = true };
+            var fakeInclCtrlSupp = new GenericCcSupport(COMMAND_CLASS_INCLUSION_CONTROLLER.ID) { Version = 1, Secure = false };
             byte versionSuppVersion = 3;
             bool isVersionSuppSecure = true;
 
@@ -847,6 +842,7 @@ namespace Zats.Services
                     //basicSupp, // Do not add Basic CC. [DT:32.11.0004.1]
                     deviceResetLocallySupp,
                     manSpecSupp,
+                    fakeInclCtrlSupp,
                     new VersionSupport(supportedCCs)                        { Version = versionSuppVersion, Secure = isVersionSuppSecure },
                 });
                 if (multiChannel)
@@ -901,6 +897,10 @@ namespace Zats.Services
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
                 { 
                     supportedCCs.Add(manSpecSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_INCLUSION_CONTROLLER.ID))
+                {
+                    supportedCCs.Add(fakeInclCtrlSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
                 {
