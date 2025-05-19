@@ -12,6 +12,7 @@ using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
 using ZWave.Devices;
+using static Zats.Services.UserCredentialSupport;
 
 namespace Zats.Services
 {
@@ -145,6 +146,13 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_LEARN_START.ID)
                     {
                         //UserCredentialSupportData.PrintUsersInfo();
+                        CredentialLearningStarted += async (UserCredentialSupport userCredentialSupport) =>
+                        {
+                            userCredentialSupport.UserCredentialSupportData.CredentialLearningStatus = CredentialLearningStatus.Started;
+
+                            SupportDelegates?.DeviceDataUpdate?.Invoke(this);
+                        };
+
                         ResultForSv = HandleCredentialLearnStart(command, sendSrcNode, out autoReportDueToSet);
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_LEARN_CANCEL.ID)
@@ -179,7 +187,6 @@ namespace Zats.Services
                         rpt = PrepareAdminPinCodeReport();
                     }
 
-
                     // Report due to Get command
                     if (rpt != null && IsResponseAllowed())
                     {
@@ -194,7 +201,6 @@ namespace Zats.Services
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, autoReportDueToSet, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
-
 
                     CommandCallback(command, sendDstNode.EndPointId);
                 }
@@ -987,7 +993,6 @@ namespace Zats.Services
             CredentialLearning.NodeStartedLearning = srcNode;
             CredentialLearning.OperationType = opType;
 
-
             if (learnTimeout == 0)
             {
                 CredentialLearning.LearningActive = false;
@@ -1019,7 +1024,6 @@ namespace Zats.Services
 
                 CredentialLearning.Timeout = null;
             };
-
 
             var startLearningReport = (COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_LEARN_REPORT)CredentialLearning;
             startLearningReport.credentialLearnStatus = (byte)CredentialLearnStatus.Started;
@@ -1916,11 +1920,32 @@ namespace Zats.Services
 
         public override void UpdateSupportData(CommandClassSupportData data)
         {
-            if (data is UserCodeSupportData newData)
+            if (data is UserCredentialSupportData newData)
             {
+                if(newData.CredentialLearningStatus != CredentialLearningStatus.NoCredentialLearnOpreation)
+                {
+                    if(newData.CredentialLearningStatus == CredentialLearningStatus.Success
+                        && newData.CredentialLearningData != Array.Empty<byte>())
+                    {
+                        LearnCredential(newData.CredentialLearningData);
+                    }
+
+                    UserCredentialSupportData.CredentialLearningStatus = CredentialLearningStatus.NoCredentialLearnOpreation;
+                    UserCredentialSupportData.CredentialLearningData = Array.Empty<byte>();
+                }
+
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
             }
         }
 
+        public enum CredentialLearningStatus
+        {
+            Success,
+            Started,
+            Failed,
+            Aborted,
+            NoCredentialLearnOpreation
+        }
 
         public enum EnterCredentialResult
         {
@@ -1950,6 +1975,10 @@ namespace Zats.Services
     public class UserCredentialSupportData : CommandClassSupportData, INodeItem
     {
         private const int UserIndex = 2;
+
+        public CredentialLearningStatus CredentialLearningStatus = CredentialLearningStatus.NoCredentialLearnOpreation;
+
+        public byte[] CredentialLearningData = Array.Empty<byte>();
 
         [ParameterSeparator(1, "User Capabilities", UserIndex + 1)]
 
