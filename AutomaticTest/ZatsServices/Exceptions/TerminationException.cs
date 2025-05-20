@@ -2,7 +2,7 @@ namespace Zats.Services
 {
     public class TerminationException : ServiceException
     {
-        public bool IsHidden { get; set; }
+        public bool IsHidden { get; set; } = false;
         public TestCaseResult Result { get; internal set; }
 
         protected TerminationException(TestCaseResult result, string message)

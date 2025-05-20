@@ -797,7 +797,7 @@ namespace ZatsTestConsole
                                                     catch (Exception e)
                                                     {
                                                         consoleOutPut.ConsoleWriteLine(e.ToString(), LogLevels.Information);
-                                                        consoleOutPut.ConsoleWriteLine("Test threw a internal exception and was skipped", LogLevels.Error);
+                                                        consoleOutPut.ConsoleWriteLine("Test threw an internal exception and was skipped", LogLevels.Error);
                                                     }
                                                     finally
                                                     {

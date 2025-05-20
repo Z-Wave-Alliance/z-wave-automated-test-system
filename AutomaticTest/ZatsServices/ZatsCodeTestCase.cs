@@ -92,6 +92,14 @@ namespace Zats.Services
             InitializeTest();
         }
 
+        private bool _isTerminationInProgress = false;
+        protected bool IsTerminationInProgress()
+        {
+            return _isTerminationInProgress;
+        }
+
+        const string TERMINATION_ALREADY_IN_PROGRESS = "Termination is already in progress!";
+
         public TestCaseResult Execute()
         {
             try
@@ -118,22 +126,30 @@ namespace Zats.Services
             }
             catch (TerminationException tex) // Terminated.
             {
+                _isTerminationInProgress = true;
+
                 Result = tex.Result;
                 switch (Result)
                 {
                     case TestCaseResult.Pass:
                         if (!tex.IsHidden)
+                        {
                             ReportService.LogInfo(tex.Message);
+                        }
                         break;
                     case TestCaseResult.Fail:
                         AddFailure(tex.Message);
                         if (!tex.IsHidden)
+                        {
                             ReportService.LogError(tex.Message);
+                        }
                         break;
                     case TestCaseResult.Skip:
                         AddFailure(tex.Message);
                         if (!tex.IsHidden)
+                        {
                             ReportService.LogWarning(tex.Message);
+                        }
                         break;
                     default:
                         break;
@@ -189,7 +205,7 @@ namespace Zats.Services
             {
                 FinalizeTest();
             }
-            Thread.Sleep(1000); // Finalize smartStart.
+            Thread.Sleep(1000); // Finalize SmartStart.
             return Result;
         }
 
@@ -324,18 +340,34 @@ namespace Zats.Services
 
         public virtual void Fail(string message)
         {
+            if (IsTerminationInProgress())
+            {
+                ReportService.LogWarning("- " + TERMINATION_ALREADY_IN_PROGRESS);
+                return;
+            }
             TerminationException.Throw(TestCaseResult.Fail, message);
         }
 
         public virtual void Pass(string message)
         {
+            if (IsTerminationInProgress())
+            {
+                ReportService.LogWarning("- " + TERMINATION_ALREADY_IN_PROGRESS);
+                return;
+            }
             TerminationException.Throw(TestCaseResult.Pass, message);
         }
 
         public virtual void Skip(string message)
         {
+            if (IsTerminationInProgress())
+            {
+                ReportService.LogWarning("- " + TERMINATION_ALREADY_IN_PROGRESS);
+                return;
+            }
             TerminationException.Throw(TestCaseResult.Skip, message);
         }
+
         public string FreqInText(string F)
         {
             string argFreq = "NON_REGION";
