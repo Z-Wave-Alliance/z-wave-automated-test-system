@@ -2108,7 +2108,7 @@ namespace Zats.Services
                 return false;
             }
 
-            var userSlot = UserSlots.FirstOrDefault(x => x.UserUniqeId == user.UserUniqeId);
+            UserSlot userSlot = UserSlots.FirstOrDefault(x => x.UserUniqeId == user.UserUniqeId);
 
             if (userSlot == null)
             {
@@ -2403,6 +2403,32 @@ namespace Zats.Services
 
     public class UserSlot
     {
+        public UserSlot(
+            ushort userUniqeId,
+            UserCredentialUserType userType,
+            UserCredentialUserActiveState activeState,
+            UserCredentialRule credentialRule,
+            ushort expiringTimeoutMinutes,
+            UserNameEncoding userNameEncoding,
+            string userName,
+            ModifierType modifierType,
+            ushort modifierNodeId)
+        {
+            UserUniqeId = userUniqeId;
+            Type = userType;
+            ActiveState = activeState;
+            CredentialRule = credentialRule;
+            ExpiringTimeout = expiringTimeoutMinutes;
+            NameEncoding = userNameEncoding;
+            Name = userName;
+            ModifierType = modifierType;
+            ModifierId = modifierNodeId;
+        }
+
+        public UserSlot()
+        {
+        }
+
         public ushort UserUniqeId { get; set; }
 
         public UserCredentialUserType Type { get; set; }
