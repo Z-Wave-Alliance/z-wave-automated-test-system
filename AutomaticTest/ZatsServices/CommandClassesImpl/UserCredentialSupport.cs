@@ -2103,6 +2103,22 @@ namespace Zats.Services
 
         public bool AddOrModifyUser(UserSlot user, List<UserCredential> credentials = null, bool allowIncorrectParameter = false)
         {
+            return AddOrModifyUser(user, out UserSetOperationType? lastOperationType, credentials, allowIncorrectParameter);
+        }
+
+        public bool AddOrModifyUser(UserSlot user, out UserSetOperationType? lastOperationType, bool allowIncorrectParameter = false)
+        {
+            return AddOrModifyUser(user, out lastOperationType, null, allowIncorrectParameter);
+        }
+
+        private bool AddOrModifyUser(
+            UserSlot user, 
+            out UserSetOperationType? lastOperationType, 
+            List<UserCredential> credentials = null, 
+            bool allowIncorrectParameter = false)
+        {
+            lastOperationType = null;
+
             if (user.UserUniqeId == 0)
             {
                 return false;
@@ -2117,10 +2133,12 @@ namespace Zats.Services
                 {
                     return false;
                 }
+                lastOperationType = UserSetOperationType.Add;
             }
             else
             {
                 UserSlots.Remove(userSlot);
+                lastOperationType = UserSetOperationType.Modify;
             }
 
             if (string.IsNullOrEmpty(user.Name)
