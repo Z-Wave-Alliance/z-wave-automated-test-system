@@ -518,9 +518,14 @@ namespace Zats.Services
             return resultForSv;
         }
 
-        private ushort GetNextUserSlot(ushort currentUserUniqueId)
+        public static ushort GetNextUserSlot(UserCredentialSupportData userCredentialSupportData, ushort currentUserUniqueId)
         {
-            var users = UserCredentialSupportData.UserSlots.OrderBy(x => x.UserUniqeId).ToList();
+            if (userCredentialSupportData == null || userCredentialSupportData.UserSlots.IsNullOrEmpty())
+            {
+                return 0;
+            }
+
+            List<UserSlot> users = userCredentialSupportData.UserSlots.OrderBy(x => x.UserUniqeId).ToList();
             UserSlot nextUser = null;
 
             for (int i = 0; i < users.Count; i++)
@@ -535,6 +540,11 @@ namespace Zats.Services
                 }
             }
             return nextUser?.UserUniqeId ?? 0;
+        }
+
+        private ushort GetNextUserSlot(ushort currentUserUniqueId)
+        {
+            return GetNextUserSlot(UserCredentialSupportData, currentUserUniqueId);
         }
 
         private byte[] PrepareUserReport(COMMAND_CLASS_USER_CREDENTIAL.USER_GET userGetCmd)
@@ -2488,6 +2498,7 @@ namespace Zats.Services
             byte[] userName = UserCredentialSupport.DecodeString(userSlot.Name, userSlot.NameEncoding);
 
             rpt.userReportType = (byte)UserReportType.ResponseToGet;
+            rpt.nextUserUniqueIdentifier = Tools.GetBytes((ushort)0);
             rpt.userModifierType = (byte)userSlot.ModifierType;
             rpt.userModifierNodeId = Tools.GetBytes(userSlot.ModifierId);
             rpt.userUniqueIdentifier = Tools.GetBytes(userSlot.UserUniqeId);
