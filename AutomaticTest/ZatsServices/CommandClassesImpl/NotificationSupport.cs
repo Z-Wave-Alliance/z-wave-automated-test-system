@@ -64,34 +64,36 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && NotificationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ALARM.ALARM_GET.ID && command.Length == 3)
+                    if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_GET.ID)
                     {
-                        rpt = PrepareAlarmV1ReportCmd(command);
-                    }
-                    else if (command[1] == COMMAND_CLASS_ALARM_V2.ALARM_GET.ID && command.Length == 4)
-                    {
-                        rpt = PrepareAlarmV2ReportCmd(command);
-                    }
+                        // COMMAND_CLASS_ALARM.ALARM_GET.ID equals COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_GET.ID
+                        if (command.Length == 3)
+                        {
+                            rpt = PrepareAlarmV1ReportCmd(command);
+                        }
+                        else if (command.Length == 4)
+                        {
+                            rpt = PrepareAlarmV2ReportCmd(command);
+                        }
+                        else /*if (command.Length == 5)*/
+                        {
+                            rpt = PrepareNotificationV3ReportCmd(command);
+                        }
 
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_GET.ID && command.Length == 5)
-                    {
-                        rpt = PrepareNotificationReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SUPPORTED_GET.ID)
                     {
-                        rpt = PrepareNotificationSupportedReport();
+                        // COMMAND_CLASS_ALARM_V2.ALARM_TYPE_SUPPORTED_GET.ID equals COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SUPPORTED_GET.ID
+                        rpt = PrepareAlarmV2OrNotificationSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V3.EVENT_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.EVENT_SUPPORTED_GET.ID)
                     {
                         rpt = PrepareEventSupportedReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SET.ID)
+                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SET.ID)
                     {
-                        ResultForSv = HandleNotificationSetCmd(command, sendSrcNode);
-                    }
-                    else if (command[1] == COMMAND_CLASS_ALARM_V2.ALARM_SET.ID)
-                    {
-                        ResultForSv = HandleAlarmSetCmd(command, sendSrcNode);
+                        // COMMAND_CLASS_ALARM_V2.ALARM_SET.ID equals COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SET.ID
+                        ResultForSv = HandleAlarmOrNotificationSetCmd(command, sendSrcNode);
                     }
 
                     if (rpt != null && IsAnsweringAllowed())
@@ -124,6 +126,7 @@ namespace Zats.Services
             }
             return null;
         }
+
         private byte[] PrepareAlarmV1ReportCmd(byte[] command)
         {
             if (Version >= 1 && Version <= 8)
@@ -133,6 +136,7 @@ namespace Zats.Services
             }
             return null;
         }
+
         private byte[] PrepareAlarmV2Report(byte alarmType, byte zwaveAlarmType)
         {
             if (Version >= 2 && Version <= 8)
@@ -196,7 +200,7 @@ namespace Zats.Services
             return null;
         }
 
-        private byte[] PrepareNotificationReport(byte v1AlarmType, byte requestedType, byte requestedEvent)
+        private byte[] PrepareNotificationV3Report(byte v1AlarmType, byte requestedType, byte requestedEvent)
         {
             if (Version >= 3 && Version <= 8)
             {
@@ -281,19 +285,19 @@ namespace Zats.Services
             }
             return null;
         }
-        private byte[] PrepareNotificationReportCmd(byte[] command)
+        private byte[] PrepareNotificationV3ReportCmd(byte[] command)
         {
             if (Version >= 3 && Version <= 8)
             {
                 COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_GET getCmd = command;
-                return PrepareNotificationReport(getCmd.v1AlarmType, getCmd.notificationType, getCmd.mevent);
+                return PrepareNotificationV3Report(getCmd.v1AlarmType, getCmd.notificationType, getCmd.mevent);
             }
             return null;
         }
 
-        private byte[] PrepareNotificationSupportedReport()
+        private byte[] PrepareAlarmV2OrNotificationSupportedReport()
         {
-            if (Version >= 1 && Version <= 8)
+            if (Version >= 2 && Version <= 8)
             {
                 COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SUPPORTED_REPORT rpt = new COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SUPPORTED_REPORT() { };
                 List<byte> supportedNotificationTypes = new List<byte>();
@@ -370,7 +374,7 @@ namespace Zats.Services
                                 requestedNotification.NotificationStatus = newNotificationStatusName;
                                 if (ReportTypes.HasFlag(ReportTypes.OnStateChange))
                                 {
-                                    SendUnsolicitedReport(PrepareNotificationReport(0, (byte) requestedNotificationTypeName, 0xFE), srcNode);
+                                    SendUnsolicitedReport(PrepareNotificationV3Report(0, (byte) requestedNotificationTypeName, 0xFE), srcNode);
                                 }
                             }
                             return SvResultNames.Successful;
@@ -380,25 +384,20 @@ namespace Zats.Services
             }
             return SvResultNames.Failed;
         }
-        private SvResultNames HandleNotificationSetCmd(byte[] command, NodeTag srcNode)
+        private SvResultNames HandleAlarmOrNotificationSetCmd(byte[] command, NodeTag srcNode)
         {
             if (Version >= 3 && Version <= 8)
             {
-                COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SET setCmd = command;
+                COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SET setCmd = command;
                 return HandleNotificationSet((NotificationTypeNames) (byte) setCmd.notificationType, (NotificationStatusNames) (byte) setCmd.notificationStatus, srcNode);
             }
-            return SvResultNames.Failed;
-        }
-        private SvResultNames HandleAlarmSetCmd(byte[] command, NodeTag srcNode)
-        {
-            if (Version >= 1 && Version <= 2)
+            else if (Version >= 1 && Version <= 2)
             {
                 COMMAND_CLASS_ALARM_V2.ALARM_SET setCmd = command;
-                return HandleNotificationSet((NotificationTypeNames) (byte) setCmd.zwaveAlarmStatus, (NotificationStatusNames) (byte) setCmd.zwaveAlarmStatus, srcNode);
+                return HandleNotificationSet((NotificationTypeNames)(byte)setCmd.zwaveAlarmStatus, (NotificationStatusNames)(byte)setCmd.zwaveAlarmStatus, srcNode);
             }
             return SvResultNames.Failed;
         }
-
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
@@ -412,7 +411,7 @@ namespace Zats.Services
             supervisionReport.status = (byte) SvStatusNames.Fail;  // FAIL as default
             switch (supervisionGet.encapsulatedCommand[1])
             {
-                case COMMAND_CLASS_NOTIFICATION_V3.NOTIFICATION_SET.ID:
+                case COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
                     {
                         supervisionReport.status = (byte)SvStatusNames.Success;
@@ -501,13 +500,13 @@ namespace Zats.Services
                     // Updates of event data is progressed no matter if this flag is set to true. This supports pull sensors, too.
                     if (newNotification.TriggerNotificationEvent)
                     {
-                        SendUnsolicitedReport(PrepareNotificationReport(0, (byte)newNotification.NotificationType, newNotification.EventOrState), NodeTag.Empty);
+                        SendUnsolicitedReport(PrepareNotificationV3Report(0, (byte)newNotification.NotificationType, newNotification.EventOrState), NodeTag.Empty);
                     }
                 }
 
                 if (isSupportChanged && ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
                 {
-                    SendUnsolicitedReport(PrepareNotificationSupportedReport(), NodeTag.Empty);
+                    SendUnsolicitedReport(PrepareAlarmV2OrNotificationSupportedReport(), NodeTag.Empty);
                 }
                 foreach (byte[] r in capabilityReports)
                 {
