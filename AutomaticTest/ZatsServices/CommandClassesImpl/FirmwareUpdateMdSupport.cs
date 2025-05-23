@@ -87,7 +87,7 @@ namespace Zats.Services
                     {
                         CmdSrcNode = sendSrcNode;
                         List<byte[]> reportList = HandleFwuMdRequestGet(command);
-                        if (reportList != null && IsResponseAllowed())
+                        if (reportList != null && IsAnsweringAllowed())
                         {   // if image transfer is initiated, the Md Request Report and one Md Get Command will be sent
                             // if not, only the Md Request Report will be sent
                             IActionItem[] actionItems = new IActionItem[reportList.Count];
@@ -114,7 +114,7 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_GET.ID)
                     {
                         List<byte[]> reportList = PrepareFwuMdDownloadReport(command);
-                        if (reportList != null && IsResponseAllowed())
+                        if (reportList != null && IsAnsweringAllowed())
                         {
                             IActionItem[] actionItems = new IActionItem[reportList.Count];
                             for (int i = 0; i < reportList.Count; i++)
@@ -126,7 +126,7 @@ namespace Zats.Services
                     }
 
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);

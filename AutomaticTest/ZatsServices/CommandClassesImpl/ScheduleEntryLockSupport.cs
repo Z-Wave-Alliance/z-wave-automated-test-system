@@ -135,7 +135,7 @@ namespace Zats.Services
                     }
 
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);

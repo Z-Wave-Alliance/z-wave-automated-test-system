@@ -57,7 +57,7 @@ namespace Zats.Services
                     byte[] rpt = null;
                     if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GET.ID)
                     {
-                        if (IsResponseAllowed())
+                        if (IsAnsweringAllowed())
                         {
 #if REPORT
                             COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GET cmd = command;
@@ -176,7 +176,7 @@ namespace Zats.Services
                         ResultForSv = HandleMultiChannelAssociationSetCmd(command, sendSrcNode);
                     }
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);

@@ -428,7 +428,7 @@ namespace Zats.Services
             }
         }
 
-        protected bool IsResponseAllowed()
+        protected bool IsAnsweringAllowed()
         {
             return !ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeBroad)
                 && !ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeMulti)

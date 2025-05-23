@@ -80,7 +80,7 @@ namespace Zats.Services
                     }
                     else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_FIND.ID)
                     {
-                        if (Version >= 3 && IsResponseAllowed())
+                        if (Version >= 3 && IsAnsweringAllowed())
                         {
                             COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_FIND cmd = command;
                             List<IndividualEndPointData> eps;
@@ -162,7 +162,7 @@ namespace Zats.Services
                         rpt = PrepareCommandEncap(command, scheme);
                     }
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(Network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);

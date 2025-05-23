@@ -88,7 +88,7 @@ namespace Zats.Services
                             {
                                     COMMAND_CLASS_CONFIGURATION_V2.CONFIGURATION_BULK_SET configurationBulkSetCmd = command;
                                     ResultForSv = HandleConfigurationBulkSetCmd(command);
-                                    if (configurationBulkSetCmd.properties1.handshake == 0x01 && IsResponseAllowed())
+                                    if (configurationBulkSetCmd.properties1.handshake == 0x01 && IsAnsweringAllowed())
                                     {
                                         List<byte[]> bulkReports = CreateBulkReportsCmd(command);
                                         IActionItem[] actionItems = new IActionItem[bulkReports.Count];
@@ -107,7 +107,7 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_CONFIGURATION_V2.CONFIGURATION_BULK_GET.ID)
                     {
                         IActionItem[] actionItems = PrepareBulkReportActionsCmd(command);
-                        if (actionItems.Length != 0 && IsResponseAllowed())
+                        if (actionItems.Length != 0 && IsAnsweringAllowed())
                         {
                             ou.SetNextActionItems(actionItems);
                         }
@@ -115,7 +115,7 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_NAME_GET.ID)
                     {
                         IActionItem[] actionItems = PrepareNameReportActionsCmd(command);
-                        if (actionItems.Length != 0 && IsResponseAllowed())
+                        if (actionItems.Length != 0 && IsAnsweringAllowed())
                         {
                             ou.SetNextActionItems(actionItems);
                         }
@@ -123,7 +123,7 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_INFO_GET.ID)
                     {
                         IActionItem[] actionItems = PrepareInfoReportActionsCmd(command);
-                        if (actionItems.Length != 0 && IsResponseAllowed())
+                        if (actionItems.Length != 0 && IsAnsweringAllowed())
                         {
                             ou.SetNextActionItems(actionItems);
                         }
@@ -138,7 +138,7 @@ namespace Zats.Services
                         DumpConfiguration("Default Reset", 0);
                     }
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);

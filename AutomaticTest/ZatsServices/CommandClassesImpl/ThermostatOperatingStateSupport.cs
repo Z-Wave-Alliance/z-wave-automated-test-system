@@ -65,7 +65,7 @@ namespace Zats.Services
                     }
                     else if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_GET.ID)
                     {
-                        if (IsResponseAllowed())
+                        if (IsAnsweringAllowed())
                         {
                             COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_REPORT[] stateReports = CreateLoggingReportsCmd(command);
                             IActionItem[] actionItems = new IActionItem[stateReports.Length];
@@ -84,7 +84,7 @@ namespace Zats.Services
                         }
                     }
 
-                    if (rpt != null && IsResponseAllowed())
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
