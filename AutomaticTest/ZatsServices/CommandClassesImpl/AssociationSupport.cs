@@ -68,7 +68,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && AssociationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ASSOCIATION.ASSOCIATION_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ASSOCIATION.ASSOCIATION_GET.ID && !IsSupervised())
                     {
                         if (IsAnsweringAllowed())
                         {
@@ -84,11 +84,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleAssociationRemoveCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION.ASSOCIATION_GROUPINGS_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION.ASSOCIATION_GROUPINGS_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareAssociationGroupingsReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_V2.ASSOCIATION_SPECIFIC_GROUP_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_V2.ASSOCIATION_SPECIFIC_GROUP_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareAssociationSpecificGroupReport();
                     }

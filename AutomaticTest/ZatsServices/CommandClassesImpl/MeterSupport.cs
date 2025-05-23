@@ -84,11 +84,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && MeterSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_METER.METER_GET.ID)
+                    if (command[1] == COMMAND_CLASS_METER.METER_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareMeterReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_METER_V2.METER_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_METER_V2.METER_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }

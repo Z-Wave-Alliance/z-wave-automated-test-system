@@ -61,11 +61,11 @@ namespace Zats.Services
                 if (isHandlingAllowed || nonSecureManufacturerSpecificGet && command != null && command.Length > 1 && ManufacturerSpecificSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC.MANUFACTURER_SPECIFIC_GET.ID)
+                    if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC.MANUFACTURER_SPECIFIC_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareManufacturerSpecificReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET.ID && !IsSupervised())
                     {
                         if (!isHandlingAllowed)
                         {

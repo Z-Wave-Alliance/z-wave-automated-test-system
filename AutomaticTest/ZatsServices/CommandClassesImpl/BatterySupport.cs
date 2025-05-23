@@ -78,11 +78,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && BatterySupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_BATTERY.BATTERY_GET.ID)
+                    if (command[1] == COMMAND_CLASS_BATTERY.BATTERY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBatteryLevelReport(false);
                     }
-                    else if (command[1] == COMMAND_CLASS_BATTERY_V2.BATTERY_HEALTH_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_BATTERY_V2.BATTERY_HEALTH_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBatteryHealthReport();
                     }

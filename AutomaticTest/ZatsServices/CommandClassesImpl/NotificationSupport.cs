@@ -64,7 +64,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && NotificationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_GET.ID)
+                    if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_GET.ID && !IsSupervised())
                     {
                         // COMMAND_CLASS_ALARM.ALARM_GET.ID equals COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_GET.ID
                         if (command.Length == 3)
@@ -81,12 +81,12 @@ namespace Zats.Services
                         }
 
                     }
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         // COMMAND_CLASS_ALARM_V2.ALARM_TYPE_SUPPORTED_GET.ID equals COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_SUPPORTED_GET.ID
                         rpt = PrepareAlarmV2OrNotificationSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.EVENT_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_NOTIFICATION_V8.EVENT_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareEventSupportedReportCmd(command);
                     }

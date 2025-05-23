@@ -90,11 +90,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && CentralSceneSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_CENTRAL_SCENE.CENTRAL_SCENE_SUPPORTED_GET.ID)
+                    if (command[1] == COMMAND_CLASS_CENTRAL_SCENE.CENTRAL_SCENE_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_CENTRAL_SCENE_V3.CENTRAL_SCENE_CONFIGURATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CENTRAL_SCENE_V3.CENTRAL_SCENE_CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReport();
                     }

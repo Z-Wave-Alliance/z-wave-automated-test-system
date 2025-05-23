@@ -49,15 +49,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && AssociationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareGroupNameReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareGroupInfoReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareGroupCommandListReportCmd(command);
                     }

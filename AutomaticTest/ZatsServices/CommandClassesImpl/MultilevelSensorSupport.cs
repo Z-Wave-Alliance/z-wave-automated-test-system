@@ -52,15 +52,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && MultilevelSensorSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_GET.ID)
+                    if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSensorReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE.ID)
+                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedScaleReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SENSOR.ID)
+                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SENSOR.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedSensorReport();
                     }

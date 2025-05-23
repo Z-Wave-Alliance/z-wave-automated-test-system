@@ -101,7 +101,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && IrRepeaterSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_CAPABILITIES_GET.ID)
+                    if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReport();
                     }
@@ -122,11 +122,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleCodeRemoveCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_LEARNT_IR_CODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_LEARNT_IR_CODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareLearntCodesReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_LEARNT_IR_CODE_READBACK_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_LEARNT_IR_CODE_READBACK_GET.ID && !IsSupervised())
                     {
                         // not yet supported
                     }
@@ -134,7 +134,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleConfigurationSetCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_CONFIGURATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_IR_REPEATER.IR_REPEATER_CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReport();
                     }

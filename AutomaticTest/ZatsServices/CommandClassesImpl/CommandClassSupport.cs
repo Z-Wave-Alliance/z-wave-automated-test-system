@@ -430,9 +430,27 @@ namespace Zats.Services
 
         protected bool IsAnsweringAllowed()
         {
-            return !ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeBroad)
-                && !ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeMulti)
-                && !ReceivedAchData.DstNode.IsBitAddress;
+            return !IsBroadcast() && !IsMulticast() && !IsMultiChannelBitAddress();
+        }
+
+        protected bool IsSupervised()
+        {
+            return ReceivedAchData.SubstituteIncomingFlags.HasFlag(ZWave.Enums.SubstituteIncomingFlags.Supervision);
+        }
+
+        private bool IsBroadcast()
+        {
+            return ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeBroad);
+        }
+
+        private bool IsMulticast()
+        {
+            return ReceivedAchData.Options.HasFlag(ZWave.Enums.ReceiveStatuses.TypeMulti);
+        }
+
+        private bool IsMultiChannelBitAddress()
+        {
+            return ReceivedAchData.DstNode.IsBitAddress;
         }
 
         public void SetupReporting(Device device, NodeIdEx dstNode, ReportTypes reportTypes)

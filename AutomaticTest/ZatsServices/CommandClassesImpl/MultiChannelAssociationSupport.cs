@@ -55,7 +55,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && AssociationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GET.ID)
+                    if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GET.ID && !IsSupervised())
                     {
                         if (IsAnsweringAllowed())
                         {
@@ -163,7 +163,7 @@ namespace Zats.Services
                             ou.SetNextActionItems(actionItems);
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GROUPINGS_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.MULTI_CHANNEL_ASSOCIATION_GROUPINGS_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareMCAssociationGroupingsReport();
                     }

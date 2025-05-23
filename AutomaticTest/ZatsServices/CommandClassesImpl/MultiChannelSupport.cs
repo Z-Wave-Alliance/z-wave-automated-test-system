@@ -70,15 +70,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && MultiChannelSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_GET.ID)
+                    if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareEndpointReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_CAPABILITY_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_CAPABILITY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_FIND.ID)
+                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_END_POINT_FIND.ID && !IsSupervised())
                     {
                         if (Version >= 3 && IsAnsweringAllowed())
                         {
@@ -153,7 +153,7 @@ namespace Zats.Services
                             ou.SetNextActionItems(sendOperations.ToArray());
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_AGGREGATED_MEMBERS_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_AGGREGATED_MEMBERS_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareAggregatedMembersReport(command);
                     }

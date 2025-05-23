@@ -62,15 +62,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ThermostatSetpointSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT.THERMOSTAT_SETPOINT_GET.ID)
+                    if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT.THERMOSTAT_SETPOINT_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT.THERMOSTAT_SETPOINT_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT.THERMOSTAT_SETPOINT_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT_V3.THERMOSTAT_SETPOINT_CAPABILITIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_SETPOINT_V3.THERMOSTAT_SETPOINT_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReportCmd(command);
                     }

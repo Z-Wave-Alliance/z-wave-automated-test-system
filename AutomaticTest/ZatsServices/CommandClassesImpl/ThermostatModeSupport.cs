@@ -65,11 +65,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ThermostatModeSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_THERMOSTAT_MODE.THERMOSTAT_MODE_GET.ID)
+                    if (command[1] == COMMAND_CLASS_THERMOSTAT_MODE.THERMOSTAT_MODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_MODE.THERMOSTAT_MODE_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_MODE.THERMOSTAT_MODE_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }

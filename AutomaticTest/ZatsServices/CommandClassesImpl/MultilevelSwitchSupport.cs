@@ -85,7 +85,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleMultilevelSwitchSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareMultilevelSwitchReport();
                     }
@@ -97,7 +97,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleStopLevelChangeCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }

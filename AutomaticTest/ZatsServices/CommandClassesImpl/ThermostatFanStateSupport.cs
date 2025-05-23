@@ -51,7 +51,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ThermostatFanStateSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_THERMOSTAT_FAN_STATE.THERMOSTAT_FAN_STATE_GET.ID)
+                    if (command[1] == COMMAND_CLASS_THERMOSTAT_FAN_STATE.THERMOSTAT_FAN_STATE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareFanStateReport();
                     }

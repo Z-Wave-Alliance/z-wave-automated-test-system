@@ -63,7 +63,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ThermostatSetbackSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_THERMOSTAT_SETBACK.THERMOSTAT_SETBACK_GET.ID)
+                    if (command[1] == COMMAND_CLASS_THERMOSTAT_SETBACK.THERMOSTAT_SETBACK_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSetbackReport();
                     }

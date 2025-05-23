@@ -89,11 +89,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && SoundSwitchSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONES_NUMBER_GET.ID)
+                    if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONES_NUMBER_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareToneNumberReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_CONFIGURATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReport();
                     }
@@ -101,11 +101,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleConfigurationSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONE_INFO_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONE_INFO_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareToneInfoReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONE_PLAY_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SOUND_SWITCH.SOUND_SWITCH_TONE_PLAY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareTonePlayReport();
                     }

@@ -60,7 +60,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleBasicSet(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_BASIC.BASIC_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_BASIC.BASIC_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBasicReport();
                     }

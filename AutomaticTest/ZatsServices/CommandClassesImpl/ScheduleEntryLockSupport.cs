@@ -62,7 +62,7 @@ namespace Zats.Services
                     {
                         HandleScheduleEntryLockEnableAllSet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_TYPE_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_TYPE_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         if (Version < 3)
                         {
@@ -77,7 +77,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleScheduleEntryLockWeekDaySet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_LOCK_WEEK_DAY_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_LOCK_WEEK_DAY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareScheduleEntryLockWeekDayReport(command);
                     }
@@ -85,7 +85,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleScheduleEntryLockYearDaySet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_LOCK_YEAR_DAY_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.SCHEDULE_ENTRY_LOCK_YEAR_DAY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareScheduleEntryLockYearDayReport(command);
                     }
@@ -93,7 +93,7 @@ namespace Zats.Services
                     {
                         HandleScheduleEntryLockTimeOffsetSet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V2.SCHEDULE_ENTRY_LOCK_TIME_OFFSET_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V2.SCHEDULE_ENTRY_LOCK_TIME_OFFSET_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareScheduleEntryLockTimeOffsetReport();
                     }
@@ -101,7 +101,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleScheduleEntryLockDailyRepeatingSet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V3.SCHEDULE_ENTRY_LOCK_DAILY_REPEATING_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V3.SCHEDULE_ENTRY_LOCK_DAILY_REPEATING_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareScheduleEntryLockDailyRepeatingReport(command);
                     }
@@ -113,11 +113,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleExtendedScheduleEntryLockWeekDaySet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_WEEK_DAY_SCHEDULE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_WEEK_DAY_SCHEDULE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareExtendedScheduleEntryLockWeekDayReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_YEAR_DAY_SCHEDULE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_YEAR_DAY_SCHEDULE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareExtendedScheduleEntryLockYearDayReport(command);
                     }
@@ -129,7 +129,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleExtendedScheduleEntryLockDailyRepeatingSet(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_DAILY_REPEATING_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.EXTENDED_SCHEDULE_ENTRY_LOCK_DAILY_REPEATING_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareExtendedScheduleEntryLockDailyRepeatingReport(command);
                     }

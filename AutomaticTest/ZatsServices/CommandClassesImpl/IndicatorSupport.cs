@@ -89,15 +89,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && IndicatorSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_INDICATOR_V2.INDICATOR_GET.ID)
+                    if (command[1] == COMMAND_CLASS_INDICATOR_V2.INDICATOR_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareIndicatorReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_INDICATOR_V2.INDICATOR_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_INDICATOR_V2.INDICATOR_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_INDICATOR_V4.INDICATOR_DESCRIPTION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_INDICATOR_V4.INDICATOR_DESCRIPTION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareDescriptionReportCmd(command);
                     }

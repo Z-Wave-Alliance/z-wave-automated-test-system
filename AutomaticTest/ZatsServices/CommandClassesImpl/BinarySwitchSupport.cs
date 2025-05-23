@@ -84,7 +84,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleBinarySwitchSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_BINARY.SWITCH_BINARY_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_BINARY.SWITCH_BINARY_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBinarySwitchReport();
                     }

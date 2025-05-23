@@ -76,11 +76,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && PowerlevelSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_POWERLEVEL.POWERLEVEL_GET.ID)
+                    if (command[1] == COMMAND_CLASS_POWERLEVEL.POWERLEVEL_GET.ID && !IsSupervised())
                     {
                         rpt = PreparePowerlevelReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_POWERLEVEL.POWERLEVEL_TEST_NODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_POWERLEVEL.POWERLEVEL_TEST_NODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareTestNodeReport();
                     }

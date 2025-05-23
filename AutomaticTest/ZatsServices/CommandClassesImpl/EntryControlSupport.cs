@@ -59,15 +59,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && EntryControlSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_KEY_SUPPORTED_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_KEY_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareKeySupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_EVENT_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_EVENT_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareEventSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_CONFIGURATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ENTRY_CONTROL.ENTRY_CONTROL_CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReport();
                     }

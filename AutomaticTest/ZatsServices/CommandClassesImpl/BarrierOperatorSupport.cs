@@ -80,7 +80,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && BarrierOperatorSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_GET.ID)
+                    if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBarrierOperatorReport();
                     }
@@ -88,11 +88,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleBarrierOperatorSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_SIGNAL_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_SIGNAL_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBarrierOperatorSignalSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNALING_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNALING_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBarrierOperatorEventSignalReportCmd(command);
                     }

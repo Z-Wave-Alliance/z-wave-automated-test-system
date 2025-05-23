@@ -73,11 +73,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleUserCodeSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUserCodeReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USERS_NUMBER_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USERS_NUMBER_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUserNumberReport();
                     }
@@ -85,11 +85,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleExtendedUserCodeSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.EXTENDED_USER_CODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.EXTENDED_USER_CODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareExtUserCodeReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_CAPABILITIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReport();
                     }
@@ -97,7 +97,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleMasterCodeSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.ADMIN_CODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.ADMIN_CODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareMasterCodeReport();
                     }
@@ -105,11 +105,11 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleKeypadModeSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_KEYPAD_MODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_KEYPAD_MODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareKeypadModeReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_CHECKSUM_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CODE_V2.USER_CODE_CHECKSUM_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareChecksumReport();
                     }

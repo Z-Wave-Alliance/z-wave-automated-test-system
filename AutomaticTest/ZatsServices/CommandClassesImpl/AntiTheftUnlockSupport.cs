@@ -58,7 +58,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && AntiTheftSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUnlockStateReport();
                     }

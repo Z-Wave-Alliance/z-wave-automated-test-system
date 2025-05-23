@@ -115,11 +115,11 @@ namespace Zats.Services
                 {
                     byte[] rpt = null;
                     byte[] autoReportDueToSet = null;
-                    if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_CAPABILITIES_GET.ID && DstNode != NodeTag.FF)
+                    if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUserCapabilitiesReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_CAPABILITIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCredentialCapabilitiesReport();
                     }
@@ -129,7 +129,7 @@ namespace Zats.Services
                         //UserCredentialSupportData.PrintUsersInfo();
                         //LogUserCodes();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_GET.ID && DstNode != NodeTag.FF)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUserReport(command);
                     }
@@ -139,7 +139,7 @@ namespace Zats.Services
                         //UserCredentialSupportData.PrintUsersInfo();
                         //LogUserCodes();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_GET.ID && DstNode != NodeTag.FF)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCredentialReportCmd(command);
                     }
@@ -166,15 +166,15 @@ namespace Zats.Services
                         ResultForSv = HandleCredentialAssociationSetCmd(command, sendSrcNode, out autoReportDueToSet);
                         //UserCredentialSupportData.PrintUsersInfo();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.ALL_USERS_CHECKSUM_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.ALL_USERS_CHECKSUM_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareAllUsersChecksumReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_CHECKSUM_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_CHECKSUM_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareUserChecksumReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_CHECKSUM_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_CHECKSUM_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCredentialChecksumReport(command);
                     }
@@ -182,7 +182,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleAdminCodeSetCmd(command, sendSrcNode, out autoReportDueToSet);
                     }
-                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.ADMIN_PIN_CODE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.ADMIN_PIN_CODE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareAdminPinCodeReport();
                     }

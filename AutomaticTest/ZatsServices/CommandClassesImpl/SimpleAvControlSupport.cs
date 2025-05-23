@@ -71,11 +71,11 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && SimpleAvControlSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_GET.ID)
+                    if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReportCmd(command);
                     }

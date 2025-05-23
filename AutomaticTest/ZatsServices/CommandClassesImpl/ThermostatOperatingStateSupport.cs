@@ -55,15 +55,15 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ThermostatOperatingStateSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE.THERMOSTAT_OPERATING_STATE_GET.ID)
+                    if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE.THERMOSTAT_OPERATING_STATE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareStateReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_THERMOSTAT_OPERATING_STATE_V2.THERMOSTAT_OPERATING_STATE_LOGGING_GET.ID && !IsSupervised())
                     {
                         if (IsAnsweringAllowed())
                         {

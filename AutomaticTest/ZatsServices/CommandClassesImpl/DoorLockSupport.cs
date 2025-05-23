@@ -118,7 +118,7 @@ namespace Zats.Services
                 {
                     byte[] rpt = null;
                     // ** Configuration **
-                    if (command[1] == COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_CONFIGURATION_GET.ID)
+                    if (command[1] == COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReport();
                     }
@@ -127,12 +127,12 @@ namespace Zats.Services
                         ResultForSv = HandleConfigurationSetCmd(command, sendSrcNode);
                     }
                     // ** Capabilities **
-                    else if (command[1] == COMMAND_CLASS_DOOR_LOCK_V4.DOOR_LOCK_CAPABILITIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_DOOR_LOCK_V4.DOOR_LOCK_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReport();
                     }
                     // ** Operation **
-                    else if (command[1] == COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareOperationReport();
                     }

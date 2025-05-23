@@ -94,7 +94,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && WindowCoveringSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_WINDOW_COVERING.WINDOW_COVERING_SUPPORTED_GET.ID)
+                    if (command[1] == COMMAND_CLASS_WINDOW_COVERING.WINDOW_COVERING_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
@@ -102,7 +102,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleWindowCoveringSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_WINDOW_COVERING.WINDOW_COVERING_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_WINDOW_COVERING.WINDOW_COVERING_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareWindowCoveringReportCmd(command);
                     }

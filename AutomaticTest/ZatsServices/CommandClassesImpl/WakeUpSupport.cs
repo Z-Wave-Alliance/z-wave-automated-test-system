@@ -105,11 +105,11 @@ namespace Zats.Services
                         //NextGoSleepTime = RuntimeElapsed + 10 + 2;
                         //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: Node stays awake at {2} for ~{3} seconds until {4}",
                         //            CommandClassShortName, EndPointName, RuntimeElapsed, 10 + 2, NextGoSleepTime);
-                        if (command[1] == COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_INTERVAL_CAPABILITIES_GET.ID)
+                        if (command[1] == COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_INTERVAL_CAPABILITIES_GET.ID && !IsSupervised())
                         {
                             rpt = PrepareCapabilitiesReport();
                         }
-                        else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_GET.ID)
+                        else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_GET.ID && !IsSupervised())
                         {
                             rpt = PrepareWakeUpIntervalReport();
                         }
@@ -119,7 +119,7 @@ namespace Zats.Services
                         }
                         else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_NO_MORE_INFORMATION.ID)
                         {
-                            if (NextGoSleepTime > 0) // is node awaken?
+                            if (NextGoSleepTime > 0) // Is the node awake?
                             {
                                 NextGoSleepTime = 0;
                                 if (WakeUpSupportData.WakeUpInterval != 0)

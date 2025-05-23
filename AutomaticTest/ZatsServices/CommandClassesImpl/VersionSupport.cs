@@ -101,19 +101,19 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && VersionSupportData != null && SupportedRootCCs != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_VERSION.VERSION_GET.ID)
+                    if (command[1] == COMMAND_CLASS_VERSION.VERSION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareVersionReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCapabilitiesReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSoftwareReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCommandClassReportCmd(command);
                     }

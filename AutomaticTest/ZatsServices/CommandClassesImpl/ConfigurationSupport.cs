@@ -65,7 +65,7 @@ namespace Zats.Services
                         ResultForSv = HandleConfigurationSetCmd(command);
                         DumpConfiguration("Configuration Set", 0);
                     }
-                    else if (command[1] == COMMAND_CLASS_CONFIGURATION.CONFIGURATION_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CONFIGURATION.CONFIGURATION_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareConfigurationReportCmd(command);
                     }
@@ -104,7 +104,7 @@ namespace Zats.Services
                             DumpConfiguration("Configuration Bulk Set", 0);
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V2.CONFIGURATION_BULK_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V2.CONFIGURATION_BULK_GET.ID && !IsSupervised())
                     {
                         IActionItem[] actionItems = PrepareBulkReportActionsCmd(command);
                         if (actionItems.Length != 0 && IsAnsweringAllowed())
@@ -112,7 +112,7 @@ namespace Zats.Services
                             ou.SetNextActionItems(actionItems);
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_NAME_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_NAME_GET.ID && !IsSupervised())
                     {
                         IActionItem[] actionItems = PrepareNameReportActionsCmd(command);
                         if (actionItems.Length != 0 && IsAnsweringAllowed())
@@ -120,7 +120,7 @@ namespace Zats.Services
                             ou.SetNextActionItems(actionItems);
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_INFO_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_INFO_GET.ID && !IsSupervised())
                     {
                         IActionItem[] actionItems = PrepareInfoReportActionsCmd(command);
                         if (actionItems.Length != 0 && IsAnsweringAllowed())
@@ -128,7 +128,7 @@ namespace Zats.Services
                             ou.SetNextActionItems(actionItems);
                         }
                     }
-                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_PROPERTIES_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_CONFIGURATION_V3.CONFIGURATION_PROPERTIES_GET.ID && !IsSupervised())
                     {
                         rpt = PreparePropertiesReportCmd(command);
                     }

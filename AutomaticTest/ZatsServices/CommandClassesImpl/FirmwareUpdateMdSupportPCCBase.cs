@@ -84,11 +84,19 @@ namespace Zats.Services
                     {
                         case (COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_MD_GET.ID):
                             {
+                                if (IsSupervised())
+                                {
+                                    break;
+                                }
                                 ou.SetNextActionItems(SendFwuMdReport(sendSrcNode, scheme));
                             }
                             break;
                         case (COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_REQUEST_GET.ID):
                             {
+                                if (IsSupervised())
+                                {
+                                    break;
+                                }
                                 ou.SetNextActionItems(HandleCmdClassFirmwareUpdateMdReqGet(sendSrcNode, command, scheme));
                                 if (_pStatus == 0xFF)
                                 {

@@ -79,11 +79,11 @@ namespace Zats.Services
                     && FirmwareUpdateMdSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD.FIRMWARE_MD_GET.ID)
+                    if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD.FIRMWARE_MD_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareFirmwareMdReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REQUEST_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REQUEST_GET.ID && !IsSupervised())
                     {
                         CmdSrcNode = sendSrcNode;
                         List<byte[]> reportList = HandleFwuMdRequestGet(command);
@@ -93,7 +93,8 @@ namespace Zats.Services
                             IActionItem[] actionItems = new IActionItem[reportList.Count];
                             for (int i = 0; i < reportList.Count; i++)
                             {
-                                actionItems[i] = new SendDataExOperation(_network, ReceivedAchData.DstNode, ReceivedAchData.SrcNode, reportList[i], TxOptions, TxSecOptions, (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme, TxOptions2);
+                                actionItems[i] = new SendDataExOperation(_network, ReceivedAchData.DstNode, ReceivedAchData.SrcNode, reportList[i], 
+                                    TxOptions, TxSecOptions, (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme, TxOptions2);
                             }
                             ou.SetNextActionItems(actionItems);
                         }
@@ -107,11 +108,11 @@ namespace Zats.Services
                     {
                         rpt = PrepareActivationStatusReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_PREPARE_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_PREPARE_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareFwuMdDownloadPrepareReport(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.FIRMWARE_UPDATE_MD_GET.ID && !IsSupervised())
                     {
                         List<byte[]> reportList = PrepareFwuMdDownloadReport(command);
                         if (reportList != null && IsAnsweringAllowed())
@@ -119,7 +120,8 @@ namespace Zats.Services
                             IActionItem[] actionItems = new IActionItem[reportList.Count];
                             for (int i = 0; i < reportList.Count; i++)
                             {
-                                actionItems[i] = new SendDataExOperation(_network, ReceivedAchData.DstNode, ReceivedAchData.SrcNode, reportList[i], TxOptions, TxSecOptions, (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme, TxOptions2);
+                                actionItems[i] = new SendDataExOperation(_network, ReceivedAchData.DstNode, ReceivedAchData.SrcNode, reportList[i], 
+                                    TxOptions, TxSecOptions, (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme, TxOptions2);
                             }
                             ou.SetNextActionItems(actionItems);
                         }

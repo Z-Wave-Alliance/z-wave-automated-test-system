@@ -44,7 +44,7 @@ namespace Zats.Services
                 if (isHandlingAllowed && command != null && command.Length > 1 && ZWavePlusInfoSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareZWavePlusInfoReport();
                     }

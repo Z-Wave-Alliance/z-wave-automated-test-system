@@ -85,7 +85,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleColorSwitchSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_COLOR.SWITCH_COLOR_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_COLOR.SWITCH_COLOR_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareColorSwitchReportCmd(command);
                     }
@@ -97,7 +97,7 @@ namespace Zats.Services
                     {
                         ResultForSv = HandleStopLevelChangeCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_COLOR.SWITCH_COLOR_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_COLOR.SWITCH_COLOR_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
