@@ -1990,56 +1990,7 @@ namespace Zats.Services
 
         public byte[] CredentialLearningData = Array.Empty<byte>();
 
-        [ParameterSeparator(1, "User Capabilities", UserIndex + 1)]
-
-        [CustomDataParameter(1, "Number of Supported Users", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config, UserIndex + 2)]
-        public ushort NoOfSupportedUsers { get; set; } = 0;
-
-        [CustomDataParameter(1, "Supported Credential Rules", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 3)]
-        public List<UserCredentialRule> SupportedCredentialRules { get; set; } = new List<UserCredentialRule>();
-
-        [CustomDataParameter(1, "Max Length Of User Name", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_1_255, EditType.Config, UserIndex + 4)]
-        public byte MaxUserNameLength { get; set; } = 255;
-
-        /// <summary>
-        /// List of 'Supported User Name Encodings' as advertised within the User Capabilities Report.
-        /// These may not be complete because of the legacy fallback:
-        /// If empty, it means that ASCII, OEM Extended ASCII and UTF-16 (Big Endian) are all supported.
-        /// </summary>
-        [CustomDataParameter(1, "User Name Encoding Support", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 5)]
-        public List<UserNameEncoding> UserNameEncodingsAdvertisedAsSupported { get; set; } = new List<UserNameEncoding>();
-
-        [CustomDataParameter(1, "User Schedule Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 6)]
-        public bool UserScheduleSupport { get; set; } = false;
-
-        [CustomDataParameter(1, "All Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 7)]
-        public bool AllUsersChecksumSupport { get; set; } = true;
-
-        [CustomDataParameter(1, "Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 8)]
-        public bool UserChecksumSupport { get; set; } = true;
-
-        [CustomDataParameter(1, "Supported User Types", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 9)]
-        public List<UserCredentialUserType> SupportedUserTypes { get; set; } = new List<UserCredentialUserType>();
-
-        public List<SupportedCredentialType> SupportedCredentialTypes { get; set; } = new List<SupportedCredentialType>();
-
-        [ParameterSeparator(1, "Credential Capabilities", UserIndex + 21)]
-
-        [CustomDataParameter(1, "Credential Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 22)]
-        public bool CredentialChecksumSupport { get; set; } = true;
-
-        [CustomDataParameter(1, "Admin Code Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 23)]
-        public bool AdminCodeSupport { get; set; } = true;
-
-        [CustomDataParameter(1, "Admin Code Deactivation Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 24)]
-        public bool AdminCodeDeactivationSupport { get; set; } = true;
-
-        [ParameterSeparator(1, "Admin Code", UserIndex + 41)]
-
-        [CustomDataParameter(1, "Admin Code", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Text_127, EditType.Config | EditType.Edit, UserIndex + 42, withoutValidation:true)]
-        public string AdminCode { get; set; } = "";
-
-        [ParameterSeparator(1, "Users", UserIndex)]
+        //[ParameterSeparator(1, "Users and Credentials", 0)]
         [JsonIgnore]
         public List<UserSlotViewModel> UserSlotViewModels
         {
@@ -2052,6 +2003,55 @@ namespace Zats.Services
         public List<UserSlot> UserSlots { get; set; } = new List<UserSlot>();
 
         public List<UserCredential> UserCredentials { get; set; } = new List<UserCredential>();
+
+        [ParameterSeparator(1, "Admin Code", UserIndex + 11)]
+
+        [CustomDataParameter(1, "Admin Code", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Text_127, EditType.Config | EditType.Edit, UserIndex + 12, withoutValidation: true)]
+        public string AdminCode { get; set; } = "";
+
+        [ParameterSeparator(1, "User Capabilities", UserIndex + 31)]
+
+        [CustomDataParameter(1, "Number of Supported Users", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config, UserIndex + 32)]
+        public ushort NoOfSupportedUsers { get; set; } = 0;
+
+        [CustomDataParameter(1, "Supported Credential Rules", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 33)]
+        public List<UserCredentialRule> SupportedCredentialRules { get; set; } = new List<UserCredentialRule>();
+
+        [CustomDataParameter(1, "Max Length of User Name", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_1_255, EditType.Config, UserIndex + 34)]
+        public byte MaxUserNameLength { get; set; } = 255;
+
+        /// <summary>
+        /// List of 'Supported User Name Encodings' as advertised within the User Capabilities Report.
+        /// These may not be complete because of the legacy fallback:
+        /// If empty, it means that ASCII, OEM Extended ASCII and UTF-16 (Big Endian) are all supported.
+        /// </summary>
+        [CustomDataParameter(1, "User Name Encoding Support", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 35)]
+        public List<UserNameEncoding> UserNameEncodingsAdvertisedAsSupported { get; set; } = new List<UserNameEncoding>();
+
+        [CustomDataParameter(1, "User Schedule Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 36)]
+        public bool UserScheduleSupport { get; set; } = false;
+
+        [CustomDataParameter(1, "All Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 37)]
+        public bool AllUsersChecksumSupport { get; set; } = true;
+
+        [CustomDataParameter(1, "Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 38)]
+        public bool UserChecksumSupport { get; set; } = true;
+
+        [CustomDataParameter(1, "Supported User Types", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 39)]
+        public List<UserCredentialUserType> SupportedUserTypes { get; set; } = new List<UserCredentialUserType>();
+
+        public List<SupportedCredentialType> SupportedCredentialTypes { get; set; } = new List<SupportedCredentialType>();
+
+        [ParameterSeparator(1, "Credential Capabilities", UserIndex + 51)]
+
+        [CustomDataParameter(1, "Credential Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 52)]
+        public bool CredentialChecksumSupport { get; set; } = true;
+
+        [CustomDataParameter(1, "Admin Code Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 53)]
+        public bool AdminCodeSupport { get; set; } = true;
+
+        [CustomDataParameter(1, "Admin Code Deactivation Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 54)]
+        public bool AdminCodeDeactivationSupport { get; set; } = true;
 
         public UserCredentialSupportData()
         {
@@ -2636,7 +2636,7 @@ namespace Zats.Services
             }
         }
 
-        [CustomDataParameter(1, "Modifier Id", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Readonly)]
+        [CustomDataParameter(1, "Modifier ID", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Readonly)]
         public ushort ModifierId
         {
             get
@@ -2709,9 +2709,9 @@ namespace Zats.Services
     {
         [Description("0x00 Standard ASCII")]
         ASCII = 0x00,
-        [Description("0x01 Extended ASCII")]
+        [Description("0x01 OEM Extended ASCII (Code Page 437)")]
         ExtendedASCII = 0x01,
-        [Description("0x02 UTF-16 (big endian)")]
+        [Description("0x02 UTF-16 (Big Endian)")]
         UTF16BE = 0x02,
     }
 
@@ -2772,7 +2772,7 @@ namespace Zats.Services
         [CustomDataParameter(1, "Modifier Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config | EditType.Edit, ItemsSource = typeof(ModifierType))]
         public ModifierType ModifierType { get; set; } = ModifierType.Locally;
 
-        [CustomDataParameter(1, "Modifier Id", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config)]
+        [CustomDataParameter(1, "Modifier ID", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config)]
         public ushort ModifierNodeId { get; set; }
 
         private bool readBack = false;
@@ -2919,7 +2919,7 @@ namespace Zats.Services
         [CustomDataParameter(1, "Credential Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config | EditType.Edit, ItemsSource = typeof(CredentialType))]
         public CredentialType Type { get; set; }
 
-        [CustomDataParameter(1, "No Of Slots", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config | EditType.Edit)]
+        [CustomDataParameter(1, "Number of Slots", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.UShort, EditType.Config | EditType.Edit)]
         public ushort NoOfSupportedSlots { get; set; } = 0;
 
         [CustomDataParameter(1, "Learn Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config | EditType.Edit)]
@@ -2934,10 +2934,10 @@ namespace Zats.Services
         [CustomDataParameter(1, "Learn Timeout", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Hex8, EditType.Config | EditType.Edit)]
         public byte CredentialLearnRecommendedTimeout { get; set; } = 0;
 
-        [CustomDataParameter(1, "No Of Steps", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Hex8, EditType.Config | EditType.Edit)]
+        [CustomDataParameter(1, "Number of Steps", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Hex8, EditType.Config | EditType.Edit)]
         public byte CredentialLearnNoOfSteps { get; set; } = 0;
 
-        [CustomDataParameter(1, "Read Back", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config | EditType.Edit)]
+        [CustomDataParameter(1, "Read Back (CRB)", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config | EditType.Edit)]
         public bool ReadBack { get; set; } = true;
 
         [JsonIgnore]
