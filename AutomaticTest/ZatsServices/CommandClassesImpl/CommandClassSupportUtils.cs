@@ -68,7 +68,7 @@ namespace Zats.Services
         public static int TickerIntervalMs = 1000;
         public static int LogLevel = 0;
 
-        private static Random RandomGenerator = new Random();
+        private static Random randomGenerator = new Random();
 
         private static readonly ConcurrentBag<UnsolicitedReport> PendingReports = new ConcurrentBag<UnsolicitedReport> { };
         private class UnsolicitedReport
@@ -622,6 +622,22 @@ namespace Zats.Services
             return eventName + " (0x" + eventType.ToString("X2") + ")";
         }
 
+        public static byte[] GetRandomBytes(int count)
+        {
+            var ret = new byte[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                ret[i] = GetRandomByte();
+            }
+            return ret;
+        }
+
+        public static byte GetRandomByte()
+        {
+            return (byte)randomGenerator.Next(0, 256);
+        }
+
         /// <summary>
         /// Get a random PIN code in range e.g. 0000 ... 9999999999 in ASCII representation.
         /// </summary>
@@ -639,7 +655,7 @@ namespace Zats.Services
         {
             byte[] supportedKeys = suppData?.SupportedKeysList ?? new byte[] { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 };
 
-            var codeLenght = RandomGenerator.Next(minLength, maxLength + 1);
+            var codeLenght = randomGenerator.Next(minLength, maxLength + 1);
 
             byte[] newCode = new byte[codeLenght];
 
@@ -647,7 +663,7 @@ namespace Zats.Services
             {
                 for (int i = 0; i < codeLenght; i++)
                 {
-                    newCode[i] = supportedKeys[RandomGenerator.Next(0, supportedKeys.Length)];
+                    newCode[i] = supportedKeys[randomGenerator.Next(0, supportedKeys.Length)];
                 }
 
                 if (suppData == null || suppData.Users == null || suppData.Users.Count == 0

@@ -8,6 +8,8 @@ using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
 using ZWave.Devices;
 
+using static Zats.Services.CommandClassSupportUtils;
+
 namespace Zats.Services
 {
     [CommandClassName("Manufacturer Specific Command Class")]
@@ -190,13 +192,13 @@ namespace Zats.Services
         // Manufacturer Specific Report
         [ParameterSeparator(1, "Manufacturer Specific Report")]
         [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x00 }, EditType.Config)]
-        public byte[] ManufacturerId { get; set; } = { 0xFF, 0xFF }; // MFG_ID_NOT_DEFINED
+        public byte[] ManufacturerId { get; set; } = GetRandomBytes(2);
 
         [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x01 }, EditType.Config)]
-        public byte[] ProductTypeId { get; set; } = { 0x00, 0xAA };
+        public byte[] ProductTypeId { get; set; } = GetRandomBytes(2);
 
         [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x02 }, EditType.Config)]
-        public byte[] ProductId { get; set; } = { 0x00, 0x01 };
+        public byte[] ProductId { get; set; } = GetRandomBytes(2);
 
         [ParameterSeparator(2, "Device Specific Report")]
         [CustomDataParameter(2, "Default Device ID Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config, typeof(DeviceIdTypeNames))]

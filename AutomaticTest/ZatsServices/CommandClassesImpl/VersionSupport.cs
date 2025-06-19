@@ -1,17 +1,19 @@
-using ZWave.BasicApplication.Operations;
-using ZWave.CommandClasses;
-using ZWave.Enums;
-using Utils;
-using ZWave.Devices;
-using ZWave.BasicApplication.Devices;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils;
+using Zats.Services.CommandClassesImpl.Definitions.Interfaces;
+using ZatsServices_netcore.CommandClassesImpl.Definitions.Interfaces;
 using ZWave;
 using ZWave.BasicApplication;
-using System;
-using ZatsServices_netcore.CommandClassesImpl.Definitions.Interfaces;
-using Newtonsoft.Json;
-using Zats.Services.CommandClassesImpl.Definitions.Interfaces;
+using ZWave.BasicApplication.Devices;
+using ZWave.BasicApplication.Operations;
+using ZWave.CommandClasses;
+using ZWave.Devices;
+using ZWave.Enums;
+
+using static Zats.Services.CommandClassSupportUtils;
 
 namespace Zats.Services
 {
@@ -371,23 +373,23 @@ namespace Zats.Services
         // V1
         [ParameterSeparator(1, "Version Report")]
         [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x00 }, EditType.Readonly)]
-        public byte ZWaveLibraryType { get; set; } = 0x03;            // = (byte)Network.Library (hardcoded)
+        public byte ZWaveLibraryType { get; set; } = (byte)Libraries.EndDeviceLib; // = (byte)Network.Library (hardcoded)
 
-        [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x01 }, EditType.Config )]
-        public byte ZWaveProtocolVersionV1 { get; set; }
+        [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x01 }, EditType.Config)]
+        public byte ZWaveProtocolVersionV1 { get; set; } = GetDefaultZWaveProtocolVersion()[0];
 
         [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x02 }, EditType.Config)]
-        public byte ZWaveProtocolSubVersionV1 { get; set; }
+        public byte ZWaveProtocolSubVersionV1 { get; set; } = GetDefaultZWaveProtocolVersion()[1];
 
         [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x03 }, EditType.Config)]
-        public byte Firmware0Version { get; set; }            // see ApplicationVersion member V3
+        public byte Firmware0Version { get; set; } = GetDefaultApplicationVersion()[0]; // see ApplicationVersion member V3
 
         [XmlDataParameter(1, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x04 }, EditType.Config)]
-        public byte Firmware0SubVersion { get; set; }         // see ApplicationVersion member V3
+        public byte Firmware0SubVersion { get; set; } = GetDefaultApplicationVersion()[1]; // see ApplicationVersion member V3
 
         // V2
         [XmlDataParameter(2, COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_VERSION.VERSION_REPORT.ID, new byte[] { 0x05 }, EditType.Config)]
-        public byte HardwareVersion { get; set; }            // = Network.HardwareVersion (hardcoded)
+        public byte HardwareVersion { get; set; } = GetRandomByte(); // = Network.HardwareVersion (hardcoded)
 
         [NestedControl(2, "Firmware Versions")]
         public List<TargetFirmwareVersion> FirmwareVersions { get; set; } = new List<TargetFirmwareVersion>();
@@ -407,7 +409,7 @@ namespace Zats.Services
         // V3 Software Report
         [ParameterSeparator(3, "Version Z-Wave Software Report")]
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x00 }, EditType.Config)]
-        public byte[] SDKVersion { get; set; } = { 0x07, 0x00, 0x00 };
+        public byte[] SDKVersion { get; set; } = { 0x07, GetRandomByte(), GetRandomByte() };
 
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x01 }, EditType.Config)]
         public byte[] ZWaveApplicationFrameworkAPIVersion { get; set; } = { 0x00, 0x00, 0x00 };
@@ -423,19 +425,45 @@ namespace Zats.Services
 
         // ZWaveProtocolVersion: Byte1 = V1..V2 Z-Wave Protocol Version; Byte2 = V1..V2 Z-Wave Protocol Sub Version
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x05 }, EditType.Config)]
-        public byte[] ZWaveProtocolVersion { get; set; } = { 0x07, 0x00, 0x00 };
+        public byte[] ZWaveProtocolVersion { get; set; } = GetDefaultZWaveProtocolVersion();
 
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x06 }, EditType.Config)]
-        public byte[] ZWaveProtocolBuildNumber { get; set; } = { 0x00, 0xFF };
+        public byte[] ZWaveProtocolBuildNumber { get; set; } = { 0x00, 0x00 } /*GetRandomBytes(2)*/;
 
-        // ApplicationVersion : Byte1 = V1 ApplicationVersion resp. V2 Firmware0Version; Byte2: V1 ApplicationSubVersion resp. V2 Firmware0SubVersion
-        [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x07 }, EditType.Config)]
-        public byte[] ApplicationVersion { get; set; } = { 0x01, 0x00, 0x00 };
+    // ApplicationVersion : Byte1 = V1 ApplicationVersion resp. V2 Firmware0Version; Byte2: V1 ApplicationSubVersion resp. V2 Firmware0SubVersion
+    [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x07 }, EditType.Config)]
+        public byte[] ApplicationVersion { get; set; } = GetDefaultApplicationVersion();
 
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x08 }, EditType.Config)]
-        public byte[] ApplicationBuildNumber { get; set; } = { 0x00, 0xFF };
+        public byte[] ApplicationBuildNumber { get; set; } = { 0x00, 0x00 } /*GetRandomBytes(2)*/;
 
         [JsonIgnore]
         public IEnumerable<INestedItem> ChildItems => FirmwareVersions;
+
+
+        #region Default Value Helpers
+
+        private static byte[] defaultZWaveProtocolVersion = null;
+        /// <returns>3 bytes (i.e. x.y.z)</returns>
+        private static byte[] GetDefaultZWaveProtocolVersion()
+        {
+            if (defaultZWaveProtocolVersion == null)
+            {
+                defaultZWaveProtocolVersion = new byte[] { 0x07, GetRandomByte(), GetRandomByte() };
+            }
+            return defaultZWaveProtocolVersion;
+        }
+
+        private static byte[] defaultApplicationVersion = null;
+        /// <returns>3 bytes (i.e. x.y.z)</returns>
+        private static byte[] GetDefaultApplicationVersion()
+        {
+            if (defaultApplicationVersion == null)
+            {
+                defaultApplicationVersion = GetRandomBytes(3);
+            }
+            return defaultApplicationVersion;
+        }
+        #endregion
     }
 }
