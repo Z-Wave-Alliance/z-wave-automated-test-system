@@ -985,7 +985,7 @@ namespace Zats.Services
                 {
                     // if NOP was not acked 
                     Log(Environment.NewLine, LogLevels.Information);
-                    Log("The DUT is not responding. Wake up the DUT!", LogLevels.Title);
+                    DeviceManager.MessageBox.ShowDutInteraction("The DUT is not responding. Wake up the DUT!");
 
                     ExpectDataResult result = sender.ExpectData(new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION(), 600000); // 10 minutes
                     BasicResult.ExpectData wakeupNotification = new BasicActionResult.ExpectData(result);

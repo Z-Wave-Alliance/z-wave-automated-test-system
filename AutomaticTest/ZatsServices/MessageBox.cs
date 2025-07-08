@@ -91,6 +91,13 @@ namespace Zats.Services
             //}
         }
 
+        public void ShowDutInteraction(string message)
+        {
+            // Warning: Changing the following string without adapting the LogDataReceived function in CTT class ZatsTestWorker 
+            // breaks the output within the CTT!
+            WriteTitle($"{message}»WAIT_DUT:SHOW«");
+        }
+
         public DialogResult Show(string message, string title, MessageBoxButtons messageBoxButtons, MessageBoxIcon messageBoxIcon = MessageBoxIcon.Asterisk)
         {
             if (TimeOut > 0)
@@ -271,6 +278,11 @@ namespace Zats.Services
         private void WriteLine(string text)
         {
             OnLog?.Invoke(text, null, LogLevels.Information);
+        }
+
+        private void WriteTitle(string text)
+        {
+            OnLog?.Invoke(text, null, LogLevels.Title);
         }
 
         public string GetUserInput()
