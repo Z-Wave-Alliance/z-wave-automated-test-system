@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using ZWave;
 using ZWave.BasicApplication.Devices;
+using ZWave.Devices;
 
 namespace Zats.Services
 {
@@ -182,7 +184,7 @@ namespace Zats.Services
 
                 case COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID:
                     #region
-                    return new SceneActuatorConfSupport(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID) { Version = 1 };
+                    return new SceneActuatorConfSupportModify(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID) { Version = 1 };
                     #endregion
 
                 case COMMAND_CLASS_SWITCH_COLOR_V3.ID:
@@ -208,7 +210,7 @@ namespace Zats.Services
                 case COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.ID:
                     #region
                     AutoResetEvent _fwuMDCompleted = new AutoResetEvent(false);
-                    return new FirmwareUpdateMdSupportBasic(() => { _fwuMDCompleted.Set(); }) { Version = 5 };
+                    return new FirmwareUpdateMdSupportPCC(() => { _fwuMDCompleted.Set(); }) { Version = 5 };
                 #endregion
 
                 case COMMAND_CLASS_INDICATOR_V4.ID:
@@ -377,14 +379,14 @@ namespace Zats.Services
         {
             var barrierOperatorSupportData = new BarrierOperatorSupportData()
             {
-                // Internals accessible from TestCases
-                LogLevel = 0,                                           // Internal default: 0
-                TransitionTimeSec = 1,                                 // Internal default: 5 seconds
-                CurrentState = BarrierOperatorStateNames.Closed,        // Internal default: Closed
-                TargetState = BarrierOperatorStateNames.Closed,        // Internal default: Closed
-                SupportedSubsystemTypes = new List<BarrierOperatorSubsystemTypes> { BarrierOperatorSubsystemTypes.AudibleNotification, BarrierOperatorSubsystemTypes.VisualNotification },      // Internal default: Audible (Bit 0) and Visual (Bit 1) Subsystems supported
-                AudibleSubsystemState = BarrierOperatorSubsystemStateNames.Off,  // Internal default: Off
-                VisualSubsystemState = BarrierOperatorSubsystemStateNames.Off,  // Internal default: Off
+                LogLevel = 0,
+                TransitionTimeSec = 1,
+                CurrentState = BarrierOperatorStateNames.Closed,
+                TargetState = BarrierOperatorStateNames.Closed,
+                SupportedSubsystemTypes = new List<BarrierOperatorSubsystem> {
+                    new BarrierOperatorSubsystem(BarrierOperatorSubsystemTypes.AudibleNotification, BarrierOperatorSubsystemStateNames.Off),
+                    new BarrierOperatorSubsystem(BarrierOperatorSubsystemTypes.VisualNotification, BarrierOperatorSubsystemStateNames.Off)
+                },
             };
             return barrierOperatorSupportData;
         }
@@ -395,31 +397,44 @@ namespace Zats.Services
             {
                 LogLevel = 1,               // Internal default: 0
                 Scenes = new List<SceneData>(),
-                // V2+
-                Identical = false,
-                NumberOfBitmaskBytes = 1,
                 // V3+
                 SlowRefreshIsSupported = true,
                 // CC:005B.03.00.21.001: Slow Refresh MUST be enabled by default after inclusion, if supported. Will be done in constructor.
             };
-            centralSceneSupportData.AddScene(1, new List<byte> { (byte)(SceneKeyAttributeNames.KeyPressed1) });
-            centralSceneSupportData.AddScene(2, new List<byte> { (byte) (SceneKeyAttributeNames.KeyPressed1 | SceneKeyAttributeNames.KeyReleased
-                                                                       | SceneKeyAttributeNames.KeyHeldDown | SceneKeyAttributeNames.KeyPressed2
-                                                                       | SceneKeyAttributeNames.KeyPressed3 | SceneKeyAttributeNames.KeyPressed4
-                                                                       | SceneKeyAttributeNames.KeyPressed5)});
+            centralSceneSupportData.AddScene(1, 
+                new List<SceneKeyAttribute> { 
+                    (SceneKeyAttribute.KeyPressed1Time) 
+                }
+            );
+            centralSceneSupportData.AddScene(2,
+                new List<SceneKeyAttribute> { 
+                    SceneKeyAttribute.KeyPressed1Time,
+                    SceneKeyAttribute.KeyReleased,
+                    SceneKeyAttribute.KeyHeldDown,
+                    SceneKeyAttribute.KeyPressed2Time,
+                    SceneKeyAttribute.KeyPressed3Time,
+                    SceneKeyAttribute.KeyPressed4Time,
+                    SceneKeyAttribute.KeyPressed5Time
+                }
+            );
+
             return centralSceneSupportData;
         }
 
         private ColorSwitchSupportData GetDummyColorSwitchSupportData()
         {
-            return new ColorSwitchSupportData()
-            {
-                SupportedColorComponentIds = new List<ColorComponentIds>
+            return new ColorSwitchSupportData() {
+                // For the encoding of duration values see Z-Wave Application Command Class Specification (0=instantly, 1-127=seconds, 128-254=minutes-127, 255=Factory Default Duration)
+                FactoryDefaultSetDuration = 0,      // Default Duration for a Set command transition, used for all Color Component IDs. Internal default: 0 (instantly)
+                FactoryDefaultLevelDuration = 32,   // Default Duration for a transition from 0% to 100% (255), used for all Color Component IDs. Internal default: 32 (32 seconds)
+                // V1+
+                // Supported Color Component IDs 0 to 7 are supported, 8 to 15 are reserved and MUST NOT be used
+                SupportedColorComponents = new List<ColorComponent>
                 {
-                    ColorComponentIds.Red,
-                    ColorComponentIds.Green,
-                    ColorComponentIds.Blue,
-                }
+                    new ColorComponent(ColorComponentIds.Red),
+                    new ColorComponent(ColorComponentIds.Green),
+                    new ColorComponent(ColorComponentIds.Blue),
+                },
             };
         }
 
@@ -502,10 +517,8 @@ namespace Zats.Services
                 ProductTypeId = new byte[2] { 0x00, 0xBB },
                 ProductId = new byte[2] { 0x00, 0x01 },
                 // Device Specific
-                DeviceIdDataFormat0 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x00
-                DeviceIdDataFormat1 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x01
-                DeviceIdDataFormat2 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x02
-                DeviceIdType = new byte[] { 0x44, 0x45, 0x56, 0x49, 0x43, 0x44, 0x34 },
+                DeviceIdDataFormat1 = DeviceIdDataFormatNames.UTF8,
+                DeviceIdDataFormat2 = DeviceIdDataFormatNames.UTF8,
                 SerialNumber = new byte[] { 0x32, 0x32, 0x32 },
                 PseudoRandom = new byte[] { 0x31, 0x32, 0x33, 0x34 }
             };
@@ -513,40 +526,45 @@ namespace Zats.Services
 
         private MeterSupportData GetDummyMeterSupportData()
         {
-            var meterSupportData = new MeterSupportData()
-            {
+            var meterSupportData = new MeterSupportData() {
                 MeterType = MeterTypeNames.Electric,
+                DefaultScale = 0x00,    // 0x00 (internal default) ... 0x03 (Spec Requirement), according to the supported Meter Type
+
+                // V2+ Supported Report
                 MeterResetSupported = true,
-                DefaultScale = 0x00,
-                ScalesSupportedBitmask = new List<byte>() {
-                    0x15, // kWh, W, V
-                    0x01  // kVar      // should be 0x01????? 0x05
-                },
+                // V4+ Supported Report
+                SupportedRateTypes = RateTypeNames.Import,
             };
+            // Meter Values
+            // Internal default values: Size=1, Precision=0, DefaultRateType=1, Values=0.0, DeltaTime=0
+            meterSupportData.MeterValues.Add(new MeterValue {
+                ScaleNumber = ScaleNames.ScalekWh,
+                SizeConsuming = 2,
+                PrecisionConsuming = 2,
+                PrecisionProducing = 2,
+                ValueConsuming = 1.23,       // Rate Type Import (0x01)
+            });
+            meterSupportData.MeterValues.Add(new MeterValue {
+                ScaleNumber = ScaleNames.ScaleW,
+                SizeConsuming = 2,
+                PrecisionConsuming = 1,
+                ValueConsuming = 123.4,      // Rate Type Import (0x01)
+            });
 
-            // kWh
-            meterSupportData.MeterValues[0].Size = 2;
-            meterSupportData.MeterValues[0].Precision = 2;
-            meterSupportData.MeterValues[0].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[0].ValueConsuming = 1.23;
+            meterSupportData.MeterValues.Add(new MeterValue {
+                ScaleNumber = ScaleNames.ScaleV,
+                SizeConsuming = 2,
+                PrecisionConsuming = 1,
+                ValueConsuming = 231.2      // Rate Type Import (0x01)
+            });
 
-            // W
-            meterSupportData.MeterValues[2].Size = 2;
-            meterSupportData.MeterValues[2].Precision = 1;
-            meterSupportData.MeterValues[2].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[2].ValueConsuming = 123.4;
+            meterSupportData.MeterValues.Add(new MeterValue {
+                ScaleNumber = ScaleNames.ScalekVarh,
+                SizeConsuming = 2,
+                PrecisionConsuming = 2,
+                ValueConsuming = 43.21,      // Rate Type Import (0x01)
+            });
 
-            // V
-            meterSupportData.MeterValues[4].Size = 2;
-            meterSupportData.MeterValues[4].Precision = 1;
-            meterSupportData.MeterValues[4].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[4].ValueConsuming = 231.2;
-
-            // kVar
-            meterSupportData.MeterValues[8].Size = 2;
-            meterSupportData.MeterValues[8].Precision = 2;
-            meterSupportData.MeterValues[8].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[8].ValueConsuming = 43.21;
             return meterSupportData;
         }
 
@@ -597,67 +615,40 @@ namespace Zats.Services
 
         private MultilevelSensorSupportData GetDummyMultilevelSensorSupportData()
         {
-            var multilevelSensorSupportData = new MultilevelSensorSupportData();
-            multilevelSensorSupportData.AddSensor(MultilevelSensorTypes.AirTemperature, 2, new byte[] { 0x00, 0x01, 0x02 }, GetTemperatureSensorValue, 20.14);
-            multilevelSensorSupportData.AddSensor(MultilevelSensorTypes.Time, 0, new byte[] { 0x00 }, 42);
-            multilevelSensorSupportData.AddSensor(MultilevelSensorTypes.CarbonMonoxide, 1, new byte[] { 0x00, 0x01 }, GetCarbonMonoxideSensorValue, 12.3);
+            var multilevelSensorSupportData = new MultilevelSensorSupportData(new List<MultilevelSensorType>()
+            {
+                new MultilevelSensorType("Air temperature", 0x01, new List<MultilevelSensorScale>() {
+                    new MultilevelSensorScale("Celcius (C)", 0x00 ) { Precision = 2, Value = 20.14 },
+                    new MultilevelSensorScale("Fahrenheit (F)", 0x01) { Precision = 2, Value = 68.25 },
+                    new MultilevelSensorScale("Reserved (Unknown) scale", 0x02) { Precision = 2, Value = 88.88 },
+                }),
+                new MultilevelSensorType("Time", 0x21, new List<MultilevelSensorScale>() {
+                    new MultilevelSensorScale("Second (s)", 0x00) { Precision = 0, Value = 42 }
+                }),
+                new MultilevelSensorType("Carbon monoxide", 0x28, new List<MultilevelSensorScale>() {
+                    new MultilevelSensorScale("Mole per cubic meter (mol/m3)", 0x00) { Precision = 1, Value = 12.3 },
+                    new MultilevelSensorScale("Parts/million (ppm)", 0x01) { Precision = 1, Value = 3.21 }
+                })
+            });
             return multilevelSensorSupportData;
-        }
-
-        private double GetTemperatureSensorValue(Sensor sensor, byte scale)
-        {
-            if (sensor != null)
-            {
-                if (scale == 1)
-                {
-                    return sensor.Value * 9 / 5 + 32;
-                }
-                else if (scale == 2)
-                {
-                    return sensor.Value * 100;
-                }
-                else
-                {
-                    return sensor.Value;
-                }
-            }
-
-            return 0;
-        }
-
-        private double GetCarbonMonoxideSensorValue(Sensor sensor, byte scale)
-        {
-            if (sensor != null)
-            {
-                if (scale == 1)
-                {
-                    return sensor.Value * 100;
-                }
-                else
-                {
-                    return sensor.Value;
-                }
-            }
-
-            return 0;
         }
 
         private NotificationSupportData GetDummyNotificationSupportData()
         {
             var notificationSupportData = new NotificationSupportData();
-            notificationSupportData.AddNotificationType(NotificationTypeNames.HeatAlarm, 0x00, new List<byte>() {
+            notificationSupportData.AddNotificationType(NotificationTypeNames.HeatAlarm, NotificationStatusNames.UnsolicitedReportsDisabled, new List<byte>() {
                 (byte) NotificationHeatAlarmEvents.OverheatDetectedWithLocation,        // Alarm V2: Overheat (0x01)
                 (byte) NotificationHeatAlarmEvents.UnderHeatDetected,                   // Alarm V2: Underheat (0x06)
                 //0x02 | // Alarm V2: Overheat (0x01)
                 //0x40   // Alarm V2: Underheat (0x06)
             });
-            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeHealth, 0x00, new List<byte>() {
+            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeHealth, NotificationStatusNames.UnsolicitedReportsDisabled, new List<byte>() {
                 (byte) NotificationHomeHealthEvents.LyingOnBed,                         // Notification V4: Lying on bed (0x03) 
                 (byte) NotificationHomeHealthEvents.PostureChanged,                     // Notification V4: Posture changed (0x04)
                 //0x08 | // Notification V4: Lying on bed (0x03) 
                 //0x10   // Notification V4: Posture changed (0x04)
             });
-            notificationSupportData.AddNotificationType(NotificationTypeNames.System, 0x00, new List<byte>() {
+            notificationSupportData.AddNotificationType(NotificationTypeNames.System, NotificationStatusNames.UnsolicitedReportsDisabled, new List<byte>() {
                 (byte) NotificationSystemEvents.SystemHardwareFailure,                  // Alarm V2: System hardware failure (0x01)
                 (byte) NotificationSystemEvents.SystemSoftwareFailure,                  // Alarm V2: System software failure (0x02)
                 (byte) NotificationSystemEvents.Tampering_ProductCoverRemoved,          // Notification V5: Tampering, product cover removed (0x06)
@@ -669,10 +660,10 @@ namespace Zats.Services
                 //0x80,  // Notification V7: Emergency shutoff (0x07)
                 //0x08   // Notification V8: Digital intput open (0x0B)
             });
-            notificationSupportData.AddNotificationType(NotificationTypeNames.Siren, 0x00, new List<byte>() {
+            notificationSupportData.AddNotificationType(NotificationTypeNames.Siren, NotificationStatusNames.UnsolicitedReportsDisabled, new List<byte>() {
                 0x02  // Notification V6: Siren active (0x01)
             });
-            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeSecurity, 0xFF, new List<byte>() {
+            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeSecurity, NotificationStatusNames.UnsolicitedReportsEnabled, new List<byte>() {
                 (byte)NotificationTypeNames.HomeSecurity
             });
             return notificationSupportData;
@@ -812,43 +803,36 @@ namespace Zats.Services
 
         private ThermostatOperatingStateSupportData GetDummyThermostatOperatingStateSupportData(byte thermostatOperatingStateSupportVersion = 2)
         {
-            ThermostatOperatingStateSupportData thermostatOperatingStateSupportData = new ThermostatOperatingStateSupportData()
-            {
+            ThermostatOperatingStateSupportData thermostatOperatingStateSupportData = new ThermostatOperatingStateSupportData() {
                 // V1+ Report
                 // Operating State - valid values: V1: 0x00 to 0x06; V2: 0x00 to 0x0B; 0x00 = IDLE
                 OperatingState = ThermostatOperatingStateNames.Idle,
                 // V2+ Supported Report
-                LoggingSupportedList = new List<ThermostatOperatingStateNames>
-                {
-                    ThermostatOperatingStateNames.Idle,             // V1+, not announced in SupportedBitmask
-                    ThermostatOperatingStateNames.Heating,          // V1+
-                    ThermostatOperatingStateNames.Cooling,          // V1+
-                    ThermostatOperatingStateNames.FanOnly,          // V1+
-                    ThermostatOperatingStateNames.PendingHeat,      // V1+
-                    ThermostatOperatingStateNames.PendingCool,      // V1+
-                    ThermostatOperatingStateNames.VentEconomizer,   // V1+
-                    ThermostatOperatingStateNames.AuxHeating,       // V2+
-                    ThermostatOperatingStateNames.Heating2ndStage,  // V2+
-                    ThermostatOperatingStateNames.Cooling2ndStage,  // V2+
-                    ThermostatOperatingStateNames.AuxHeat2ndStage,  // V2+
-                    ThermostatOperatingStateNames.AuxHeat3rdStage,  // V2+
-                },
-                // LoggingSupportedBitmask: Allowed masks: from { 0x00 } to { 0xFE, 0x0F } (V2), Bit 0 of Byte 1 MUST be 0
-                //LoggingSupportedBitmask = new List<byte> { 0xFA, 0x0F }, // V2 all except states 0x00 'Off' and 0x02 'Cooling'
-                //LoggingSupportedBitmask = new List<byte> { 0x00 }, // V2 nothing
             };
-            thermostatOperatingStateSupportData.OperatingStateLogs[1].UsageTodayHours = 1;
-            thermostatOperatingStateSupportData.OperatingStateLogs[1].UsageTodayMinutes = 15;
-            thermostatOperatingStateSupportData.OperatingStateLogs[1].UsageYesterdayHours = 2;
-            thermostatOperatingStateSupportData.OperatingStateLogs[1].UsageYesterdayMinutes = 30;
-            thermostatOperatingStateSupportData.OperatingStateLogs[3].UsageTodayHours = 3;
-            thermostatOperatingStateSupportData.OperatingStateLogs[3].UsageTodayMinutes = 15;
-            thermostatOperatingStateSupportData.OperatingStateLogs[3].UsageYesterdayHours = 6;
-            thermostatOperatingStateSupportData.OperatingStateLogs[3].UsageYesterdayMinutes = 30;
-            thermostatOperatingStateSupportData.OperatingStateLogs[11].UsageTodayHours = 11;
-            thermostatOperatingStateSupportData.OperatingStateLogs[11].UsageTodayMinutes = 15;
-            thermostatOperatingStateSupportData.OperatingStateLogs[11].UsageYesterdayHours = 22;
-            thermostatOperatingStateSupportData.OperatingStateLogs[11].UsageYesterdayMinutes = 30;
+            // V2+ Supported Report
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.Cooling, UsageTodayHours = 11 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.Heating, UsageTodayHours = 12 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.FanOnly, UsageTodayHours = 13 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.PendingHeat, UsageTodayHours = 14 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.PendingCool, UsageTodayHours = 15 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.VentEconomizer, UsageTodayHours = 16 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.AuxHeating, UsageTodayHours = 17 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.Heating2ndStage, UsageTodayHours = 18 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.Cooling2ndStage, UsageTodayHours = 19 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.AuxHeat2ndStage, UsageTodayHours = 20 });
+            thermostatOperatingStateSupportData.OperatingStateLogs.Add(new OperatingStateLog { 
+                OperatingState = ThermostatOperatingStateNames.AuxHeat3rdStage, UsageTodayHours = 21 });
+
             return thermostatOperatingStateSupportData;
         }
 
@@ -895,18 +879,17 @@ namespace Zats.Services
 
         private UserCodeSupportData GetDummyUserCodeSupportData()
         {
-            var userCodeSupportData = new UserCodeSupportData()
-            {
-                SupportedUsers = 4,
+            UserCodeSupportData userCodeSupportData = new UserCodeSupportData() {
+                // The implementation IGNORES a Master Code already set to a User ID (CC:0063.02.0E.11.007)
                 AdminCodeSup = true,
                 AdminCodeDeactivationSup = true,
                 // Internal Default: 0x17. Bit 0 = Available; Bit 1 = Enabled/Grant Access; Bit 2 = Disabled; Bit 3 = Messaging (not implemented); Bit 4 = Passage Mode
-                SupportedUserIdStatusList = new List<UserCodeUserIdStatusV2>
+                SupportedUserIdStatusListV2 = new List<UserCodeSupportedUserIdStatusV2>
                 {
-                    UserCodeUserIdStatusV2.Available,
-                    UserCodeUserIdStatusV2.Enabled,
-                    UserCodeUserIdStatusV2.Disabled,
-                    UserCodeUserIdStatusV2.PassageMode,
+                    UserCodeSupportedUserIdStatusV2.Available,
+                    UserCodeSupportedUserIdStatusV2.Enabled,
+                    UserCodeSupportedUserIdStatusV2.Disabled,
+                    UserCodeSupportedUserIdStatusV2.PassageMode,
                 },
                 // Internal Default: 0x07. Bit 0 = Normal mode; Bit 1 = Vacation mode; Bit 2 = Privacy Mode; Bit 3 = Locked Out Mode (not implemented)
                 SupportedKeypadModesList = new List<UserCodeKeypadMode>
@@ -917,28 +900,30 @@ namespace Zats.Services
                 },
                 // SupportedKeysList contains all supported ASCII codes. 
                 // Internal default: { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 } = Keys 0...9
-                SupportedKeysList = new List<byte> { 0x00, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 },
+                SupportedKeysList = new byte[] { 0x01, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 },
                 UserCodeChecksumSup = true,
                 MultipleUserCodeReportSup = true,
                 MultipleUserCodeSetSup = true,
             };
+
+            for (int i = 0; i < 258; i++) {
+                userCodeSupportData.Users.Add(new UserCodeUser((ushort)i, UserCodeUserIdStatusV1.Available, new byte[] { 0, 0, 0, 0 }));
+            }
+
             return userCodeSupportData;
         }
 
         public VersionSupportData GetDummyVersionSupportData()
         {
-            var versionSupportData = new VersionSupportData()
-            {
+            var versionSupportData = new VersionSupportData() {
                 // Default values for the Version Reports
                 // Version Report (V1+)
                 // ZWaveLibraryType = (byte)Device.Library,     // this field is filled internally
                 // HardwareVersion = Network.HardwareVersion,   // this field is filled internally
-                NumberOfFirmwareTargets = 0x01,
                 // FirmwareVersions.Count MUST match NumberOfFirmwareTargets (2 bytes per target) !
-                FirmwareVersions = new List<COMMAND_CLASS_VERSION_V2.VERSION_REPORT.TVG>()
+                FirmwareVersions = new List<TargetFirmwareVersion>()
                 {
-                    new COMMAND_CLASS_VERSION_V2.VERSION_REPORT.TVG () {firmwareVersion = 0x01, firmwareSubVersion = 0xAA, },
-                    //new COMMAND_CLASS_VERSION_V2.VERSION_REPORT.TVG () {firmwareVersion = 0x02, firmwareSubVersion = 0xBB, },
+                    new TargetFirmwareVersion(0x01, 0xAA)
                 },
                 // Version Capabilities Report (V3)
                 CapVersion = 1,
@@ -988,13 +973,10 @@ namespace Zats.Services
         {
             var windowCoveringSupportData = new WindowCoveringSupportData()
             {
-                // Internals accessible from TestCases
-                LogLevel = 0,   // Internal default: 0
-                FactoryDefaultSetDuration = 4,      // Default Duration for a Set command transition, used for all added parameters. Internal default: 0 (instantly)
-                FactoryDefaultLevelDuration = 16,    // Default Duration for a transition from 0% to 100% (0x63), used for all added parameters. Internal default: 16 (16 seconds)
-                BasicZWavePlusVersion = 2,          // Internal default: 2
-                SpecificDeviceClass = WindowCoveringSpecificDeviceType.PositionAndEndpointAware,   // Internal default: PositionAndEndpointAware, used for Basic Mapping only
-
+                FactoryDefaultSetDuration = 4,
+                FactoryDefaultLevelDuration = 16,
+                BasicZWavePlusVersion = 2,
+                SpecificDeviceClass = WindowCoveringSpecificDeviceClass.PositionAndEndpointAware,
             };
 
             windowCoveringSupportData.AddParameter(WindowCoveringParameterNames.OutRightPosition, (byte)WindowCoveringPositionNames.Closed);
@@ -1034,7 +1016,7 @@ namespace Zats.Services
             private bool enabled = true;
             public bool Enabled { get { return enabled; } set { enabled = value; } }
 
-            public bool BasicSet(byte value)
+            public bool BasicSet(byte value, NodeTag srcNode)
             {
                 state = value;
                 return true;

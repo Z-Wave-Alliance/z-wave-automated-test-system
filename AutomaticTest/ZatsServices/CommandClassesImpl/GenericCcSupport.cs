@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using ZWave;
+using ZWave.Devices;
 
 
 namespace Zats.Services
 {
+    [CommandClassName("Generic Command Class")]
+    [MinVersion(1)]
+    [MaxVersion(255)]
     /// <summary>
     /// Generic Command Class support to support unknown CC's or known CC's freely
     /// Supervision is handled with SUCCESS if a Command Callback has been registered using
@@ -13,11 +18,11 @@ namespace Zats.Services
 
     public class GenericCcSupport : CommandClassSupport
     {
+        public override CommandClassSupportData CommandClassSupportData { get; set; } // dummy
+
         public GenericCcSupport(byte commandClassId)
             : base(commandClassId)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 255;
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
@@ -34,17 +39,25 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1)
+                if (isHandlingAllowed && command != null && command.Length > 1)
                 {
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
+        }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            // @todo: placeholder - still needs to be implemented
         }
     }
 

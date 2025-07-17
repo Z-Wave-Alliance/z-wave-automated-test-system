@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System.Collections.Generic;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
+using ZWave.Devices;
 
 namespace Zats.Services
 {
@@ -13,7 +15,7 @@ namespace Zats.Services
     /// ApplicationService.AddCommandCallbacks() method
     /// </summary>
 
-    public class SceneActuatorConfSupport : CommandClassSupport
+    public class SceneActuatorConfSupportModify : CommandClassSupport
     {
 
         private SvResultNames ResultForSv = SvResultNames.Undefined;
@@ -21,7 +23,7 @@ namespace Zats.Services
         private byte _dimmingDuration  = 0;
         private byte _level = 0;
 
-        public SceneActuatorConfSupport(byte commandClassId)
+        public SceneActuatorConfSupportModify(byte commandClassId)
             : base(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID)
         {
             MinCCVersion = 1;
@@ -56,15 +58,16 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1)
+                if (isHandlingAllowed && command != null && command.Length > 1)
                 {
                     byte[] rpt = null;
                     if (command[1] == COMMAND_CLASS_SCENE_ACTUATOR_CONF.SCENE_ACTUATOR_CONF_GET.ID)
@@ -82,16 +85,26 @@ namespace Zats.Services
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
-        }        
+        }
+
+        // CC doesn't use internal data, just satisfy abstract members
+        public override CommandClassSupportData CommandClassSupportData {
+            get { return null; }
+            set {; }
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data) {
+
+        }
     }
     public class SceneSupportData
     {
         // Internals accessible from TestCases
         public int LogLevel { get; set; } = 0;
-        public List<SceneActuatorConfSupport> SceneGroups { get; set; } = new List<SceneActuatorConfSupport>();
+        public List<SceneActuatorConfSupportModify> SceneGroups { get; set; } = new List<SceneActuatorConfSupportModify>();
 
         // Access to Scene Groups for other supporting Command Classes
         public static SceneSupportData SupportDataObject;

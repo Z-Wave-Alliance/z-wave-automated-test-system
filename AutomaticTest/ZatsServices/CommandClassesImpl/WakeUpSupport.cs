@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Zats.Services.CommandClassesImpl;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
+using ZWave.Devices;
+using static Zats.Services.AssociationGroupEx;
 
 // ToDo: Support of WakeUpRequest bit of Supervision V2 command (not yet supported by SupervisionCallback method)
 // ToDo: Callback from any received command to restart Minimum WakeUp Time (10 s)
@@ -13,20 +17,35 @@ using ZWave.BasicApplication.Operations;
 
 namespace Zats.Services
 {
+    [CommandClassName("Wake Up Command Class")]
+    [CommandClassId(COMMAND_CLASS_WAKE_UP.ID)]
+    [MinVersion(1)]
+    [MaxVersion(2)]
     public class WakeUpSupport : CommandClassSupport
     {
         private WakeUpSupportData WakeUpSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return WakeUpSupportData; }
+            set
+            {
+                WakeUpSupportData = (WakeUpSupportData)value;
 
-        private readonly string CommandClassName = "Wake Up CC";
-        private string EndPointName = "";
-        private readonly int LogLevel;  // shortcut for SupportData.LogLevel
+                if (WakeUpSupportData.WakeUpInterval != 0 && WakeUpSupportData.SimulateWakeUp)
+                {
+                    NextWakeUpTime = RuntimeElapsed + WakeUpSupportData.WakeUpInterval;
+                }
+            }
+        }
+
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
-        private readonly BackgroundWorker WakeUpTimer = new BackgroundWorker();
-        private string WakeUpTimerName = "";
+        private readonly BackgroundWorker RuntimeTimer = new BackgroundWorker();
+        private string RuntimeTimerName = "";
         private readonly AutoResetEvent _resetEvent = new AutoResetEvent(false);
 
         private uint RuntimeElapsed = 0;
+        private bool IsTimerStarted = false;   // This value is maintained by WakeUpSupport(). Do not change!
         private uint NextWakeUpTime = 0;
         private uint NextGoSleepTime = 0;
 
@@ -37,84 +56,95 @@ namespace Zats.Services
         public WakeUpSupport(WakeUpSupportData wakeUpSupportData)
             : base(COMMAND_CLASS_WAKE_UP.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 3;
             WakeUpSupportData = wakeUpSupportData;
-            LogLevel = WakeUpSupportData.LogLevel;
+        }
 
-            if (!WakeUpSupportData.IsTimerStarted)
-            {
-                WakeUpTimer.DoWork += new DoWorkEventHandler(WakeUpTimer_DoWork);
-                WakeUpTimer.RunWorkerCompleted += new RunWorkerCompletedEventHandler(WakeUpTimer_RunWorkerCompleted);
-                WakeUpTimer.WorkerSupportsCancellation = true;
-                WakeUpTimer.WorkerReportsProgress = false;
-                WakeUpTimer.RunWorkerAsync();
-                WakeUpSupportData.IsTimerStarted = true;
-            }
-
+        public override void StartEmulation()
+        {
             if (WakeUpSupportData.WakeUpInterval != 0 && WakeUpSupportData.SimulateWakeUp)
             {
                 NextWakeUpTime = RuntimeElapsed + WakeUpSupportData.WakeUpInterval;
             }
+
+            if (!IsTimerStarted)
+            {
+                RuntimeTimer.DoWork += new DoWorkEventHandler(RuntimeTimerDoWork);
+                RuntimeTimer.RunWorkerCompleted += new RunWorkerCompletedEventHandler(RuntimeTimerRunWorkerCompleted);
+                RuntimeTimer.WorkerSupportsCancellation = true;
+                RuntimeTimer.WorkerReportsProgress = false;
+                RuntimeTimerStart();
+                IsTimerStarted = true;
+            }
+        }
+
+        public override void ResetEmulation()
+        {
+            WakeUpSupportData.WakeUpInterval = WakeUpSupportData.DefaultWakeUpInterval;
+            WakeUpSupportData.WakeUpDestinationNodeId = 0;
+            RuntimeTimerReset();
+            SupportDelegates?.DeviceDataUpdate?.Invoke(this);
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                EndPointName = ReceivedAchData.DstNode.EndPointId == 0 ? " @ Root" : string.Format(" @ EP {0}", ReceivedAchData.DstNode.EndPointId);
-                WakeUpTimerName = string.Format("{0}{1}: WakeUp Timer", CommandClassName, EndPointName);
+                RuntimeTimerName = string.Format("{0} CC @ {1}: Runtime Timer", CommandClassShortName, EndPointName);
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && WakeUpSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && WakeUpSupportData != null)
                 {
                     byte[] rpt = null;
                     // Simulate Sleep/Awake cycle for WakeUp CC commands only (requires SimulateWakeUp==true)
                     //if (NextGoSleepTime > 0) // is node awaken?
                     {
                         //NextGoSleepTime = RuntimeElapsed + 10 + 2;
-                        //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Node stays awake at {2} for ~{3} seconds until {4}",
-                        //            CommandClassName, EndPointName, RuntimeElapsed, 10 + 2, NextGoSleepTime);
-                        if (command[1] == COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_INTERVAL_CAPABILITIES_GET.ID)
+                        //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: Node stays awake at {2} for ~{3} seconds until {4}",
+                        //            CommandClassShortName, EndPointName, RuntimeElapsed, 10 + 2, NextGoSleepTime);
+                        if (command[1] == COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_INTERVAL_CAPABILITIES_GET.ID && !IsSupervised())
                         {
                             rpt = PrepareCapabilitiesReport();
                         }
-                        else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_GET.ID)
+                        else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_GET.ID && !IsSupervised())
                         {
-                            rpt = PrepareIntervalReport();
+                            rpt = PrepareWakeUpIntervalReport();
                         }
                         else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_SET.ID)
                         {
-                            ResultForSv = HandleWakeUpSet(command);
+                            ResultForSv = HandleWakeUpSetCmd(command, sendSrcNode);
                         }
                         else if (command[1] == COMMAND_CLASS_WAKE_UP.WAKE_UP_NO_MORE_INFORMATION.ID)
                         {
-                            if (NextGoSleepTime > 0) // is node awaken?
+                            if (NextGoSleepTime > 0) // Is the node awake?
                             {
                                 NextGoSleepTime = 0;
                                 if (WakeUpSupportData.WakeUpInterval != 0)
                                 {
                                     NextWakeUpTime = RuntimeElapsed + WakeUpSupportData.WakeUpInterval;
                                 }
-                                CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: No More Info - Node sleeps from {2} for {3} seconds until {4}",
-                                            CommandClassName, EndPointName, RuntimeElapsed, WakeUpSupportData.WakeUpInterval, NextWakeUpTime);
+                                CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel, 
+                                            "{0} CC @ {1}: No More Info - Node sleeps from {2} for {3} seconds until {4}",
+                                            CommandClassShortName, EndPointName, 
+                                            RuntimeElapsed, WakeUpSupportData.WakeUpInterval, NextWakeUpTime);
                             }
+                            SupportDelegates?.DeviceSleep(this, 30);
                         }
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
@@ -142,7 +172,7 @@ namespace Zats.Services
             }
             return null;
         }
-        private byte[] PrepareIntervalReport()
+        private byte[] PrepareWakeUpIntervalReport()
         {
             COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_REPORT rpt = new COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_REPORT()
             {
@@ -152,11 +182,17 @@ namespace Zats.Services
             return rpt;
         }
 
-        private void WakeUpTimer_DoWork(object sender, DoWorkEventArgs e)
+        #region Runtime Timer
+        private void RuntimeTimerStart()
+        {
+            // WakeUpSupportData.CancelPendingRuntimeTimer = RuntimeTimerReset;
+            RuntimeTimer.RunWorkerAsync();   // the Runtime Timer runs infinitely or until Result.State == ActionStates.Cancelled
+        }
+        private void RuntimeTimerDoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker bw = sender as BackgroundWorker;
 
-            CommandClassSupportUtils.ReportTimerState(LogLevel, WakeUpTimerName, ReportTimerStateNames.Started, RuntimeElapsed);
+            CommandClassSupportUtils.ReportTimerState(WakeUpSupportData.LogLevel, RuntimeTimerName, ReportTimerStateNames.Started, RuntimeElapsed);
             while (true)
             {
                 RuntimeElapsed++;
@@ -164,15 +200,20 @@ namespace Zats.Services
                 {
                     NextWakeUpTime = 0;
                     NextGoSleepTime = RuntimeElapsed + 10;
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Node awakened at {2} for {3} seconds until {4}",
-                                CommandClassName, EndPointName, RuntimeElapsed, 10, NextGoSleepTime);
+                    CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel, 
+                                "{0} CC @ {1}: Node awakened at {2} for {3} seconds until {4}",
+                                CommandClassShortName, EndPointName, RuntimeElapsed, 10, NextGoSleepTime);
 
-                    if (WakeUpSupportData.SendWakeUpNotification)
-                    { 
+                    if (WakeUpSupportData.SimulateWakeUp)
+                    {
                         COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION rpt = new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION() { };
-                        CommandClassSupportUtils.AddUnsolicitedFrame(rpt, new byte[] { WakeUpSupportData.WakeUpDestinationNodeId }, TxOptions, (byte) Network.GetHighestSecurityScheme()/*ReceivedAchData.SecurityScheme*/);
-                        CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Wake Up Notification added to queue", CommandClassName, EndPointName);
+                        DeviceRestart(NodeTag.Empty);
+                        SendUnsolicitedReport(rpt, new NodeIdEx(WakeUpSupportData.WakeUpDestinationNodeId, 0, false), default(NodeTag));
+                        SupportDelegates?.DeviceSleep(this, ReportWakeupTimeout);
+                        CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel, 
+                                    "{0} CC @ {1}: Wake Up Notification added to queue", CommandClassShortName, EndPointName);
                     }
+                    //SupportDelegates?.DeviceDataUpdate?.Invoke(this); // inform (EDE) about current state
                 }
                 if (NextGoSleepTime > 0 && NextGoSleepTime <= RuntimeElapsed)
                 {
@@ -181,58 +222,67 @@ namespace Zats.Services
                     { 
                         NextWakeUpTime = RuntimeElapsed + WakeUpSupportData.WakeUpInterval;
                     }
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Node sleeps from {2} for {3} seconds until {4}", 
-                                CommandClassName, EndPointName, RuntimeElapsed, WakeUpSupportData.WakeUpInterval, NextWakeUpTime);
+                    CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel, 
+                                "{0} CC @ {1}: Node sleeps from {2} for {3} seconds until {4}", 
+                                CommandClassShortName, EndPointName, 
+                                RuntimeElapsed, WakeUpSupportData.WakeUpInterval, NextWakeUpTime);
+                    //SupportDelegates?.DeviceDataUpdate?.Invoke(this); // inform (EDE) about current state
+                }
+                if (Result.State == ActionStates.Cancelled)
+                {
+                    RuntimeTimerReset();
                 }
                 Thread.Sleep(1000);
                 if (bw.CancellationPending)
                 {
-                    CommandClassSupportUtils.ReportTimerState(LogLevel, WakeUpTimerName, ReportTimerStateNames.CancelledElapsedSec, RuntimeElapsed);
+                    CommandClassSupportUtils.ReportTimerState(WakeUpSupportData.LogLevel, RuntimeTimerName, ReportTimerStateNames.CancelledElapsedSec, RuntimeElapsed);
                     e.Cancel = true;
                     break;
                 }
             }
             if (!e.Cancel)
             {
-                CommandClassSupportUtils.ReportTimerState(LogLevel, WakeUpTimerName, ReportTimerStateNames.ExpiredSec, RuntimeElapsed);
+                CommandClassSupportUtils.ReportTimerState(WakeUpSupportData.LogLevel, RuntimeTimerName, ReportTimerStateNames.ExpiredSec, RuntimeElapsed);
             }
         }
 
-        private void WakeUpTimer_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void RuntimeTimerRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
             {
                 _resetEvent.Set();
             }
         }
-        private void WakeUpTimer_Reset()
+        private void RuntimeTimerReset() // the Runtime Timer runs infinitely or until Result.State == ActionStates.Cancelled
         {
-            if (WakeUpTimer.IsBusy)
+            if (RuntimeTimer.IsBusy)
             {
-                WakeUpTimer.CancelAsync();
+                CommandClassSupportUtils.ReportTimerState(WakeUpSupportData.LogLevel, RuntimeTimerName, ReportTimerStateNames.Reset, 0);
+                RuntimeTimer.CancelAsync();
                 _resetEvent.WaitOne();
-                CommandClassSupportUtils.ReportTimerState(LogLevel, WakeUpTimerName, ReportTimerStateNames.Reset, 0);
+                IsTimerStarted = false;
             }
         }
+        #endregion // Runtime Timer
 
-        private SvResultNames HandleWakeUpSet(byte[] command)
+        private SvResultNames HandleWakeUpSet(byte wakeUpDestinationNodeId, uint wakeUpIntervalSec, NodeTag srcNode)
         {
-            COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_SET wakeUpIntervalSetCmd = command;
-            uint wakeUpInterval;
+            WakeUpSupportData.WakeUpDestinationNodeId = wakeUpDestinationNodeId;
 
-            WakeUpSupportData.WakeUpDestinationNodeId = wakeUpIntervalSetCmd.nodeid;
-
-            wakeUpInterval = Convert.ToUInt32(CommandClassSupportUtils.ByteFieldToUInt64(wakeUpIntervalSetCmd.seconds, 3));
             if (Version == 1)
             {
-                WakeUpSupportData.WakeUpInterval = wakeUpInterval;
+                WakeUpSupportData.WakeUpInterval = wakeUpIntervalSec;
             }
             if (Version >= 2)
             {
-                if ( (wakeUpInterval == 0)
-                || (wakeUpInterval >= WakeUpSupportData.MinimumWakeUpInterval && wakeUpInterval <= WakeUpSupportData.MaximumWakeUpInterval) )
+                if ( (wakeUpIntervalSec == 0)
+                || (wakeUpIntervalSec >= WakeUpSupportData.MinimumWakeUpInterval && wakeUpIntervalSec <= WakeUpSupportData.MaximumWakeUpInterval) )
                 {
-                    WakeUpSupportData.WakeUpInterval = wakeUpInterval;
+                    WakeUpSupportData.WakeUpInterval = wakeUpIntervalSec;
+                }
+                else
+                {
+                    SupportDelegates?.LogMessage?.Invoke(LogLocation.Frontend, LogLevel.Error, "New Wake Up Interval has not been set (not between minimum and maximum interval)!");
                 }
             }
 
@@ -242,13 +292,28 @@ namespace Zats.Services
                 NextWakeUpTime = RuntimeElapsed + WakeUpSupportData.WakeUpInterval;
             }
 
-            return (WakeUpSupportData.WakeUpInterval == wakeUpInterval) ? SvResultNames.Successful : SvResultNames.Failed;
+            if (WakeUpSupportData.WakeUpInterval == wakeUpIntervalSec)
+            {
+                if (ReportTypes.HasFlag(ReportTypes.OnStateChange))
+                {
+                    SendUnsolicitedReport(PrepareWakeUpIntervalReport(), srcNode);
+                }
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // inform (EDE) about current state
+                return SvResultNames.Successful;
+            }
+            return SvResultNames.Failed;
+        }
+        private SvResultNames HandleWakeUpSetCmd(byte[] command, NodeTag srcNode)
+        {
+            COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_SET wakeUpIntervalSetCmd = command;
+            uint wakeUpIntervalSec = Convert.ToUInt32(CommandClassSupportUtils.ByteFieldToUInt64(wakeUpIntervalSetCmd.seconds, 3));
+            return HandleWakeUpSet(wakeUpIntervalSetCmd.nodeid, wakeUpIntervalSec, srcNode);
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
-            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
+            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != CommandClassId)
             {
                 supervisionReport.status = (byte) SvStatusNames.NoSupport;
                 return;
@@ -259,29 +324,110 @@ namespace Zats.Services
             {
                 case COMMAND_CLASS_WAKE_UP.WAKE_UP_INTERVAL_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
+                    {
                         supervisionReport.status = (byte) SvStatusNames.Success;
+                    }
                     break;
             }
             ResultForSv = SvResultNames.Undefined;
         }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            if (data is WakeUpSupportData newData)
+            {
+                if (newData.TriggerWakeUpNotification == true)  // UI-Button 'Wake Up', ignore all other data newData members
+                {
+                    COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION rpt = new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION() { };
+                    CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel,
+                                "{0} CC @ {1}: Wake Up Notification to NodeId {2} (triggered) prepared",
+                                CommandClassShortName, EndPointName, WakeUpSupportData.WakeUpDestinationNodeId);
+                    SendUnsolicitedReport(rpt, new NodeIdEx(WakeUpSupportData.WakeUpDestinationNodeId, 0, false), default(NodeTag));
+                    CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel,
+                                "{0} CC @ {1}: Wake Up Notification to NodeId {2} (triggered) sent",
+                                CommandClassShortName, EndPointName, WakeUpSupportData.WakeUpDestinationNodeId);
+                    //CommandClassSupportUtils.AddUnsolicitedFrame(rpt, new byte[] { WakeUpSupportData.WakeUpDestinationNodeId }, TxOptions, (byte)Network.GetHighestSecurityScheme()/*ReceivedAchData.SecurityScheme*/);
+                    //CommandClassSupportUtils.ReportAddLog(WakeUpSupportData.LogLevel,
+                    //            "{0} CC @ {1}: Wake Up Notification to NodeId {2} added to queue",
+                    //            CommandClassShortName, EndPointName, WakeUpSupportData.WakeUpDestinationNodeId);
+                }
+                else
+                {
+                    RuntimeTimerName = string.Format("{0} CC @ {1}: Runtime Timer", CommandClassShortName, EndPointName);
+
+                    //if (WakeUpSupportData.SimulateWakeUp != newData.SimulateWakeUp 
+                    // || WakeUpSupportData.SendWakeUpNotification != newData.SendWakeUpNotification)
+                    {
+                        WakeUpSupportData.SimulateWakeUp = newData.SimulateWakeUp;
+                    }
+
+                    if (WakeUpSupportData.WakeUpDestinationNodeId != newData.WakeUpDestinationNodeId
+                     || WakeUpSupportData.WakeUpInterval != newData.WakeUpInterval)
+                    {
+                        HandleWakeUpSet(newData.WakeUpDestinationNodeId, newData.WakeUpInterval, NodeTag.Empty);
+                    }
+
+                    if (WakeUpSupportData.MinimumWakeUpInterval != newData.MinimumWakeUpInterval
+                     || WakeUpSupportData.MaximumWakeUpInterval != newData.MaximumWakeUpInterval
+                     || WakeUpSupportData.DefaultWakeUpInterval != newData.DefaultWakeUpInterval
+                     || WakeUpSupportData.WakeUpIntervalStep != newData.WakeUpIntervalStep
+                     || WakeUpSupportData.WakeUpOnDemandSupport != newData.WakeUpOnDemandSupport)
+                    {
+                        WakeUpSupportData.MinimumWakeUpInterval = newData.MinimumWakeUpInterval;
+                        WakeUpSupportData.MaximumWakeUpInterval = newData.MaximumWakeUpInterval;
+                        WakeUpSupportData.DefaultWakeUpInterval = newData.DefaultWakeUpInterval;
+                        WakeUpSupportData.WakeUpIntervalStep = newData.WakeUpIntervalStep;
+                        WakeUpSupportData.WakeUpOnDemandSupport = newData.WakeUpOnDemandSupport;
+                        if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                        {
+                            SendUnsolicitedReport(PrepareCapabilitiesReport(), NodeTag.Empty);
+                        }
+                    }
+                }
+                // safety mechanism: make sure that trigger flag is still false
+                WakeUpSupportData.TriggerWakeUpNotification = false;
+
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
+            }
+        }
     }
 
-    public class WakeUpSupportData
+    public class WakeUpSupportData : CommandClassSupportData
     {
-        // Internals accessible from TestCases
-        public int LogLevel { get; set; } = 0;
-        public bool SimulateWakeUp { get; set; } = false;           // Wake Up Timer simulation (log only): false = off, true = on 
-        public bool SendWakeUpNotification { get; set; } = false;   // True: requires SimulateWakeUp==true to send the notification
-        public bool IsTimerStarted { get; set; } = false;           // This value is maintained by WakeUpSupport(). Do not change!
-        // V1+
+        // Internals accessible from TestCases or EDE
+        [CustomDataParameter(1, "Simulate Wake Up", UiControl.CheckBox, InputType.Boolean, EditType.Config)]
+        public bool SimulateWakeUp { get; set; } = true;                // Wake Up Timer simulation (log only): false = off, true = on 
+
+        [CustomDataParameterEventTrigger]
+        [ParameterSeparator(1, "Wake Up Notification")]
+        [CustomDataParameter(1, "Trigger Wake Up Notification", UiControl.Button, InputType.Boolean, EditType.View | EditType.Edit)]
+        public bool TriggerWakeUpNotification { get; set; } = false;    // Set this to true to trigger one manual WakeUpNotification (EDE only)
+
+        [ParameterSeparator(1, "Wake Up Interval Report")]
+        // Wake Up Interval Report V1+
+        [XmlDataParameter(1, 0x84, 0x06, new byte[] { 0x00 }, EditType.Config | EditType.Edit)]
         public uint WakeUpInterval { get; set; } = 60;
-        public byte WakeUpDestinationNodeId { get; set; } = 0;      // Initialize with unknown destination
-        // V2+
+
+        [XmlDataParameter(1, 0x84, 0x06, new byte[] { 0x01 }, EditType.Config | EditType.Edit)]
+        public byte WakeUpDestinationNodeId { get; set; } = 0;          // Initialize with unknown destination
+        // Wake Up Capabilities Report V2+
+
+        [ParameterSeparator(2, "Wake Up Interval Capabilities Report")]
+        [XmlDataParameter(2, 0x84, 0x0A, new byte[] { 0x00 }, EditType.Config)]
         public uint MinimumWakeUpInterval { get; set; } = 5;
+
+        [XmlDataParameter(2, 0x84, 0x0A, new byte[] { 0x01 }, EditType.Config)]
         public uint MaximumWakeUpInterval { get; set; } = 100000;
+
+        [XmlDataParameter(2, 0x84, 0x0A, new byte[] { 0x02 }, EditType.Config)]
         public uint DefaultWakeUpInterval { get; set; } = 60;
+
+        [XmlDataParameter(2, 0x84, 0x0A, new byte[] { 0x03 }, EditType.Config)]
         public uint WakeUpIntervalStep { get; set; } = 1;
-        // V3+
+
+        // Wake Up Capabilities Report V3+
+        [XmlDataParameter(3, 0x84, 0x0A, new byte[] { 0x04, 0x00 }, EditType.Config)]
         public bool WakeUpOnDemandSupport { get; set; } = false;
     }
 }

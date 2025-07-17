@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 
 namespace Zats.Services {
     using System.Xml.Serialization;
@@ -302,6 +303,8 @@ namespace Zats.Services {
         
         private string sName;
         
+        private int sPort;
+        
         private InterfaceTypes sType;
         
         private RemoteApiTypes rApiType;
@@ -312,6 +315,8 @@ namespace Zats.Services {
         
         private bool isUZB;
         
+        private bool isVirtual;
+        
         private string chipSeries;
         
         private byte[] dsk;
@@ -319,9 +324,11 @@ namespace Zats.Services {
         private string hop;
         
         public DeviceHost() {
+            sPort = 0;
             sType = InterfaceTypes.COM;
             rApiType = RemoteApiTypes.None;
             isUZB = false;
+            isVirtual = false;
         }
         
         [XmlAttribute]
@@ -354,6 +361,18 @@ namespace Zats.Services {
             set {
                 sName = value;
                 RaisePropertyChanged("SName");
+            }
+        }
+        
+        [XmlAttribute]
+        [DefaultValue(0)]
+        public int SPort {
+            get {
+                return sPort;
+            }
+            set {
+                sPort = value;
+                RaisePropertyChanged("SPort");
             }
         }
         
@@ -416,6 +435,18 @@ namespace Zats.Services {
         }
         
         [XmlAttribute]
+        [DefaultValue(false)]
+        public bool IsVirtual {
+            get {
+                return isVirtual;
+            }
+            set {
+                isVirtual = value;
+                RaisePropertyChanged("IsVirtual");
+            }
+        }
+        
+        [XmlAttribute]
         public string ChipSeries {
             get {
                 return chipSeries;
@@ -472,9 +503,9 @@ namespace Zats.Services {
         HTTP,
         
         MQTT,
-
+        
         ZIGBEE,
-
+        
         SSH,
     }
     

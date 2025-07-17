@@ -53,7 +53,7 @@ namespace ZatsServicesTests
             testCaseDefinition.SshDevices = new SortedList<Alias, SshDeviceMappingAttribute>();
             testCaseDefinition.DeviceGroups = new SortedList<Alias, MultiDeviceMappingAttribute>();
 
-            var consoleOutPut = new ConsoleCustomOutput(false, false);
+            var consoleOutPut = new ConsoleCustomOutput(false, false, false);
             Profile profile = new Profile();
             profile.DeviceHosts = new ObservableCollection<DeviceHost>();
             foreach (var item in actualVersions.Select(x => x.Value.Item2))
@@ -61,7 +61,7 @@ namespace ZatsServicesTests
                 profile.DeviceHosts.Add(item);
             }
 
-            var actualSetupResult = zatsEnvironment.SetUp(profile, testCaseDefinition, cmdLineSettings, zatsSettings, consoleOutPut, frequency, 1, 1);
+            var actualSetupResult = zatsEnvironment.SetUp(profile, testCaseDefinition, cmdLineSettings, zatsSettings, consoleOutPut, frequency, LongRangeChannels.Undefined, 1, 1);
             return actualSetupResult;
         }
 

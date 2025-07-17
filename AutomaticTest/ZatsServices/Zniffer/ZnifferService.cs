@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ using ZWave.Security;
 using ZWave.Xml.Application;
 using ZWave.ZnifferApplication;
 using ZWave.ZnifferApplication.Devices;
+using ZWave.ZnifferApplication.Enums;
 using ZWave.ZnifferApplication.Operations;
 
 namespace Zats.Services
@@ -266,6 +268,23 @@ namespace Zats.Services
                     mHeaderString,
                     mWatchDelta), ll);
             }
+        }
+
+        public bool SetLRChannelConfig(ZnifferChannelConfig channelConfig)
+        {
+            if (ZnifferManager.Zniffer == null)
+            {
+                return false;
+            }
+
+            if (ZnifferManager.Zniffer.GetType() == typeof(SnifferPti))
+            {
+                Log("PTI Zniffer does not support setting LR channel configuration", LogLevels.Error);
+                return false;
+            }
+
+            ZnifferManager.Zniffer.SetLRChannelConfig((byte)channelConfig);
+            return ZnifferManager.Zniffer.Start();
         }
 
         public void SetSecurityNetworkKey(byte[] networkKey)

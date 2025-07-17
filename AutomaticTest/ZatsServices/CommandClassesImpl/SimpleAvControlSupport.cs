@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
@@ -14,18 +15,29 @@ using ZWave.CommandClasses;
 using ZWave.Devices;
 using ZWave.Enums;
 using Utils.UI.Enums;
+using Newtonsoft.Json;
+using ZWave.Xml.Application;
+using static Zats.Services.ZipResult;
+using System.Runtime.CompilerServices;
+using ZatsServices_netcore.CommandClassesImpl.Definitions.Interfaces;
 
 // ToDo: Supervision status 'Working' for Set Command ?
 
 namespace Zats.Services
 {
+    [CommandClassName("Simple AV Control Command Class")]
+    [CommandClassId(COMMAND_CLASS_SIMPLE_AV_CONTROL.ID)]
+    [MinVersion(1)]
+    [MaxVersion(4)]
     public class SimpleAvControlSupport : CommandClassSupport
     {
-        private SimpleAvControlSupportData SimpleAVSupportData { get; set; }
+        private SimpleAvControlSupportData SimpleAvControlSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return SimpleAvControlSupportData; }
+            set { SimpleAvControlSupportData = (SimpleAvControlSupportData)value; }
+        }
 
-        public readonly string CommandClassName = "Simple AV Control CC";
-        public string EndPointName = "";
-        private readonly int LogLevel;  // shortcut for SupportData.LogLevel
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
         private readonly int BitmaskBytesPerReport = 31;
@@ -34,124 +46,152 @@ namespace Zats.Services
             : this(new SimpleAvControlSupportData() { })
         { }
 
-        public SimpleAvControlSupport(SimpleAvControlSupportData simpleAVSupportData)
+        public SimpleAvControlSupport(SimpleAvControlSupportData simpleAvControlSupportData)
             : base(COMMAND_CLASS_SIMPLE_AV_CONTROL.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 4;
-            SimpleAVSupportData = simpleAVSupportData;
-            SimpleAVSupportData.SupportClassObject = this;
-            LogLevel = SimpleAVSupportData.LogLevel;
+            SimpleAvControlSupportData = simpleAvControlSupportData;
+            SimpleAvControlSupportData.SupportClassObject = this;
+        }
+
+        public override void StartEmulation()
+        {
+            SimpleAvControlSupportData.SupportClassObject = this;
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                EndPointName = ReceivedAchData.DstNode.EndPointId == 0 ? " @ Root" : string.Format(" @ EP {0}", ReceivedAchData.DstNode.EndPointId);
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && SimpleAVSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && SimpleAvControlSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_GET.ID)
+                    if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareSupportedReport(command);
+                        rpt = PrepareSupportedReportCmd(command);
                     }
                     else if (command[1] == COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.ID)
                     {
-                        ResultForSv = HandleSetCommand(command);
+                        ResultForSv = HandleSetCommandCmd(command);
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
 
         private byte[] PrepareReport()
         {
-            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_REPORT rpt = new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_REPORT() { };
-            rpt.numberOfReports = (byte) (((SimpleAVSupportData.SupportedAvCommandsBitmask.Count - 1) / BitmaskBytesPerReport) + 1);
+            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_REPORT rpt = new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_REPORT();
+            List<byte> supportedAvCommandsBitmask = CommandClassSupportUtils.CreateBitmaskFromList(SimpleAvControlSupportData.SupportedAvCommands.Select(x => x.Command).ToList(), 1);
+            rpt.numberOfReports = (byte) (((supportedAvCommandsBitmask.Count - 1) / BitmaskBytesPerReport) + 1);
             return rpt;
         }
-        private byte[] PrepareSupportedReport(byte[] command)
+        private byte[] PrepareSupportedReport(byte requestedReport)
         {
-            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET getCmd = command;
-            int numberOfReports = ((SimpleAVSupportData.SupportedAvCommandsBitmask.Count - 1) / BitmaskBytesPerReport) + 1;
-            byte requestedReport = getCmd.reportNo;
+            List<byte> supportedAvCommandsBitmask = CommandClassSupportUtils.CreateBitmaskFromList(SimpleAvControlSupportData.SupportedAvCommands.Select(x => x.Command).ToList(), 1, true);
+
+            int numberOfReports = ((supportedAvCommandsBitmask.Count - 1) / BitmaskBytesPerReport) + 1;
+            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_REPORT rpt = new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_REPORT();
+            List<byte> bitmasks = new List<byte> { };
+            rpt.reportNo = requestedReport;
             if (requestedReport >= 1 && requestedReport <= numberOfReports)
             {
-                COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_REPORT rpt = new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_REPORT() { };
                 int index = (requestedReport - 1) * BitmaskBytesPerReport;
-                List<byte> bitmasks = new List<byte> { };
-                while (index < SimpleAVSupportData.SupportedAvCommandsBitmask.Count && index < (requestedReport - 0) * BitmaskBytesPerReport)
+                while (index < supportedAvCommandsBitmask.Count && index < (requestedReport - 0) * BitmaskBytesPerReport)
                 {
-                    bitmasks.Add(SimpleAVSupportData.SupportedAvCommandsBitmask[index++]);
+                    bitmasks.Add(supportedAvCommandsBitmask[index++]);
                 }
-                rpt.reportNo = requestedReport;
-                rpt.bitMask = bitmasks;
-                return rpt;
             }
-            return null;
+            if (bitmasks.Count == 0)
+            {
+                bitmasks.Add(0x00); // force Report if requestedReport is invalid
+            }
+            rpt.bitMask = bitmasks;
+            return rpt;
+        }
+        private byte[] PrepareSupportedReportCmd(byte[] command)
+        {
+            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SUPPORTED_GET getCmd = command;
+            return PrepareSupportedReport(getCmd.reportNo);
         }
 
-        public SvResultNames HandleSetCommand(byte[] command)
+        public SvResultNames HandleSetCommand(SimpleAvKeyAttributeNames keyAttributes, List<ushort> avCommandsList, byte sequenceNumber, bool updateUI)
         {
-            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET setCmd = command;
-            SimpleAvKeyAttributeNames keyAttributes = (SimpleAvKeyAttributeNames) setCmd.properties1.keyAttributes;
-            List<COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG> avCommands = setCmd.vg;
             SvResultNames success = SvResultNames.Successful;
 
-            if (setCmd.sequenceNumber != SimpleAVSupportData.LastReceivedSequenceNumber)
+            if (sequenceNumber != SimpleAvControlSupportData.LastReceivedSequenceNumber)
             {
-                SimpleAVSupportData.LastReceivedSequenceNumber = (byte) ((SimpleAVSupportData.LastReceivedSequenceNumber + 1) % 256);
+                SimpleAvControlSupportData.LastReceivedSequenceNumber = (byte)((SimpleAvControlSupportData.LastReceivedSequenceNumber + 1) % 256);
                 if (keyAttributes == SimpleAvKeyAttributeNames.KeyDown
                  || keyAttributes == SimpleAvKeyAttributeNames.KeyUp
                  || keyAttributes == SimpleAvKeyAttributeNames.KeepAlive)
                 {
-                    foreach (COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG avCommandVg in avCommands)
+                    SimpleAvControlSupportData.LastReceivedKeyAttribute = keyAttributes;
+                    SimpleAvControlSupportData.LastReceivedAvCommands = string.Join(", ", avCommandsList);
+                    foreach (ushort avCommand in avCommandsList)
                     {
-                        ushort avCommand = (ushort) CommandClassSupportUtils.ByteFieldToUInt64(avCommandVg.command, 2);
-                        if (SimpleAVSupportData.SupportedAvCommands.Contains(avCommand))
+                        if (SimpleAvControlSupportData.SupportedAvCommands.Find(x => x.Command == avCommand) != null)
                         {
-                            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: AV Command {2} = 0x{2:X2} accepted. Key Attributes: {3}", 
-                                        CommandClassName, EndPointName, avCommand, keyAttributes);
+                            CommandClassSupportUtils.ReportAddLog(SimpleAvControlSupportData.LogLevel,
+                                        "{0} CC @ {1}: AV Command {2} = 0x{2:X2} accepted. Key Attributes: {3}",
+                                        CommandClassShortName, EndPointName, avCommand, keyAttributes);
+                            if (updateUI)
+                            {
+                                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // inform (EDE) about current state
+                            }
                         }
                         else
                         {
                             success = SvResultNames.Failed;
-                            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: AV Command {2} = 0x{2:X2} ignored (not supported). Key Attributes: {3}",
-                                        CommandClassName, EndPointName, avCommand, keyAttributes);
+                            CommandClassSupportUtils.ReportAddLog(SimpleAvControlSupportData.LogLevel,
+                                        "{0} CC @ {1}: AV Command {2} = 0x{2:X2} ignored (not supported). Key Attributes: {3}",
+                                        CommandClassShortName, EndPointName, avCommand, keyAttributes);
                         }
                     }
                     return success;
                 }
             }
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: AV Command(s) ignored. Key Attributes {2} or Sequence Number {3} invalid.",
-                        CommandClassName, EndPointName, (byte) keyAttributes, setCmd.sequenceNumber);
+            CommandClassSupportUtils.ReportAddLog(SimpleAvControlSupportData.LogLevel,
+                        "{0} CC @ {1}: AV Command(s) ignored. Key Attributes {2} or Sequence Number {3} invalid.",
+                        CommandClassShortName, EndPointName, (byte)keyAttributes, sequenceNumber);
             return SvResultNames.Failed;
+        }
+        public SvResultNames HandleSetCommandCmd(byte[] command)
+        {
+            COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET setCmd = command;
+            List<COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG> avCommands = setCmd.vg;
+            List<ushort> avCommandsList = new List<ushort>();
+
+            foreach (COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG avCommandVg in avCommands)
+            {
+                avCommandsList.Add((ushort)CommandClassSupportUtils.ByteFieldToUInt64(avCommandVg.command, 2));
+            }
+            return HandleSetCommand((SimpleAvKeyAttributeNames)setCmd.properties1.keyAttributes, avCommandsList, setCmd.sequenceNumber, true);
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
-            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
+            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != CommandClassId)
             {
                 supervisionReport.status = (byte) SvStatusNames.NoSupport;
                 return;
@@ -162,39 +202,84 @@ namespace Zats.Services
             {
                 case COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
-                        supervisionReport.status = (byte) SvStatusNames.Success;
+                    {
+                        supervisionReport.status = (byte)SvStatusNames.Success;
+                    }
                     break;
             }
             ResultForSv = SvResultNames.Undefined;
         }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            if (data is SimpleAvControlSupportData newData)
+            {
+                bool isSupportedListChanged = !CommandClassSupportUtils.ListElementsEqual(SimpleAvControlSupportData.SupportedAvCommands, newData.SupportedAvCommands);
+
+                SimpleAvControlSupportData.LastReceivedSequenceNumber = newData.LastReceivedSequenceNumber;
+                if (isSupportedListChanged)
+                {
+                    SimpleAvControlSupportData.SupportedAvCommands = newData.SupportedAvCommands;
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareReport(), NodeTag.Empty);
+                        SendUnsolicitedReport(PrepareSupportedReport(1), NodeTag.Empty);
+                        SendUnsolicitedReport(PrepareSupportedReport(2), NodeTag.Empty);
+                    }
+                }
+
+                // TEST HandleSetCommand(SimpleAvKeyAttributeNames.KeyDown, new List<ushort> { 4, 125, 465 }, 118, false);
+
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
+            }
+        }
     }
 
-    public class SimpleAvControlSupportData : IBasicMapping
+    public class SupportedAvCommand : INestedItem
     {
-        // Internals accessible from TestCases
-        public int LogLevel { get; set; } = 0;
+        public ushort Command { get; set;}
+
+        // only used for EDE UI. see interface for useage notes.
+        [JsonIgnore]
+        public int NestedId
+        {
+            get => (int)Command;
+            set { }
+        }
+
+        public SupportedAvCommand(ushort cmd)
+        {
+            Command = cmd;  
+        }
+    }
+
+    public class SimpleAvControlSupportData : CommandClassSupportData, IBasicMapping, INodeItem
+    {
+        // Internals accessible from TestCases or EDE
         public byte LastReceivedSequenceNumber { get; set; } = 0;
 
-        // This byte list contains all supported (added) AV commands.
-        public List<ushort> SupportedAvCommands { get; set; } = new List<ushort> { };
+        // This list contains all supported (added) AV commands.
+        [NestedControl(1, "Supported AV Commands")]
+        public List<SupportedAvCommand> SupportedAvCommands { get; set; } = new List<SupportedAvCommand>();
 
-        // This byte list represents the Bit Mask fields of the Simple AV Control Supported Report Command.
-        // List length is dynamically, depending from the supported (added) AV commands.
-        // Use the SimpleAVSupportData.AddSupportedAvCommand methods to add AV commands and update the Supported Commands Bit Mask fields.
-        public List<byte> SupportedAvCommandsBitmask { get; set; } = new List<byte> { };
+        // These values hold the content of the last received Simple AV Control Set Command.
+        public SimpleAvKeyAttributeNames LastReceivedKeyAttribute { get; set; } = SimpleAvKeyAttributeNames.Undefined;
+        public string LastReceivedAvCommands { get; set; } = "";
 
+        [JsonIgnore]
+        public IEnumerable<INestedItem> ChildItems => SupportedAvCommands;
 
-        private readonly int HighestAvCommandsV4 = 465;
-        //private readonly int[] HighestAvCommands = { 0, 363, 377, 383, 465 };
+        // The following methods are only used by some Test Cases.
+        private readonly int[] HighestAvCommands = { 0, 363, 377, 383, 465 };
         public bool AddSupportedAvCommand(ushort avCommand)
         {
             //if (avCommand >= 1 && avCommand <= HighestAvCommands[SupportClassObject.Version]) // Version could not be available!
-            if (avCommand >= 1 && avCommand <= HighestAvCommandsV4)
+            if (avCommand >= 1 && avCommand <= HighestAvCommands[4])
             {
-                if (!SupportedAvCommands.Contains(avCommand))
+                if (SupportedAvCommands.Find(x => x.Command == avCommand) == null)
                 {
-                    SupportedAvCommands.Add(avCommand);
-                    UpdateSupportedAvCommandsBitmask(avCommand);
+                    SupportedAvCommands.Add(new SupportedAvCommand(avCommand));
                     return true;
                 }
             }
@@ -205,32 +290,35 @@ namespace Zats.Services
             bool success = true;
             foreach (ushort avCommand in avCommands)
             {
-                if (AddSupportedAvCommand(avCommand) == false)
+                if (!AddSupportedAvCommand(avCommand))
                 {
                     success = false;
                 }
             }
             return success;
         }
-        private void UpdateSupportedAvCommandsBitmask(ushort avCommand)
+        public bool RemoveSupportedAvCommand(ushort avCommand)
         {
-            byte byteIndex, bit;
-            //if (avCommand >= 1 && avCommand <= HighestAvCommands[SupportClassObject.Version]) // Version could not be available
-            if (avCommand >= 1 && avCommand <= HighestAvCommandsV4)
+            var cmd = SupportedAvCommands.Find(x => x.Command == avCommand);
+            return cmd != null && SupportedAvCommands.Remove(cmd);
+        }
+        public bool RemoveSupportedAvCommands(List<ushort> avCommands)
+        {
+            bool success = true;
+            foreach (ushort avCommand in avCommands)
             {
-                byteIndex = (byte) ((avCommand - 1) / 8);    // Bit 0 represents command #1
-                bit = (byte) ((avCommand - 1) % 8);
-                while (byteIndex >= SupportedAvCommandsBitmask.Count)
+                if (!RemoveSupportedAvCommand(avCommand))
                 {
-                    SupportedAvCommandsBitmask.Add(0x00);
+                    success = false;
                 }
-                SupportedAvCommandsBitmask[byteIndex] |= (byte)(1 << bit);
             }
+            return success;
         }
 
         // Basic CC Mapping
+        [JsonIgnore]
         public SimpleAvControlSupport SupportClassObject;
-        bool IBasicMapping.BasicSet(byte value)
+        bool IBasicMapping.BasicSet(byte value, NodeTag srcNode)
         {
             if (SupportClassObject.Version <= 4)
             {
@@ -244,20 +332,22 @@ namespace Zats.Services
                     avCommandsVg.Add(new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG());
                     if (value == 0xFF)
                     {
-                        avCommandsVg[0].command = new byte[] { (byte)(SupportedAvCommands[0] / 256), (byte)(SupportedAvCommands[0] % 256) };
+                        avCommandsVg[0].command = new byte[] { (byte)(SupportedAvCommands[0].Command / 256), (byte)(SupportedAvCommands[0].Command % 256) };
                     }
                     if (value == 0x00)
                     {
-                        avCommandsVg[0].command = new byte[] { (byte)(SupportedAvCommands[1] / 256), (byte)(SupportedAvCommands[1] % 256) };
+                        avCommandsVg[0].command = new byte[] { (byte)(SupportedAvCommands[1].Command / 256), (byte)(SupportedAvCommands[1].Command % 256) };
                     }
                     setCmd.vg = avCommandsVg;
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Basic Set with value 0x{2:X2} accepted.", 
-                                SupportClassObject.CommandClassName, SupportClassObject.EndPointName, value);
-                    return SupportClassObject.HandleSetCommand(setCmd) == SvResultNames.Successful;
+                    CommandClassSupportUtils.ReportAddLog(LogLevel, 
+                                "{0} CC @ {1}: Basic Set with value 0x{2:X2} accepted.", 
+                                SupportClassObject.CommandClassShortName, SupportClassObject.EndPointName, value);
+                    return SupportClassObject.HandleSetCommandCmd(setCmd) == SvResultNames.Successful;
                 }
             }
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Basic Set with value 0x{2:X2} ignored.", 
-                        SupportClassObject.CommandClassName, SupportClassObject.EndPointName, value);
+            CommandClassSupportUtils.ReportAddLog(LogLevel, 
+                        "{0} CC @ {1}: Basic Set with value 0x{2:X2} ignored.", 
+                        SupportClassObject.CommandClassShortName, SupportClassObject.EndPointName, value);
             return false;
         }
         COMMAND_CLASS_BASIC_V2.BASIC_REPORT IBasicMapping.BasicV2Get()
@@ -271,8 +361,13 @@ namespace Zats.Services
     }
     public enum SimpleAvKeyAttributeNames : byte
     {
+        [Description("0x00 Key down")]
         KeyDown = 0x00,
+        [Description("0x01 Key up")]
         KeyUp = 0x01,
+        [Description("0x02 Keep alive")]
         KeepAlive = 0x02,
+        [Description("0xFF Undefined")]
+        Undefined = 0xFF,
     };
 }

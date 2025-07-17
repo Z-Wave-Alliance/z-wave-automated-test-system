@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using ZWave;
+using ZWave.Devices;
 
 
 namespace Zats.Services
@@ -11,11 +13,12 @@ namespace Zats.Services
     /// ApplicationService.AddCommandCallbacks() method
     /// </summary>
 
-    public class SceneActivationSupport : CommandClassSupport
+    public class ProtectionSupportModify : CommandClassSupport
     {
+
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
-        public SceneActivationSupport(byte commandClassId)
+        public ProtectionSupportModify(byte commandClassId)
             : base(commandClassId)
         {
             MinCCVersion = 1;
@@ -27,34 +30,47 @@ namespace Zats.Services
             if (IsCommandCallbackRegistered(supervisionGet.encapsulatedCommand[1])) {
                 supervisionReport.status = (byte)SvStatusNames.Success;
                 return;
+
             }
 
-            supervisionReport.status = (byte)SvStatusNames.Fail;  // FAIL as default
+            supervisionReport.status = (byte)SvStatusNames.NoSupport;
             switch (supervisionGet.encapsulatedCommand[1])
             {
-                case COMMAND_CLASS_SCENE_ACTIVATION.SCENE_ACTIVATION_SET.ID:
+                case COMMAND_CLASS_PROTECTION.PROTECTION_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
                         supervisionReport.status = (byte)SvStatusNames.Success;
                     break;
             }
             ResultForSv = SvResultNames.Undefined;
+
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                byte[] rpt = null;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1)
-                {     
-                    CommandCallback(command);
+                if (isHandlingAllowed && command != null && command.Length > 1)
+                {
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
+        }
+
+        // CC doesn't use internal data, just satisfy abstract members
+        public override CommandClassSupportData CommandClassSupportData {
+            get { return null; }
+            set {; }
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data) {
+
         }
     }
 

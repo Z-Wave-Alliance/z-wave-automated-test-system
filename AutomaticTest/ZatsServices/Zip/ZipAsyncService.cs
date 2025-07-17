@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -479,7 +480,7 @@ namespace Zats.Services
 
                     dataToSend.Insert(3, (byte)firmwareDataIndex);
 
-                    short crc = Utils.Tools.CalculateCrc16(dataToSend);
+                    ushort crc = Utils.Tools.CalculateCrc16(dataToSend);
 
                     dataToSend.Add((byte)(crc >> 8));
                     dataToSend.Add((byte)crc);

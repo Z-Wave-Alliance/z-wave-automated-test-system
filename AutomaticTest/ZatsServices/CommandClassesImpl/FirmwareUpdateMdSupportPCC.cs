@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +11,29 @@ using ZWave.Enums;
 
 namespace Zats.Services
 {
-    public class FirmwareUpdateMdSupportBasic : FirmwareUpdateMdSupport
+    [CommandClassName("Firmware Update Command Class")]
+    [CommandClassId(COMMAND_CLASS_FIRMWARE_UPDATE_MD_V5.ID)]
+    [MinVersion(3)]
+    [MaxVersion(5)]
+    public class FirmwareUpdateMdSupportPCC : FirmwareUpdateMdSupportPCCBase
     {
+        private FirmwareUpdateMdSupportPCCData FirmwareUpdateMdSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return FirmwareUpdateMdSupportData; }
+            set { FirmwareUpdateMdSupportData = (FirmwareUpdateMdSupportPCCData)value; }
+        }
+
         private int _firmwareOffset;
         private FirmwareUpdateNvmSetNewImageOperation _firmwareUpdateNvmSetNewImageTrue;
         private FirmwareUpdateNvmSetNewImageOperation _firmwareUpdateNvmSetNewImageFalse;
         private FirmwareUpdateNvmInitOperation _firmwareUpdateNvmInit;
 
-        public FirmwareUpdateMdSupportBasic(Action SetNewImageCompletedCallback) :
+        public FirmwareUpdateMdSupportPCC() :
+            base()
+        { }
+
+        public FirmwareUpdateMdSupportPCC(Action SetNewImageCompletedCallback) :
             base(SetNewImageCompletedCallback) { }
 
         protected override void CreateInstance()
@@ -72,7 +88,7 @@ namespace Zats.Services
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
-            if (supervisionGet.encapsulatedCommand[0] != Id)
+            if (supervisionGet.encapsulatedCommand[0] != CommandClassId)
             {
                 supervisionReport.status = 0x00;                    // NO_SUPPORT
                 return;
@@ -81,5 +97,17 @@ namespace Zats.Services
             // TODO: Implement proper Supervision return codes (see BinarySwitchSupport.cs for an example)
             supervisionReport.status = 0xFF;                        // SUCCESS
         }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            // @todo: placeholder - still needs to be implemented
+        }
+    }
+
+    public class FirmwareUpdateMdSupportPCCData : CommandClassSupportData
+    {
+        // Internals accessible from TestCases
+        public int LogLevel { get; set; } = 0;
     }
 }

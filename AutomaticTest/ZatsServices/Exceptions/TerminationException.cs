@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 namespace Zats.Services
 {
     public class TerminationException : ServiceException
     {
-        public bool IsHidden { get; set; }
+        public bool IsHidden { get; set; } = false;
         public TestCaseResult Result { get; internal set; }
 
         protected TerminationException(TestCaseResult result, string message)

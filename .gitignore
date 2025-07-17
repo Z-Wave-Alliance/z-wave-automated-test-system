@@ -8,9 +8,19 @@
 packages/
 
 # PyCharm
-.idea
+*.idea
+
+# Python
+__pycache__
 
 # Visual Studio
+.vs/
+_ReSharper*/
+[Bb]in
+[Dd]ebug*/
+[Oo]bj/
+[Rr]elease*/
+[Tt]est[Rr]esult*
 *_i.c
 *_p.c
 *.aps
@@ -18,10 +28,10 @@ packages/
 *.cache
 *.exe
 *.ilk
-*.lib
 *.log
+*.lib
 *.ncb
-*.obj
+*.[Oo]bj
 *.pch
 *.pdb
 *.sbr
@@ -30,13 +40,15 @@ packages/
 *.tlh
 *.user
 *.vspscc
-.vs/
-_[Rr]e[Ss]harper*/
-[Bb]in
-[Dd]ebug*/
-[Oo]bj/
-[Rr]elease*/
-[Tt]est[Rr]esult*
+
+# VS Code
+.vscode/
 
 # Windows
 Thumbs.db
+
+# Ignore Test Cases for Setup Package
+CertTestCases/SetupPackage
+
+# Exceptions for files which are shipped with ZATS
+!AutomaticTest/ZatsTestConsole/Programmer/*.exe

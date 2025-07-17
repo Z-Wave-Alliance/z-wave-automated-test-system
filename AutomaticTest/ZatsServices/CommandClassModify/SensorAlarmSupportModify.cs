@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
@@ -16,7 +17,7 @@ namespace Zats.Services
     /// ApplicationService.AddCommandCallbacks() method
     /// </summary>
 
-    public class SensorAlarmSupport : CommandClassSupport
+    public class SensorAlarmSupportModify : CommandClassSupport
     {
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
@@ -24,7 +25,7 @@ namespace Zats.Services
 
         private SensorAlarmSupportData SensorAlarmSupportData { get; set; }
 
-        public SensorAlarmSupport(SensorAlarmSupportData sensorAlarmSupportData)
+        public SensorAlarmSupportModify(SensorAlarmSupportData sensorAlarmSupportData)
             : base(COMMAND_CLASS_SENSOR_ALARM.ID)
         {
             MinCCVersion = 1;
@@ -42,15 +43,16 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1 && SensorAlarmSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && SensorAlarmSupportData != null)
                 {
                     if (command[1] == COMMAND_CLASS_SENSOR_ALARM.SENSOR_ALARM_SUPPORTED_GET.ID)
                     {
@@ -84,10 +86,21 @@ namespace Zats.Services
 
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
+
+        // CC doesn't use internal data which inherits from CommandClassSupportData, just satisfy abstract members
+        public override CommandClassSupportData CommandClassSupportData {
+            get { return null; }
+            set {; }
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data) {
+
+        }
+
     }
 
     public class SensorAlarm
@@ -126,7 +139,7 @@ namespace Zats.Services
         private void UpdateSensorAlarmTypesBitmask(byte sensorType)
         {
             byte byteIndex, bit;
-            if (sensorType >= 0x00 && sensorType < SensorAlarmSupport.SensorsTypesCount)
+            if (sensorType >= 0x00 && sensorType < SensorAlarmSupportModify.SensorsTypesCount)
             {
                 byteIndex = (byte)(sensorType / 8);
                 bit = (byte)(sensorType % 8);

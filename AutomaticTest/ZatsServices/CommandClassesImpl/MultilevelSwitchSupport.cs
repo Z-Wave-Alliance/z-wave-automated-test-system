@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -10,19 +12,26 @@ using ZWave.BasicApplication.Operations;
 using ZWave.CommandClasses;
 using ZWave.Devices;
 using ZWave.Enums;
+using ZWave.Xml.Application;
 
 // ToDo: Implementation of Secondary Switch Type action (timer) in StartLevelChange and StopLevelChange
 // ToDo: Supervision Report Status 'Working'
 
 namespace Zats.Services
 {
+    [CommandClassName("Multilevel Switch Command Class")]
+    [CommandClassId(COMMAND_CLASS_SWITCH_MULTILEVEL.ID)]
+    [MinVersion(1)]
+    [MaxVersion(4)]
     public class MultilevelSwitchSupport : CommandClassSupport
     {
         private MultilevelSwitchSupportData MultilevelSwitchSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return MultilevelSwitchSupportData; }
+            set { MultilevelSwitchSupportData = (MultilevelSwitchSupportData)value; }
+        }
 
-        public readonly string CommandClassName = "Multilevel Switch CC";
-        public string EndPointName = "";
-        private readonly int LogLevel;  // shortcut for SupportData.LogLevel
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
         private readonly BackgroundWorker Transition1Timer = new BackgroundWorker();
@@ -36,6 +45,8 @@ namespace Zats.Services
         private bool Down1 = false;
         private bool Decr2 = false;
 
+        private NodeTag CmdSrcNode = NodeTag.Empty;
+
         public MultilevelSwitchSupport()
             : this(new MultilevelSwitchSupportData() { })
         { }
@@ -43,68 +54,69 @@ namespace Zats.Services
         public MultilevelSwitchSupport(MultilevelSwitchSupportData multilevelSwitchSupportData)
                 : base(COMMAND_CLASS_SWITCH_MULTILEVEL.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 4;
             MultilevelSwitchSupportData = multilevelSwitchSupportData;
             MultilevelSwitchSupportData.SupportClassObject = this;
-            LogLevel = MultilevelSwitchSupportData.LogLevel;
 
-            Transition1Timer.DoWork += new DoWorkEventHandler(Transition1Timer_DoWork);
-            Transition1Timer.RunWorkerCompleted += new RunWorkerCompletedEventHandler(TransitionTimer_RunWorkerCompleted);
+            Transition1Timer.DoWork += new DoWorkEventHandler(Transition1TimerDoWork);
+            Transition1Timer.RunWorkerCompleted += new RunWorkerCompletedEventHandler(TransitionTimerRunWorkerCompleted);
             Transition1Timer.WorkerSupportsCancellation = true;
             Transition1Timer.WorkerReportsProgress = false;
+        }
+
+        public override void StartEmulation()
+        {
+            MultilevelSwitchSupportData.SupportClassObject = this;
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                EndPointName = ReceivedAchData.DstNode.EndPointId == 0 ? " @ Root" : string.Format(" @ EP {0}", ReceivedAchData.DstNode.EndPointId);
-                Transition1TimerName = string.Format("{0}{1}: Transition Timer (Primary)", CommandClassName, EndPointName);
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && MultilevelSwitchSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && MultilevelSwitchSupportData != null)
                 {
                     byte[] rpt = null;
                     if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_SET.ID)
                     {
-                        ResultForSv = HandleMultilevelSwitchSet(command);
+                        ResultForSv = HandleMultilevelSwitchSetCmd(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareReport();
+                        rpt = PrepareMultilevelSwitchReport();
                     }
                     else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_START_LEVEL_CHANGE.ID)
                     {
-                        ResultForSv = HandleStartLevelChange(command);
+                        ResultForSv = HandleStartLevelChangeCmd(command);
                     }
                     else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_STOP_LEVEL_CHANGE.ID)
                     {
-                        ResultForSv = HandleStopLevelChange(command);
+                        ResultForSv = HandleStopLevelChangeCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedReport();
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
 
-        public byte[] PrepareReport()
+        public byte[] PrepareMultilevelSwitchReport()
         {
             if (Version <= 3)
             {
@@ -128,41 +140,44 @@ namespace Zats.Services
             if (Version >= 3)
             {
                 COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_REPORT rpt = new COMMAND_CLASS_SWITCH_MULTILEVEL_V3.SWITCH_MULTILEVEL_SUPPORTED_REPORT() { };
-                rpt.properties1.primarySwitchType = (byte) MultilevelSwitchSupportData.PrimarySwitchType;
-                rpt.properties2.secondarySwitchType = (byte) MultilevelSwitchSupportData.SecondarySwitchType;
+                rpt.properties1.primarySwitchType = (byte)MultilevelSwitchSupportData.PrimarySwitchType;
+                rpt.properties2.secondarySwitchType = (byte)MultilevelSwitchSupportData.SecondarySwitchType;
                 return rpt;
             }
             return null;
         }
 
-        public SvResultNames HandleMultilevelSwitchSet(byte[] command)
+        public SvResultNames HandleMultilevelSwitchSet(byte value, byte duration, NodeTag srcNode)
         {
+            CmdSrcNode = srcNode;
             SvResultNames success = SvResultNames.Successful;
+            Transition1TimerName = string.Format("{0} CC @ {1}: Transition Timer (Primary)", CommandClassShortName, EndPointName);
 
             if (Version <= 4)
             {
-                COMMAND_CLASS_SWITCH_MULTILEVEL_V2.SWITCH_MULTILEVEL_SET multilevelSwitchSetCmd = command;
-
-                if (multilevelSwitchSetCmd.value > OnValue && multilevelSwitchSetCmd.value != 0xFF)
+                if (value > OnValue && value != 0xFF)
                 {
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Set ignored - invalid value 0x{2:X2} = {2}",
-                                CommandClassName, EndPointName, (byte) multilevelSwitchSetCmd.value);
+                    CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                                "{0} CC @ {1}: Set ignored - invalid value 0x{2:X2} = {2}",
+                                CommandClassShortName, EndPointName, value);
                     success = SvResultNames.Failed;
                 }
                 else
                 {
                     IsLevelChange1 = false;
-                    if (Version == 1 || multilevelSwitchSetCmd.duration == 0xFF)
+                    Transition1TimerCancel();
+
+                    if (Version == 1 || duration == 0xFF)
                     {
                         MultilevelSwitchSupportData.Duration = MultilevelSwitchSupportData.FactoryDefaultSetDuration;
                     }
                     else
                     {
-                        MultilevelSwitchSupportData.Duration = multilevelSwitchSetCmd.duration;
+                        MultilevelSwitchSupportData.Duration = duration;
                     }
 
                     MultilevelSwitchSupportData.TargetValuePrimary = MultilevelSwitchSupportData.CurrentValuePrimary;
-                    if (multilevelSwitchSetCmd.value == 0xFF)
+                    if (value == 0xFF)
                     {
                         if (MultilevelSwitchSupportData.LastSetValuePrimary != 0x00)
                         {
@@ -171,13 +186,12 @@ namespace Zats.Services
                     }
                     else
                     {
-                        MultilevelSwitchSupportData.TargetValuePrimary = multilevelSwitchSetCmd.value;
+                        MultilevelSwitchSupportData.TargetValuePrimary = value;
                     }
                     if (MultilevelSwitchSupportData.TargetValuePrimary != MultilevelSwitchSupportData.CurrentValuePrimary)
                     {
                         Down1 = MultilevelSwitchSupportData.TargetValuePrimary < MultilevelSwitchSupportData.CurrentValuePrimary ? true : false;
-                        Transition1Timer_Reset();
-                        Transition1Timer.RunWorkerAsync();
+                        Transition1TimerStart();
                     }
                     else
                     {
@@ -188,7 +202,18 @@ namespace Zats.Services
             return success;
         }
 
-        public SvResultNames HandleStartLevelChange(byte[] command)
+        public SvResultNames HandleMultilevelSwitchSetCmd(byte[] command, NodeTag srcNode)
+        {
+            if (Version <= 4)
+            {
+                COMMAND_CLASS_SWITCH_MULTILEVEL_V2.SWITCH_MULTILEVEL_SET multilevelSwitchSetCmd = command;
+                return HandleMultilevelSwitchSet(multilevelSwitchSetCmd.value, multilevelSwitchSetCmd.duration, srcNode);
+            }
+            return SvResultNames.Failed;
+        }
+
+        #region LevelChange
+        public SvResultNames HandleStartLevelChangeCmd(byte[] command)
         {
             SvResultNames success = SvResultNames.Successful;
 
@@ -199,15 +224,16 @@ namespace Zats.Services
                 if (multilevelSwitchStartLevelCmd.properties1.ignoreStartLevel == 0x00
                  && multilevelSwitchStartLevelCmd.startLevel > OnValue)
                 {
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: StartLevelChange ignored - invalid StartLevel 0x{2:X2} = {2}",
-                            CommandClassName, EndPointName, (byte) multilevelSwitchStartLevelCmd.startLevel);
+                    CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                                "{0} CC @ {1}: StartLevelChange ignored - invalid StartLevel 0x{2:X2} = {2}",
+                                CommandClassShortName, EndPointName, (byte)multilevelSwitchStartLevelCmd.startLevel);
                     success = SvResultNames.Failed;
                 }
                 else
                 {
                     StartLevelChangePrimary(multilevelSwitchStartLevelCmd.properties1.upDown,
-                                            multilevelSwitchStartLevelCmd.startLevel, 
-                                            multilevelSwitchStartLevelCmd.properties1.ignoreStartLevel, 
+                                            multilevelSwitchStartLevelCmd.startLevel,
+                                            multilevelSwitchStartLevelCmd.properties1.ignoreStartLevel,
                                             multilevelSwitchStartLevelCmd.dimmingDuration);
                 }
             }
@@ -218,8 +244,9 @@ namespace Zats.Services
                 if (multilevelSwitchStartLevelCmd.properties1.ignoreStartLevel == 0x00
                  && multilevelSwitchStartLevelCmd.startLevel > OnValue)
                 {
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: StartLevelChange ignored - invalid StartLevel 0x{2:X2} = {2}",
-                            CommandClassName, EndPointName, (byte) multilevelSwitchStartLevelCmd.startLevel);
+                    CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                                "{0} CC @ {1}: StartLevelChange ignored - invalid StartLevel 0x{2:X2} = {2}",
+                                CommandClassShortName, EndPointName, (byte)multilevelSwitchStartLevelCmd.startLevel);
                     success = SvResultNames.Failed;
                 }
                 else
@@ -241,35 +268,46 @@ namespace Zats.Services
                             MultilevelSwitchSupportData.Duration = multilevelSwitchStartLevelCmd.dimmingDuration;
                         }
                         MultilevelSwitchSupportData.StepSizeSecondary = multilevelSwitchStartLevelCmd.stepSize;
-                        CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: LevelChange [Secondary]: Duration = 0x{2:X2} = {3} sec - StepSize = {4} - Decr2 = {5}",
-                                CommandClassName, 
-                                EndPointName,
-                                MultilevelSwitchSupportData.Duration,
-                                CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
-                                MultilevelSwitchSupportData.StepSizeSecondary,
-                                Decr2);
+                        CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                                    "{0} CC @ {1}: LevelChange [Secondary]: Duration = 0x{2:X2} = {3} sec - StepSize = {4} - Decr2 = {5}",
+                                    CommandClassShortName,
+                                    EndPointName,
+                                    MultilevelSwitchSupportData.Duration,
+                                    CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
+                                    MultilevelSwitchSupportData.StepSizeSecondary,
+                                    Decr2);
 
                         MultilevelSwitchSupportData.TargetValueSecondary = MultilevelSwitchSupportData.CurrentValueSecondary;
                         if (Decr2)
                         {
                             if (MultilevelSwitchSupportData.CurrentValueSecondary - MultilevelSwitchSupportData.StepSizeSecondary >= 0)
+                            {
                                 MultilevelSwitchSupportData.TargetValueSecondary = (byte)(MultilevelSwitchSupportData.TargetValueSecondary - MultilevelSwitchSupportData.StepSizeSecondary);
+                            }
                             else
+                            {
                                 MultilevelSwitchSupportData.TargetValueSecondary = 0x00;
+                            }
                         }
-                    
+
                         else
                         {
                             if (MultilevelSwitchSupportData.CurrentValueSecondary + MultilevelSwitchSupportData.StepSizeSecondary <= OnValue)
+                            {
                                 MultilevelSwitchSupportData.TargetValueSecondary = (byte)(MultilevelSwitchSupportData.TargetValueSecondary + MultilevelSwitchSupportData.StepSizeSecondary);
+                            }
                             else
+                            {
                                 MultilevelSwitchSupportData.TargetValueSecondary = OnValue;
+                            }
                         }
                         ReportOperationStateSecondary();
                         if (MultilevelSwitchSupportData.TargetValueSecondary != MultilevelSwitchSupportData.CurrentValueSecondary)
                         {
                             // ToDo: Start a Timer to respect the Duration field
-                            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Duration ignored (not implemented).", CommandClassName, EndPointName);
+                            CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                                        "{0} CC @ {1}: Duration ignored (not implemented).",
+                                        CommandClassShortName, EndPointName);
                             MultilevelSwitchSupportData.CurrentValueSecondary = MultilevelSwitchSupportData.TargetValueSecondary; // preliminary
                             ReportOperationStateSecondary();
                         }
@@ -279,17 +317,12 @@ namespace Zats.Services
             return success;
         }
 
-        public SvResultNames HandleStopLevelChange(byte[] command)
+        public SvResultNames HandleStopLevelChangeCmd(byte[] command)
         {
             SvResultNames success = SvResultNames.Successful;
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Stop Level Change accepted.", CommandClassName, EndPointName);
-            Transition1Timer_Reset();
-            MultilevelSwitchSupportData.TargetValuePrimary = MultilevelSwitchSupportData.CurrentValuePrimary;
-            if (Version >= 3)
-            {
-                MultilevelSwitchSupportData.CurrentValueSecondary = MultilevelSwitchSupportData.TargetValueSecondary; // preliminary
-                //Transition2Timer_Reset();
-            }
+            CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                        "{0} CC @ {1}: Stop Level Change accepted.", CommandClassName, EndPointName);
+            Transition1TimerCancel();
             ReportOperationStatePrimary();
             ReportOperationStateSecondary();
             return success;
@@ -298,6 +331,7 @@ namespace Zats.Services
         private void StartLevelChangePrimary(byte upDown, byte startLevel, byte ignoreStartLevel, byte dimmingDuration)
         {
             IsLevelChange1 = true;
+            Transition1TimerCancel();
 
             Down1 = upDown == 0x00 ? false : true;
             MultilevelSwitchSupportData.TargetValuePrimary = Down1 ? (byte)0x00 : OnValue;
@@ -315,19 +349,26 @@ namespace Zats.Services
             {
                 MultilevelSwitchSupportData.Duration = dimmingDuration;
             }
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: LevelChange [Primary]: StartLevel = {2} - Ignore = {3} - Duration = 0x{4:X2} = {5} sec - Down1 = {6}",
-                    CommandClassName,
-                    EndPointName,
-                    startLevel,
-                    ignoreStartLevel,
-                    MultilevelSwitchSupportData.Duration,
-                    CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
-                    Down1);
-            Transition1Timer_Reset();
+            CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                        "{0} CC @ {1}: LevelChange [Primary]: StartLevel = {2} - Ignore = {3} - Duration = 0x{4:X2} = {5} sec - Down1 = {6}",
+                        CommandClassName,
+                        EndPointName,
+                        startLevel,
+                        ignoreStartLevel,
+                        MultilevelSwitchSupportData.Duration,
+                        CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
+                        Down1);
+            Transition1TimerStart();
+        }
+        #endregion // LevelChange
+
+        #region Transition 1 Timer
+        private void Transition1TimerStart()
+        {
+            MultilevelSwitchSupportData.CancelPendingTransition1 = Transition1TimerReset;
             Transition1Timer.RunWorkerAsync();
         }
-
-        private void Transition1Timer_DoWork(object sender, DoWorkEventArgs e)
+        private void Transition1TimerDoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker bw = sender as BackgroundWorker;
             int numberOfSteps;
@@ -357,17 +398,35 @@ namespace Zats.Services
                 remainingDurationTimeMs = transitionDurationMs;
                 RemainingTransition1DurationTimeSec = transitionDurationMs / 1000;
 
-                CommandClassSupportUtils.ReportAddLog(LogLevel, "sleepTimePerStepMs: {0}, numberOfSteps = {1}, durationOffOn = {2}, TransitionDurationSec = {3}, transitionDurationMs = {4}, Down = {5}", sleepTimePerStepMs, numberOfSteps, durationOffOnSec, Transition1DurationSec, transitionDurationMs, Down1);
-                CommandClassSupportUtils.ReportTimerState(LogLevel, Transition1TimerName, ReportTimerStateNames.Started, durationOffOnSec);
+                CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                            "sleepTimePerStepMs: {0}, numberOfSteps = {1}, durationOffOn = {2}, TransitionDurationSec = {3}, transitionDurationMs = {4}, Down = {5}",
+                            sleepTimePerStepMs, numberOfSteps, durationOffOnSec,
+                            Transition1DurationSec, transitionDurationMs, Down1);
+                CommandClassSupportUtils.ReportTimerState(MultilevelSwitchSupportData.LogLevel,
+                            Transition1TimerName, ReportTimerStateNames.Started, durationOffOnSec);
                 for (int i = numberOfSteps; i > 0; i--)
                 {
                     ReportOperationStatePrimary();
 
+                    if (Result.State == ActionStates.Cancelled)
+                    {
+                        Transition1TimerCancel();
+                    }
                     Thread.Sleep(sleepTimePerStepMs);
 
                     if (bw.CancellationPending)
                     {
-                        CommandClassSupportUtils.ReportTimerState(LogLevel, Transition1TimerName, ReportTimerStateNames.CancelledRemainSec, RemainingTransition1DurationTimeSec);
+                        CommandClassSupportUtils.ReportTimerState(MultilevelSwitchSupportData.LogLevel,
+                                    Transition1TimerName, ReportTimerStateNames.CancelledRemainSec, RemainingTransition1DurationTimeSec);
+                        //if (IsLevelChange1) // always hold Current and Target identically, if a transition stops.
+                        {
+                            MultilevelSwitchSupportData.TargetValuePrimary = MultilevelSwitchSupportData.CurrentValuePrimary;
+                            if (Version >= 3)
+                            {
+                                MultilevelSwitchSupportData.CurrentValueSecondary = MultilevelSwitchSupportData.TargetValueSecondary; // preliminary
+                              //Transition2TimerCancel();
+                            }
+                        }
                         e.Cancel = true;
                         break;
                     }
@@ -392,7 +451,8 @@ namespace Zats.Services
                 }
                 if (!e.Cancel)
                 {
-                    CommandClassSupportUtils.ReportTimerState(LogLevel, Transition1TimerName, ReportTimerStateNames.ExpiredSec, Transition1DurationSec);
+                    CommandClassSupportUtils.ReportTimerState(MultilevelSwitchSupportData.LogLevel,
+                                Transition1TimerName, ReportTimerStateNames.ExpiredSec, Transition1DurationSec);
                     ReportOperationStatePrimary();
                 }
             }
@@ -411,113 +471,234 @@ namespace Zats.Services
             }
             RemainingTransition1DurationTimeSec = 0x00;
             MultilevelSwitchSupportData.Duration = 0x00;
+
+            if (ReportTypes.HasFlag(ReportTypes.OnStateChange))
+            {
+                DeviceRestart(CmdSrcNode);
+                SendUnsolicitedReport(PrepareMultilevelSwitchReport(), CmdSrcNode);
+                SupportDelegates?.DeviceSleep(this, ReportWakeupTimeout);
+            }
+            SupportDelegates?.DeviceDataUpdate?.Invoke(this); // inform (EDE) about current state
         }
 
-        private void TransitionTimer_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void TransitionTimerRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
             {
                 _resetEvent.Set();
             }
         }
-        private void Transition1Timer_Reset()
+        private void Transition1TimerCancel()
+        {
+            MultilevelSwitchSupportData.CancelPendingTransition1?.Invoke();
+            MultilevelSwitchSupportData.CancelPendingTransition1 = null;
+        }
+
+        // This method MUST only be called via <CommandClass>SupportData.CancelPending<CommandName>.Invoke();
+        private void Transition1TimerReset()
         {
             if (Transition1Timer.IsBusy)
             {
+                CommandClassSupportUtils.ReportTimerState(MultilevelSwitchSupportData.LogLevel,
+                            Transition1TimerName, ReportTimerStateNames.Reset, 0);
                 Transition1Timer.CancelAsync();
                 _resetEvent.WaitOne();
-                CommandClassSupportUtils.ReportTimerState(LogLevel, Transition1TimerName, ReportTimerStateNames.Reset, 0);
             }
         }
+        #endregion // Transition 1 Timer
 
         private void ReportOperationStatePrimary()
         {
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: [Primary] Current value: 0x{2:X2} - Target value: 0x{3:X2} - Duration: 0x{4:X2} = {5} sec - Remaining: {6} sec",
-                CommandClassName,
-                EndPointName,
-                MultilevelSwitchSupportData.CurrentValuePrimary, 
-                MultilevelSwitchSupportData.TargetValuePrimary, 
-                MultilevelSwitchSupportData.Duration,
-                CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
-                RemainingTransition1DurationTimeSec);
+            CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                        "{0} CC @ {1}: [Primary] Current value: 0x{2:X2} - Target value: 0x{3:X2} - Duration: 0x{4:X2} = {5} sec - Remaining: {6} sec",
+                        CommandClassShortName,
+                        EndPointName,
+                        MultilevelSwitchSupportData.CurrentValuePrimary,
+                        MultilevelSwitchSupportData.TargetValuePrimary,
+                        MultilevelSwitchSupportData.Duration,
+                        CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration),
+                        RemainingTransition1DurationTimeSec);
         }
         private void ReportOperationStateSecondary()
         {
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: [Secondary] Current value: 0x{2:X2} - Target value: 0x{3:X2} - Duration: 0x{4:X2} = {5} sec",
-                CommandClassName,
-                EndPointName,
-                MultilevelSwitchSupportData.CurrentValueSecondary,
-                MultilevelSwitchSupportData.TargetValueSecondary,
-                MultilevelSwitchSupportData.Duration,
-                CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration));
+            CommandClassSupportUtils.ReportAddLog(MultilevelSwitchSupportData.LogLevel,
+                        "{0} CC @ {1}: [Secondary] Current value: 0x{2:X2} - Target value: 0x{3:X2} - Duration: 0x{4:X2} = {5} sec",
+                        CommandClassShortName,
+                        EndPointName,
+                        MultilevelSwitchSupportData.CurrentValueSecondary,
+                        MultilevelSwitchSupportData.TargetValueSecondary,
+                        MultilevelSwitchSupportData.Duration,
+                        CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration));
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet,
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
             {
-                if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
+                if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != CommandClassId)
                 {
-                    supervisionReport.status = (byte) SvStatusNames.NoSupport;
+                    supervisionReport.status = (byte)SvStatusNames.NoSupport;
                     return;
                 }
 
-                supervisionReport.status = (byte) SvStatusNames.Fail;  // FAIL as default
+                supervisionReport.status = (byte)SvStatusNames.Fail;  // FAIL as default
                 switch (supervisionGet.encapsulatedCommand[1])
                 {
                     case COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_SET.ID:
                         if (ResultForSv == SvResultNames.Successful)
-                            supervisionReport.status = (byte) SvStatusNames.Success;
+                        {
+                            supervisionReport.status = (byte)SvStatusNames.Success;
+                        }
                         break;
                     case COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_START_LEVEL_CHANGE.ID:
                         if (ResultForSv == SvResultNames.Successful)
-                            supervisionReport.status = (byte) SvStatusNames.Success;
+                        {
+                            supervisionReport.status = (byte)SvStatusNames.Success;
+                        }
                         break;
                     case COMMAND_CLASS_SWITCH_MULTILEVEL.SWITCH_MULTILEVEL_STOP_LEVEL_CHANGE.ID:
                         if (ResultForSv == SvResultNames.Successful)
-                            supervisionReport.status = (byte) SvStatusNames.Success;
+                        {
+                            supervisionReport.status = (byte)SvStatusNames.Success;
+                        }
                         break;
                 }
                 ResultForSv = SvResultNames.Undefined;
             }
         }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            if (data is MultilevelSwitchSupportData newData)
+            {
+                bool identicalCapabilities = true;
+                if (MultilevelSwitchSupportData.FactoryDefaultSetDuration != newData.FactoryDefaultSetDuration
+                 || MultilevelSwitchSupportData.FactoryDefaultLevelDuration != newData.FactoryDefaultLevelDuration
+                 || MultilevelSwitchSupportData.PrimarySwitchType != newData.PrimarySwitchType
+                 || MultilevelSwitchSupportData.SecondarySwitchType != newData.SecondarySwitchType)
+                {
+                    identicalCapabilities = false;
+                }
+                bool identicalSwitchTypes = true;
+                if (MultilevelSwitchSupportData.FactoryDefaultSetDuration != newData.FactoryDefaultSetDuration
+                 || MultilevelSwitchSupportData.FactoryDefaultLevelDuration != newData.FactoryDefaultLevelDuration
+                 || MultilevelSwitchSupportData.PrimarySwitchType != newData.PrimarySwitchType
+                 || MultilevelSwitchSupportData.SecondarySwitchType != newData.SecondarySwitchType)
+                {
+                    identicalSwitchTypes = false;
+                }
+                bool identicalState = true;
+                if (MultilevelSwitchSupportData.CurrentValuePrimary != newData.CurrentValuePrimary
+                 || MultilevelSwitchSupportData.TargetValuePrimary != newData.TargetValuePrimary
+                 || MultilevelSwitchSupportData.CurrentValueSecondary != newData.CurrentValueSecondary
+                 || MultilevelSwitchSupportData.TargetValueSecondary != newData.TargetValueSecondary)
+                {
+                    identicalState = false;
+                }
+
+                if (!identicalCapabilities)
+                {
+                    MultilevelSwitchSupportData.FactoryDefaultSetDuration = newData.FactoryDefaultSetDuration;
+                    MultilevelSwitchSupportData.FactoryDefaultLevelDuration = newData.FactoryDefaultLevelDuration;
+                    //if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    //    SendUnsolicitedReport(PrepareSupportedReport());
+                }
+                if (!identicalSwitchTypes)
+                {
+                    MultilevelSwitchSupportData.PrimarySwitchType = newData.PrimarySwitchType;
+                    MultilevelSwitchSupportData.SecondarySwitchType = newData.SecondarySwitchType;
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareSupportedReport(), NodeTag.Empty);
+                    }
+                }
+                if (!identicalState)
+                {
+                    MultilevelSwitchSupportData.CurrentValueSecondary = newData.CurrentValueSecondary;
+                    MultilevelSwitchSupportData.TargetValueSecondary = newData.TargetValueSecondary;
+                    MultilevelSwitchSupportData.Duration = newData.Duration;
+                    RemainingTransition1DurationTimeSec = CommandClassSupportUtils.DurationToSeconds(MultilevelSwitchSupportData.Duration); // necessary for Unsolicited Report
+                    if (Version <= 3)
+                    {
+                        //MultilevelSwitchSupportData.CurrentValuePrimary = newData.CurrentValuePrimary;
+                        //MultilevelSwitchSupportData.TargetValuePrimary = newData.TargetValuePrimary;
+                        HandleMultilevelSwitchSet(newData.CurrentValuePrimary, 0, NodeTag.Empty);
+                    }
+                    if (Version == 4)
+                    {
+                        MultilevelSwitchSupportData.CurrentValuePrimary = newData.CurrentValuePrimary;
+                        MultilevelSwitchSupportData.TargetValuePrimary = newData.TargetValuePrimary;
+                        if (MultilevelSwitchSupportData.CurrentValuePrimary != MultilevelSwitchSupportData.TargetValuePrimary)
+                        {
+                            HandleMultilevelSwitchSet(MultilevelSwitchSupportData.TargetValuePrimary, MultilevelSwitchSupportData.Duration, NodeTag.Empty);
+                        }
+                    }
+                }
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
+            }
+        }
     }
 
-    public class MultilevelSwitchSupportData : IBasicMapping
+    public class MultilevelSwitchSupportData : CommandClassSupportData, IBasicMapping
     {
-        // Internals accessible from TestCases
-        public int LogLevel { get; set; } = 0;
+        // Internals accessible from TestCases or EDE
+        [CustomDataParameter(1, "Factory Default Set Duration", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_0_254, EditType.Config)]
         public byte FactoryDefaultSetDuration { get; set; } = 0;
+
+        [CustomDataParameter(1, "Factory Default Level Duration", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_0_254, EditType.Config)]
         public byte FactoryDefaultLevelDuration { get; set; } = 50; // from 0 to 99
+
+        [JsonIgnore]
+        public CancelPendingOperationDelegate CancelPendingTransition1 = null;
 
         // V1+
         public byte LastSetValuePrimary { get; set; } = 0x05; // this value is affected by Set commands and completed Level Change commands
+
+        [ParameterSeparator(1, "Multilevel Switch Report")]
+        [XmlDataParameter(1, 3, 0x26, 0x03, new byte[] { 0x00 }, EditType.Config | EditType.Edit)]
+        public byte ValuePrimary
+        {
+            get { return CurrentValuePrimary; }
+            set { CurrentValuePrimary = value; }
+        }
+
+        // 4+
+        [XmlDataParameter(4, 0x26, 0x03, new byte[] { 0x00 }, EditType.Config /*| EditType.Edit*/)]
         public byte CurrentValuePrimary { get; set; } = 0x00;
-        // V2+
+        [XmlDataParameter(4, 0x26, 0x03, new byte[] { 0x01 }, EditType.Config | EditType.Edit)]
         public byte TargetValuePrimary { get; set; } = 0x00;
+
+        [XmlDataParameter(4, 0x26, 0x03, new byte[] { 0x02 }, EditType.Config | EditType.Edit)]
         public byte Duration { get; set; } = 0x00;
         // V3+
+
+        [ParameterSeparator(3, "Multilevel Switch Supported Report")]
+        [XmlDataParameter(3, 0x26, 0x07, new byte[] { 0x00, 0x00 }, EditType.Config)]
         public SwitchTypeNames PrimarySwitchType { get; set; } = SwitchTypeNames.DownUp;        // 0x02 = Down (0x00) / Up (0x63/0xFF)
+
+        [XmlDataParameter(3, 0x26, 0x07, new byte[] { 0x01, 0x00 }, EditType.Config)]
         public SwitchTypeNames SecondarySwitchType { get; set; } = SwitchTypeNames.CloseOpen;   // 0x03 = Close (0x00) / Open (0x63/0xFF)
         public byte CurrentValueSecondary { get; set; } = 0x00;
         public byte TargetValueSecondary { get; set; } = 0x00;
         public byte StepSizeSecondary { get; set; } = 0x00;
 
         // Basic CC Mapping
+        [JsonIgnore]
         public MultilevelSwitchSupport SupportClassObject;
-        bool IBasicMapping.BasicSet(byte value)
+        bool IBasicMapping.BasicSet(byte value, NodeTag srcNode)
         {
             if (SupportClassObject.Version <= 4)
             {
                 COMMAND_CLASS_SWITCH_MULTILEVEL_V2.SWITCH_MULTILEVEL_SET multilevelSwitchSetCmd = new COMMAND_CLASS_SWITCH_MULTILEVEL_V2.SWITCH_MULTILEVEL_SET() { };
                 multilevelSwitchSetCmd.value = value;
                 multilevelSwitchSetCmd.duration = 0x00;
-                CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Basic Set with value 0x{2:X2} accepted.", 
-                            SupportClassObject.CommandClassName, SupportClassObject.EndPointName, value);
-                return SupportClassObject.HandleMultilevelSwitchSet(multilevelSwitchSetCmd) == SvResultNames.Successful ? true : false;
+                CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: Basic Set with value 0x{2:X2} accepted.", 
+                            SupportClassObject.CommandClassShortName, SupportClassObject.EndPointName, value);
+                return SupportClassObject.HandleMultilevelSwitchSetCmd(multilevelSwitchSetCmd, srcNode) == SvResultNames.Successful ? true : false;
             }
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Basic Set with value 0x{2:X2} ignored.", 
-                        SupportClassObject.CommandClassName, SupportClassObject.EndPointName, value);
+            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: Basic Set with value 0x{2:X2} ignored.", 
+                        SupportClassObject.CommandClassShortName, SupportClassObject.EndPointName, value);
             return false;
         }
         COMMAND_CLASS_BASIC_V2.BASIC_REPORT IBasicMapping.BasicV2Get()

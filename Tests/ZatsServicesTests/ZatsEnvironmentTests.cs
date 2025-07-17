@@ -55,9 +55,9 @@ namespace ZatsServicesTests
             testCaseDefinition.IsZnifferRequired = isZnifferRequired;
             testCaseDefinition.DeviceGroups = new SortedList<Alias, MultiDeviceMappingAttribute>();
 
-            var consoleOutPut = new ConsoleCustomOutput(false, false);
+            var consoleOutPut = new ConsoleCustomOutput(false, false, false);
 
-            var actualSetupResult = zatsEnvironment.SetUp(profile, testCaseDefinition, cmdLineSettings, zatsSettings, consoleOutPut, frequency, 1, 1);
+            var actualSetupResult = zatsEnvironment.SetUp(profile, testCaseDefinition, cmdLineSettings, zatsSettings, consoleOutPut, frequency, LongRangeChannels.Undefined, 1, 1);
             return actualSetupResult;
         }
 

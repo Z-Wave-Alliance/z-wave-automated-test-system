@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System.Collections.Generic;
 using System.Text;
 using ZWave.BasicApplication.Operations;
@@ -9,163 +10,88 @@ using ZWave.Devices;
 using Utils;
 using ZWave;
 using ZWave.BasicApplication;
+using static Zats.Services.AssociationGroupEx;
+using System;
 
 namespace Zats.Services
 {
-    public class AssociationGroupInfoSupport : CommandClassSupport
+    [CommandClassName("Association Group Information Command Class")]
+    [CommandClassId(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID)]
+    [MinVersion(1)]
+    [MaxVersion(3)]
+    public class AssociationGroupInfoSupport : AssociationSupportBase
     {
-        private AssociationSupportData AssociationSupportData { get; set; }
-
-        //private readonly string CommandClassName = "Association Group Info CC";
-        //private string EndPointName = "";
-        //private readonly int LogLevel;  // shortcut for SupportData.LogLevel
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return AssociationSupportData; }
+            set { AssociationSupportData = (AssociationSupportData)value; }
+        }
 
         public AssociationGroupInfoSupport(AssociationSupportData associationSupportData)
             : base(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 3;
             AssociationSupportData = associationSupportData;
-            //LogLevel = associationSupportData.LogLevel;
         }
 
+        public AssociationGroupInfoSupport()
+            : this(new AssociationSupportData() { })
+        { }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1 && AssociationSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && AssociationSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareGroupNameReport(command);
+                        rpt = PrepareGroupNameReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareGroupInfoReport(command);
+                        rpt = PrepareGroupInfoReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareGroupCommandListReport(command);
+                        rpt = PrepareGroupCommandListReportCmd(command);
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
 
-        private byte[] PrepareGroupNameReport(byte[] command)
+        private byte[] PrepareGroupNameReportCmd(byte[] command)
         {
             COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_GET associationNameGetCmd = command;
-            byte requestedGroupId = associationNameGetCmd.groupingIdentifier;
-            AssociationGroupEx requestedGroup = AssociationSupportData.AssociationGroups.Find(group => group.GroupId == requestedGroupId);
-            byte[] rpt = null;
-
-            if (requestedGroup != null)
-            {
-                rpt = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_NAME_REPORT()
-                {
-                    groupingIdentifier = requestedGroup.GroupId,
-                    lengthOfName = (byte)Encoding.UTF8.GetByteCount(requestedGroup.GroupName),
-                    name = Encoding.UTF8.GetBytes(requestedGroup.GroupName)
-                };
-            }
-            return rpt;
+            return PrepareGroupNameReport(associationNameGetCmd.groupingIdentifier);
         }
 
-        private byte[] PrepareGroupInfoReport(byte[] command)
+        private byte[] PrepareGroupInfoReportCmd(byte[] command)
         {
             COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_GET associationInfoGetCmd = command;
-            byte requestedGroupId = associationInfoGetCmd.groupingIdentifier;
-            AssociationGroupEx requestedGroup = AssociationSupportData.AssociationGroups.Find(group => group.GroupId == requestedGroupId);
-            byte[] rpt = null;
-
-            if (requestedGroup == null)
-            {
-                requestedGroup = AssociationSupportData.AssociationGroups[0];
-            }
-
-            if (associationInfoGetCmd.properties1.listMode == 0)
-            {
-                rpt = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT()
-                {
-                    properties1 = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.Tproperties1()
-                    {
-                        listMode = associationInfoGetCmd.properties1.listMode,
-                        groupCount = 0x01
-                    },
-                    vg1 = new List<COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.TVG1>()
-                    {
-                        new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.TVG1()
-                        {
-                            groupingIdentifier = requestedGroup.GroupId,
-                            mode = 0,
-                            profile1 = (byte) (requestedGroup.Profile >> 8),
-                            profile2 = (byte) (requestedGroup.Profile & 0xFF)
-                        }
-                    }
-                };
-            }
-            else
-            {
-                List<COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.TVG1> groupList = new List<COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.TVG1>();
-
-                for (int i = 0; i < AssociationSupportData.AssociationGroups.Count; i++)
-                {
-                    groupList.Add(
-                        new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.TVG1()
-                        {
-                            groupingIdentifier = AssociationSupportData.AssociationGroups[i].GroupId,
-                            mode = 0,
-                            profile1 = (byte)(AssociationSupportData.AssociationGroups[i].Profile >> 8),
-                            profile2 = (byte)(AssociationSupportData.AssociationGroups[i].Profile & 0xFF)
-                        });
-                }
-
-                rpt = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT()
-                {
-                    properties1 = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_INFO_REPORT.Tproperties1()
-                    {
-                        listMode = associationInfoGetCmd.properties1.listMode,
-                        groupCount = (byte)groupList.Count
-                    },
-                    vg1 = groupList
-                };
-            }
-            return rpt;
+            return PrepareGroupInfoReport(associationInfoGetCmd.groupingIdentifier, associationInfoGetCmd.properties1.listMode);
         }
 
-        private byte[] PrepareGroupCommandListReport(byte[] command)
+        private byte[] PrepareGroupCommandListReportCmd(byte[] command)
         {
             COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_GET associationCommandListGetCmd = command;
-            byte requestedGroupId = associationCommandListGetCmd.groupingIdentifier;
-            AssociationGroupEx requestedGroup = AssociationSupportData.AssociationGroups.Find(group => group.GroupId == requestedGroupId);
-            byte[] rpt = null;
-
-            if (requestedGroup != null)
-            {
-                rpt = new COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ASSOCIATION_GROUP_COMMAND_LIST_REPORT()
-                {
-                    groupingIdentifier = requestedGroup.GroupId,
-                    listLength = (byte)requestedGroup.CommandClassAndCommandList.Length,
-                    command = requestedGroup.CommandClassAndCommandList
-                };
-            }
-            return rpt;
+            return PrepareGroupCommandListReport(associationCommandListGetCmd.groupingIdentifier);
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet,

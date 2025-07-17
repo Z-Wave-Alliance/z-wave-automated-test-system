@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
@@ -54,18 +55,19 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
                 EndPointName = ReceivedAchData.DstNode.EndPointId == 0 ? " @ Root" : string.Format(" @ EP {0}", ReceivedAchData.DstNode.EndPointId);
                 TransitionTimerName = string.Format("{0}{1}: Transition Simulation", CommandClassName, EndPointName);
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && BarrierOperatorSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && BarrierOperatorSupportData != null)
                 {
                     byte[] rpt = null;
                     if (command[1] == COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_GET.ID)
@@ -95,7 +97,7 @@ namespace Zats.Services
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
@@ -117,50 +119,50 @@ namespace Zats.Services
         {
             COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNALING_GET getCmd = command;
             COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNALING_REPORT rpt = new COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNALING_REPORT() { };
-            BarrierOperatorSubsystemTypes requestedSubsystemType = (BarrierOperatorSubsystemTypes)(byte)getCmd.subsystemType;
-            switch (requestedSubsystemType)
+
+            try
             {
-                case BarrierOperatorSubsystemTypes.AudibleNotification: rpt.subsystemState = (byte)BarrierOperatorSupportData.AudibleSubsystemState; break; // 0x01
-                case BarrierOperatorSubsystemTypes.VisualNotification: rpt.subsystemState = (byte)BarrierOperatorSupportData.VisualSubsystemState; break; // 0x02
-                default: return null;
+                rpt.subsystemState = (byte)BarrierOperatorSupportData.SupportedSubsystemTypes.First(x => (byte)x.SubsystemType == getCmd.subsystemType.Value).SubsystemState;
             }
+            catch
+            { 
+                rpt.subsystemState = 0xFE;
+            }
+            
             rpt.subsystemType = getCmd.subsystemType;
             return rpt;
         }
+
         public SvResultNames HandleBarrierOperatorSignalSet(byte[] command)
         {
             COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNAL_SET setCmd = command;
-            BarrierOperatorSubsystemTypes requestedSubsystemType = (BarrierOperatorSubsystemTypes)(byte)setCmd.subsystemType;
-            BarrierOperatorSubsystemStateNames requestedSubsystemState = (BarrierOperatorSubsystemStateNames)(byte)setCmd.subsystemState;
+            BarrierOperatorSubsystemTypes requestedSubsystemType  = (BarrierOperatorSubsystemTypes)  (byte) setCmd.subsystemType;
+            BarrierOperatorSubsystemStateNames requestedSubsystemState = (BarrierOperatorSubsystemStateNames) (byte) setCmd.subsystemState;
 
             if (requestedSubsystemState == BarrierOperatorSubsystemStateNames.Off || requestedSubsystemState == BarrierOperatorSubsystemStateNames.On)
-            {
-                if (requestedSubsystemType == BarrierOperatorSubsystemTypes.AudibleNotification && BarrierOperatorSupportData.SupportedSubsystemTypes.Contains(BarrierOperatorSubsystemTypes.AudibleNotification))
+            { 
+                if (BarrierOperatorSupportData.SupportedSubsystemTypes.FirstOrDefault(x => x.SubsystemType == requestedSubsystemType) is BarrierOperatorSubsystem requestedSubsystem)
                 {
-                    BarrierOperatorSupportData.AudibleSubsystemState = requestedSubsystemState;
-                    return SvResultNames.Successful;
-                }
-                if (requestedSubsystemType == BarrierOperatorSubsystemTypes.VisualNotification && BarrierOperatorSupportData.SupportedSubsystemTypes.Contains(BarrierOperatorSubsystemTypes.VisualNotification))
-                {
-                    BarrierOperatorSupportData.VisualSubsystemState = requestedSubsystemState;
+                    requestedSubsystem.SubsystemState = requestedSubsystemState;
                     return SvResultNames.Successful;
                 }
             }
+
             return SvResultNames.Failed;
         }
 
         public byte[] PrepareBarrierOperatorReport()
         {
             COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_REPORT rpt = new COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_REPORT() { };
-            //ReportBarrierState(BarrierOperatorSupportData.CurrentState);
-            rpt.state = (byte)BarrierOperatorSupportData.CurrentState;
+          //ReportBarrierState(BarrierOperatorSupportData.CurrentState);
+            rpt.state = (byte) BarrierOperatorSupportData.CurrentState;
             return rpt;
         }
 
         public SvResultNames HandleBarrierOperatorSet(byte[] command)
         {
             COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_SET barrierOperatorSetCmd = command;
-            BarrierOperatorTargetStateNames requestedOperation = (BarrierOperatorTargetStateNames)(byte)barrierOperatorSetCmd.targetValue;
+            BarrierOperatorTargetStateNames requestedOperation = (BarrierOperatorTargetStateNames) (byte) barrierOperatorSetCmd.targetValue;
 
             ReportBarrierState(BarrierOperatorSupportData.CurrentState);
 
@@ -195,7 +197,7 @@ namespace Zats.Services
                 }
             }
             CommandClassSupportUtils.ReportAddLog(LogLevel, CommandClassName + EndPointName + ": Operator Set Command '{0}' (0x{1:X2}) ignored. Current state: '{2}'.",
-                        requestedOperation, (byte)requestedOperation, BarrierOperatorSupportData.CurrentState);
+                        requestedOperation, (byte) requestedOperation, BarrierOperatorSupportData.CurrentState);
             return SvResultNames.Failed;
         }
         private void TransitionTimer_DoWork(object sender, DoWorkEventArgs e)
@@ -225,7 +227,7 @@ namespace Zats.Services
                     {
                         BarrierOperatorSupportData.CurrentTransitionPosition = 100 - BarrierOperatorSupportData.CurrentTransitionPosition;
                     }
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} is running. Position is 0x{1:X2} = {1} % opened.",
+                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} is running. Position is 0x{1:X2} = {1} % opened.", 
                                 TransitionTimerName, BarrierOperatorSupportData.CurrentTransitionPosition);
                     ReportOperationProgress(TransitionTimerName, ReportTimerStateNames.RunRemainMs, remainingTransitionTimeMs);
                 }
@@ -271,28 +273,40 @@ namespace Zats.Services
         {
             CommandClassSupportUtils.ReportAddLog(LogLevel, CommandClassName + EndPointName + ": Current state is '{0}'.", stateName);
         }
-        public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet,
+        public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
             if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
             {
-                supervisionReport.status = (byte)SvStatusNames.NoSupport;
+                supervisionReport.status = (byte) SvStatusNames.NoSupport;
                 return;
             }
 
-            supervisionReport.status = (byte)SvStatusNames.Fail;  // FAIL as default
+            supervisionReport.status = (byte) SvStatusNames.Fail;  // FAIL as default
             switch (supervisionGet.encapsulatedCommand[1])
             {
                 case COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
-                        supervisionReport.status = (byte)SvStatusNames.Success;
+                        supervisionReport.status = (byte) SvStatusNames.Success;
                     break;
                 case COMMAND_CLASS_BARRIER_OPERATOR.BARRIER_OPERATOR_EVENT_SIGNAL_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
-                        supervisionReport.status = (byte)SvStatusNames.Success;
+                        supervisionReport.status = (byte) SvStatusNames.Success;
                     break;
             }
             ResultForSv = SvResultNames.Undefined;
+        }
+
+        // Satisfy abstract members
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return null; }
+            set {; }
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+
         }
     }
 }

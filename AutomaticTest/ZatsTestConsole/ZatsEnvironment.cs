@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,7 +27,8 @@ namespace ZatsTestConsole
             CmdLineSettings settings,
             ZatsSettings zatsSettings,
             ConsoleCustomOutput consoleOutPut,
-            string frequency,
+            string rfRegion,
+            LongRangeChannels lrChannel,
             int runCounter,
             int tcCounter)
         {
@@ -257,30 +259,39 @@ namespace ZatsTestConsole
             _managers.DebugDeviceManager.InitDevices(available, debugDeviceRequiredList);
 
             var profileZName = GetEnvironmentZnifferPort(activeProfile);
-            if (!string.IsNullOrEmpty(profileZName) && !string.IsNullOrEmpty(frequency))
+            if (!string.IsNullOrEmpty(profileZName) && !string.IsNullOrEmpty(rfRegion))
             {
-                if (System.Net.IPAddress.TryParse(profileZName, out System.Net.IPAddress ptiSource))
+                if (System.Net.IPAddress.TryParse(profileZName, out System.Net.IPAddress ptiSource) && settings.IsZnifferVirtual == false)
                 {
-                    var host = new DeviceHost() { SName = profileZName, JName = profileZName, SType = InterfaceTypes.TCP };
+                    var host = new DeviceHost() { SName = profileZName, SPort = 4905 /*non-virtual Zniffer PTI via JLink*/, JName = profileZName, SType = InterfaceTypes.TCP };
                     var chipType = _managers.DeviceManager.GetChipType(new DeviceHostClient(host, null, null));
                     if (!string.IsNullOrWhiteSpace(chipType) && Enum.TryParse(chipType, out ChipSeries chipSeries))
                     {
                         var hosts = new List<DeviceHost>() { host };
                         var reqZnif = new UnknownDevice(new Alias(0xDEAD), null,
                             new ZWave.Enums.Libraries[] { ZWave.Enums.Libraries.ZnifferPTI },
-                            chipSeries, InterfaceTypes.TCP, frequency, DevKits.Default, null, null);
+                            chipSeries, InterfaceTypes.TCP, rfRegion, DevKits.Default, null, null);
                         var reqs = new List<UnknownDevice>() { reqZnif };
                         _managers.DeviceManager.InitDevices(hosts, reqs, settings.IsAppendMode, configurationMode, settings.ConfigPath);
                     }
                 }
-                var isInited = _managers.ZnifferManager.InitDevice(profileZName, frequency);
+                var isInited = _managers.ZnifferManager.InitDevice(profileZName, settings.IsZnifferVirtual, rfRegion, lrChannel);
                 if (!isInited && testCaseDefinition.IsZnifferRequired)
                     return false;
             }
 
             try
             {
-                consoleOutPut.ReportDevicesToConsole(testCaseDefinition, _managers, frequency);
+                byte? lrChannelConfigCode = null;
+                string lrChannelConfigDescription = null;
+                if (RfRegionsExtensions.IsLongRangeRfRegion(rfRegion))
+                {
+                    ZnifferChannelConfig lrChannelConfig = ZnifferManager.GetDefaultZnifferLRChannelConfig(lrChannel);
+                    lrChannelConfigCode = (byte)lrChannelConfig;
+                    lrChannelConfigDescription = ZnifferManager.GetZnifferChannelConfigDescription(lrChannelConfig);
+                }
+
+                consoleOutPut.ReportDevicesToConsole(testCaseDefinition, _managers, rfRegion, lrChannelConfigCode, lrChannelConfigDescription);
             }
             catch (Exception ex)
             {

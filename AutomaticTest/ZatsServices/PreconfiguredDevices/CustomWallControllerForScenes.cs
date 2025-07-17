@@ -40,8 +40,8 @@ namespace Zats.Services.PreconfiguredDevices
             var commandClassesSupportHandler = new CommandClassesSupportHandler();
             var multiChaAssoSupModify = new MultiChannelAssociationSupportModify(commandClassesSupportHandler.GetDummyAssociationSupportDataModify()) { Version = 4 };
             var assoGroupSupportModify = new AssociationGroupInfoSupportModify(commandClassesSupportHandler.GetDummyAssociationSupportDataModify()) { Version = 3 };
-            var ScenesActivationSupportModify = new SceneActivationSupport(COMMAND_CLASS_SCENE_ACTIVATION.ID);
-            var ScenesActuatorConfSupportModify = new SceneActuatorConfSupport(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID);
+            var ScenesActivationSupportModify = new SceneActivationSupportModify(COMMAND_CLASS_SCENE_ACTIVATION.ID);
+            var ScenesActuatorConfSupportModify = new SceneActuatorConfSupportModify(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID);
             SupportedModifyCommandClasses = new List<CommandClassSupport> { multiChaAssoSupModify, assoGroupSupportModify, 
                 ScenesActivationSupportModify, ScenesActuatorConfSupportModify };
 

@@ -1,19 +1,32 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
 using ZWave.Devices;
 
+using static Zats.Services.CommandClassSupportUtils;
+
 namespace Zats.Services
 {
+    [CommandClassName("Manufacturer Specific Command Class")]
+    [CommandClassId(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID)]
+    [MinVersion(1)]
+    [MaxVersion(2)]
     public class ManufacturerSpecificSupport : CommandClassSupport
     {
         private ManufacturerSpecificSupportData ManufacturerSpecificSupportData { get; set; }
-
-        //private readonly static string CommandClassName = "Manufacturer Specific CC";
-        //private string EndPointName = "";
-        //private readonly int LogLevel;  // shortcut for SupportData.LogLevel
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return ManufacturerSpecificSupportData; }
+            set { ManufacturerSpecificSupportData = (ManufacturerSpecificSupportData)value; }
+        }
 
         public ManufacturerSpecificSupport()
             : this(new ManufacturerSpecificSupportData() { })
@@ -22,41 +35,57 @@ namespace Zats.Services
         public ManufacturerSpecificSupport(ManufacturerSpecificSupportData manufacturerSpecificSupportData)
             : base(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 2;
             ManufacturerSpecificSupportData = manufacturerSpecificSupportData;
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
+                bool nonSecureManufacturerSpecificGet = false;
 
-                if (isResponseAllowed && command != null && command.Length > 1 && ManufacturerSpecificSupportData != null)
+                ZWave.Enums.SecuritySchemes[] schemes = Network.GetSecuritySchemes();
+
+                if (schemes != null &&
+                    schemes.Contains(ZWave.Enums.SecuritySchemes.S0) &&
+                    !schemes.Contains(ZWave.Enums.SecuritySchemes.S2_UNAUTHENTICATED) &&
+                    !schemes.Contains(ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED) &&
+                    !schemes.Contains(ZWave.Enums.SecuritySchemes.S2_ACCESS))
+                {
+                    // backwards compatible rule for S0 Inclusions: Manufacturer Specific Get must be answered non-securely
+                    nonSecureManufacturerSpecificGet = true;
+                }
+
+                if (isHandlingAllowed || nonSecureManufacturerSpecificGet && command != null && command.Length > 1 && ManufacturerSpecificSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC.MANUFACTURER_SPECIFIC_GET.ID)
+                    if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC.MANUFACTURER_SPECIFIC_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareManufacturerSpecificReport();
                     }
-                    else if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET.ID && !IsSupervised())
                     {
+                        if (!isHandlingAllowed)
+                        {
+                            return;
+                        }
                         rpt = PrepareDeviceSpecificReport(command);
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
@@ -71,24 +100,27 @@ namespace Zats.Services
             };
             return rpt;
         }
-        private byte[] PrepareDeviceSpecificReport(byte[] command)
+        private byte[] PrepareDeviceSpecificReport(byte deviceIdType)
         {
             if (Version >= 2)
             {
-                COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_REPORT rpt = new COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_REPORT();
-                switch (((COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET)command).properties1.deviceIdType)
+                if (deviceIdType == 0)
                 {
-                    case 0x00:
+                    deviceIdType = (byte)ManufacturerSpecificSupportData.DefaultDeviceIdType;
+                }
+
+                COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_REPORT rpt = new COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_REPORT();
+                switch (deviceIdType)
+                {
                     case 0x01:
-                    default:
                         rpt.properties1.deviceIdType = 0x01;
-                        rpt.properties2.deviceIdDataFormat = ManufacturerSpecificSupportData.DeviceIdDataFormat1;
+                        rpt.properties2.deviceIdDataFormat = (byte)ManufacturerSpecificSupportData.DeviceIdDataFormat1;
                         rpt.properties2.deviceIdDataLengthIndicator = (byte)ManufacturerSpecificSupportData.SerialNumber.Length;
                         rpt.deviceIdData = ManufacturerSpecificSupportData.SerialNumber;
                         break;
                     case 0x02:
                         rpt.properties1.deviceIdType = 0x02;
-                        rpt.properties2.deviceIdDataFormat = ManufacturerSpecificSupportData.DeviceIdDataFormat2;
+                        rpt.properties2.deviceIdDataFormat = (byte)ManufacturerSpecificSupportData.DeviceIdDataFormat2;
                         rpt.properties2.deviceIdDataLengthIndicator = (byte)ManufacturerSpecificSupportData.PseudoRandom.Length;
                         rpt.deviceIdData = ManufacturerSpecificSupportData.PseudoRandom;
                         break;
@@ -97,27 +129,109 @@ namespace Zats.Services
             }
             return null;
         }
+        private byte[] PrepareDeviceSpecificReport(byte[] command)
+        {
+            if (Version >= 2)
+            {
+                return PrepareDeviceSpecificReport(((COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.DEVICE_SPECIFIC_GET)command).properties1.deviceIdType);
+            }
+            return null;
+        }
 
-        public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
+        public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet,
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
-            supervisionReport.status = (byte) SvStatusNames.NoSupport;
+            supervisionReport.status = (byte)SvStatusNames.NoSupport;
             return;
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            if (data is ManufacturerSpecificSupportData newData)
+            {
+                if (ManufacturerSpecificSupportData.ManufacturerId != newData.ManufacturerId
+                 || ManufacturerSpecificSupportData.ProductTypeId != newData.ProductTypeId
+                 || ManufacturerSpecificSupportData.ProductId != newData.ProductId)
+                {
+                    ManufacturerSpecificSupportData.ManufacturerId = newData.ManufacturerId;
+                    ManufacturerSpecificSupportData.ProductTypeId = newData.ProductTypeId;
+                    ManufacturerSpecificSupportData.ProductId = newData.ProductId;
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareManufacturerSpecificReport(), NodeTag.Empty);
+                    }
+                }
+                if (ManufacturerSpecificSupportData.DefaultDeviceIdType != newData.DefaultDeviceIdType)
+                {
+                    ManufacturerSpecificSupportData.DefaultDeviceIdType = newData.DefaultDeviceIdType;
+                }
+                if (ManufacturerSpecificSupportData.DeviceIdDataFormat1 != newData.DeviceIdDataFormat1
+                 || !ManufacturerSpecificSupportData.SerialNumber.SequenceEqual(newData.SerialNumber) )
+                {
+                    ManufacturerSpecificSupportData.DeviceIdDataFormat1 = newData.DeviceIdDataFormat1;
+                    ManufacturerSpecificSupportData.SerialNumber = newData.SerialNumber;
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareDeviceSpecificReport((byte)DeviceIdTypeNames.SerialNumber), NodeTag.Empty);
+                    }
+                }
+                if (ManufacturerSpecificSupportData.DeviceIdDataFormat2 != newData.DeviceIdDataFormat2
+                 || !ManufacturerSpecificSupportData.PseudoRandom.SequenceEqual(newData.PseudoRandom))
+                {
+                    ManufacturerSpecificSupportData.DeviceIdDataFormat2 = newData.DeviceIdDataFormat2;
+                    ManufacturerSpecificSupportData.PseudoRandom = newData.PseudoRandom;
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareDeviceSpecificReport((byte)DeviceIdTypeNames.PseudoRandom), NodeTag.Empty);
+                    }
+                }
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
+            }
         }
     }
 
-    public class ManufacturerSpecificSupportData
+    public class ManufacturerSpecificSupportData : CommandClassSupportData
     {
-        // Manufacturer Specific
-        public byte[] ManufacturerId { get; set; } = { 0xFF, 0xFF }; // MFG_ID_NOT_DEFINED
-        public byte[] ProductTypeId { get; set; } = { 0x00, 0xAA };
-        public byte[] ProductId { get; set; } = { 0x00, 0x01 };
-        // Device Specific
-        public byte DeviceIdDataFormat0 { get; set; } = 0x00;   // 0x00 = UTF-8; 0x01 = Plain binary for DeviceIdType 0x00
-        public byte DeviceIdDataFormat1 { get; set; } = 0x00;   // 0x00 = UTF-8; 0x01 = Plain binary for DeviceIdType 0x01
-        public byte DeviceIdDataFormat2 { get; set; } = 0x00;   // 0x00 = UTF-8; 0x01 = Plain binary for DeviceIdType 0x02
-        public byte[] DeviceIdType { get; set; } = { 0x44, 0x45, 0x56, 0x49, 0x43, 0x44, 0x31 };    // Get 0x00 = Factory default Device ID Type
-        public byte[] SerialNumber { get; set; } = { 0x31, 0x31, 0x31 };        // Get 0x01 = Serial number
-        public byte[] PseudoRandom { get; set; } = { 0x39, 0x38, 0x37, 0x36 };  // Get 0x02 = Pseudo Random
+        // Manufacturer Specific Report
+        [ParameterSeparator(1, "Manufacturer Specific Report")]
+        [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x00 }, EditType.Config)]
+        public byte[] ManufacturerId { get; set; } = GetRandomBytes(2);
+
+        [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x01 }, EditType.Config)]
+        public byte[] ProductTypeId { get; set; } = GetRandomBytes(2);
+
+        [XmlDataParameter(1, 0x72, 0x05, new byte[] { 0x02 }, EditType.Config)]
+        public byte[] ProductId { get; set; } = GetRandomBytes(2);
+
+        [ParameterSeparator(2, "Device Specific Report")]
+        [CustomDataParameter(2, "Default Device ID Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config, typeof(DeviceIdTypeNames))]
+        public DeviceIdTypeNames DefaultDeviceIdType { get; set; } = DeviceIdTypeNames.SerialNumber;
+
+        [CustomDataParameter(2, "Serial Number Format", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config, typeof(DeviceIdDataFormatNames))]
+        public DeviceIdDataFormatNames DeviceIdDataFormat1 { get; set; } = DeviceIdDataFormatNames.UTF8;
+
+        [CustomDataParameter(2, "Serial Number Data", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.HexByteArray, EditType.Config)]
+        public byte[] SerialNumber { get; set; } = { };
+
+        [CustomDataParameter(2, "Pseudo Random Format", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config, typeof(DeviceIdDataFormatNames))]
+        public DeviceIdDataFormatNames DeviceIdDataFormat2 { get; set; } = DeviceIdDataFormatNames.UTF8;
+
+        [CustomDataParameter(2, "Pseudo Random Data", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.HexByteArray, EditType.Config)]
+        public byte[] PseudoRandom { get; set; } = { };
+    }
+
+    public enum DeviceIdDataFormatNames : byte
+    {
+        [Description("0x00 UTF8")]
+        UTF8 = 0x00,
+        [Description("0x01 Binary")]
+        Binary = 0x01
+    }
+    public enum DeviceIdTypeNames : byte
+    {
+        [Description("0x01 Serial Number")]
+        SerialNumber = 0x01,
+        [Description("0x02 Pseudo Random")]
+        PseudoRandom = 0x02
     }
 }

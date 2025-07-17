@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -91,6 +92,13 @@ namespace Zats.Services
             //{
             //    WriteLine("DISABLE SKIP BREAK BY TIMEOUT!!!");
             //}
+        }
+
+        public void ShowDutInteraction(string message)
+        {
+            // Warning: Changing the following string without adapting the LogDataReceived function in CTT class ZatsTestWorker 
+            // breaks the output within the CTT!
+            WriteTitle($"{message}»WAIT_DUT:SHOW«");
         }
 
         public DialogResult Show(string message, string title, MessageBoxButtons messageBoxButtons, MessageBoxIcon messageBoxIcon = MessageBoxIcon.Asterisk)
@@ -273,6 +281,11 @@ namespace Zats.Services
         private void WriteLine(string text)
         {
             OnLog?.Invoke(text, null, LogLevels.Information);
+        }
+
+        private void WriteTitle(string text)
+        {
+            OnLog?.Invoke(text, null, LogLevels.Title);
         }
 
         public string GetUserInput()

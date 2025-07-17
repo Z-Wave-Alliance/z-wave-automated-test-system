@@ -94,16 +94,30 @@
     <Compile Include="Clusters\Unify_NameAndLocationCluster.cs" />
     <Compile Include="Clusters\Unify_SystemMetrics.cs" />
     <Compile Include="CommandClassesImpl\AntiTheftSupport.cs" />
+    <Compile Include="CommandClassesImpl\AntiTheftSupportBase.cs" />
     <Compile Include="CommandClassesImpl\AntiTheftUnlockSupport.cs" />
+    <Compile Include="CommandClassesImpl\ApplicationStatusSupport.cs" />
     <Compile Include="CommandClassesImpl\AssociationGroupInfoSupport.cs" />
     <Compile Include="CommandClassesImpl\AssociationSupport.cs" />
+    <Compile Include="CommandClassesImpl\AssociationSupportBase.cs" />
     <Compile Include="CommandClassesImpl\BarrierOperatorSupport.cs" />
     <Compile Include="CommandClassesImpl\BatterySupport.cs" />
     <Compile Include="CommandClassesImpl\BasicSupport.cs" />
     <Compile Include="CommandClassesImpl\CentralSceneSupport.cs" />
     <Compile Include="CommandClassesImpl\ColorSwitchSupport.cs" />
+    <Compile Include="CommandClassesImpl\CommandClassSupportAttribute.cs" />
+    <Compile Include="CommandClassesImpl\CommandClassSupportData.cs" />
+    <Compile Include="CommandClassesImpl\CommandClassSupportDelegates.cs" />
+    <Compile Include="CommandClassesImpl\CommandClassSupportEnums.cs" />
     <Compile Include="CommandClassesImpl\CommandClassSupportUtils.cs" />
     <Compile Include="CommandClassesImpl\ConfigurationSupport.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\ICommandClass.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\INestedItem.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\INodeItem.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\MultilevelSensorTypes.cs" />
+    <Compile Include="CommandClassesImpl\DeviceResetLocallySupport.cs" />
+    <Compile Include="CommandClassesImpl\FirmwareUpdateMdSupportPCC.cs" />
+    <Compile Include="CommandClassesImpl\FirmwareUpdateMdSupportPCCBase.cs" />
     <Compile Include="CommandClassesImpl\GenericCcSupport.cs" />
     <Compile Include="CommandClassesImpl\EntryControlSupport.cs" />
     <Compile Include="CommandClassesImpl\IndicatorSupport.cs" />
@@ -111,6 +125,8 @@
     <Compile Include="CommandClassesImpl\MeterSupport.cs" />
     <Compile Include="CommandClassesImpl\MultiChannelAssociationSupport.cs" />
     <Compile Include="CommandClassesImpl\NotificationSupport.cs" />
+    <Compile Include="CommandClassesImpl\PowerlevelSupport.cs" />
+    <Compile Include="CommandClassesImpl\ScheduleEntryLockSupport.cs" />
     <Compile Include="CommandClassesImpl\SimpleAvControlSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatFanModeSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatFanStateSupport.cs" />
@@ -118,6 +134,7 @@
     <Compile Include="CommandClassesImpl\ThermostatOperatingStateSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatSetbackSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatSetpointSupport.cs" />
+    <Compile Include="CommandClassesImpl\UserCredentialSupport.cs" />
     <Compile Include="CommandClassesImpl\WakeUpSupport.cs" />
     <Compile Include="CommandClassesImpl\ManufacturerSpecificSupport.cs" />
     <Compile Include="CommandClassesImpl\WindowCoveringSupport.cs" />
@@ -126,30 +143,29 @@
     <Compile Include="CommandClassesImpl\CommandClassSupport.cs" />
     <Compile Include="CommandClassesImpl\DoorLockSupport.cs" />
     <Compile Include="CommandClassesImpl\FirmwareUpdateMdSupport.cs" />
-    <Compile Include="CommandClassesImpl\FirmwareUpdateMdSupportBasic.cs" />
     <Compile Include="CommandClassesImpl\MultiChannelSupport.cs" />
     <Compile Include="CommandClassesImpl\MultilevelSensorSupport.cs" />
     <Compile Include="CommandClassesImpl\MultilevelSwitchSupport.cs" />
     <Compile Include="CommandClassesImpl\SoundSwitchSupport.cs" />
     <Compile Include="CommandClassesImpl\UserCodeSupport.cs" />
     <Compile Include="CommandClassesImpl\VersionSupport.cs" />
-    <Compile Include="CommandClassModify\ApplicationStatusSupport.cs" />
+    <Compile Include="CommandClassModify\ApplicationStatusSupportModify.cs" />
     <Compile Include="CommandClassModify\AssociationGroupInfoSupportModify.cs" />
     <Compile Include="CommandClassModify\AssociationSupportModify.cs" />
     <Compile Include="CommandClassModify\BarrierOperatorSupportModify.cs" />
     <Compile Include="CommandClassModify\CommandClassesSupportHandlerModify.cs" />
-    <Compile Include="CommandClassModify\Crc16EncapSupport.cs" />
-    <Compile Include="CommandClassModify\DeviceResetLocallySupport.cs" />
+    <Compile Include="CommandClassModify\Crc16EncapSupportModify.cs" />
+    <Compile Include="CommandClassModify\DeviceResetLocallySupportModify.cs" />
     <Compile Include="CommandClassModify\FirmwareUpdateMdSupportBasicModify.cs" />
     <Compile Include="CommandClassModify\FirmwareUpdateMdSupportModify.cs" />
     <Compile Include="CommandClassModify\IndicatorSupportModify.cs" />
     <Compile Include="CommandClassModify\MultiChannelAssociationSupportModify.cs" />
-    <Compile Include="CommandClassModify\PowerlevelSupport.cs" />
-    <Compile Include="CommandClassModify\ProtectionSupport.cs" />
-    <Compile Include="CommandClassModify\SceneActivationSupport.cs" />
-    <Compile Include="CommandClassModify\SceneActuatorConfSupport.cs" />
-    <Compile Include="CommandClassModify\SensorAlarmSupport.cs" />
-    <Compile Include="CommandClassModify\SwitchAllSupport.cs" />
+    <Compile Include="CommandClassModify\PowerlevelSupportModify.cs" />
+    <Compile Include="CommandClassModify\ProtectionSupportModify.cs" />
+    <Compile Include="CommandClassModify\SceneActivationSupportModify.cs" />
+    <Compile Include="CommandClassModify\SceneActuatorConfSupportModify.cs" />
+    <Compile Include="CommandClassModify\SensorAlarmSupportModify.cs" />
+    <Compile Include="CommandClassModify\SwitchAllSupportModify.cs" />
     <Compile Include="CommandsComparator.cs" />
     <Compile Include="Configuration\ConfigurationItem.cs">
       <DependentUpon>ConfigurationItem.xsd</DependentUpon>
@@ -183,6 +199,7 @@
     <Compile Include="Enums\MaxLrTxPower.cs" />
     <Compile Include="Enums\RoutingSchemes.cs" />
     <Compile Include="Enums\RunModes.cs" />
+    <Compile Include="Enums\ZnifferChannelConfig.cs" />
     <Compile Include="InstrumentMappingAttribute.cs" />
     <Compile Include="Enums\ConfigurationModes.cs" />
     <Compile Include="Enums\DcdcModes.cs" />
@@ -383,6 +400,7 @@
     <Compile Include="ZWaveClasses\COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_ASSOCIATION_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_ASSOCIATION_V3.cs" />
+    <Compile Include="ZWaveClasses\COMMAND_CLASS_ASSOCIATION_V4.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_AUTHENTICATION.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_AUTHENTICATION_MEDIA_WRITE.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_AV_CONTENT_DIRECTORY_MD.cs" />
@@ -430,6 +448,7 @@
     <Compile Include="ZWaveClasses\COMMAND_CLASS_FIRMWARE_UPDATE_MD_V8.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_GENERIC_SCHEDULE.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_GEOGRAPHIC_LOCATION.cs" />
+    <Compile Include="ZWaveClasses\COMMAND_CLASS_GEOGRAPHIC_LOCATION_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_GROUPING_NAME.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_HAIL.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_HRV_CONTROL.cs" />
@@ -472,6 +491,7 @@
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V4.cs" />
+    <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V5.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_V3.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_MULTI_CHANNEL_V4.cs" />
@@ -522,6 +542,7 @@
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_ENTRY_LOCK.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V3.cs" />
+    <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_ENTRY_LOCK_V4.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_V3.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_SCHEDULE_V4.cs" />
@@ -597,6 +618,7 @@
     <Compile Include="ZWaveClasses\COMMAND_CLASS_TRANSPORT_SERVICE_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_USER_CODE.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_USER_CODE_V2.cs" />
+    <Compile Include="ZWaveClasses\COMMAND_CLASS_USER_CREDENTIAL.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_VERSION.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_VERSION_V2.cs" />
     <Compile Include="ZWaveClasses\COMMAND_CLASS_VERSION_V3.cs" />
@@ -676,6 +698,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="CommandClassesImpl\Definitions\MultilevelSensorTypes.json" />
     <None Include="Configuration\ConfigurationItem.ps1" />
     <None Include="Configuration\ConfigurationItem.xsd">
       <SubType>Designer</SubType>
@@ -700,6 +723,9 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="System.Text.Encoding.CodePages">
+      <Version>9.0.0</Version>
     </PackageReference>
     <PackageReference Include="Telnet">
       <Version>0.11.3</Version>
