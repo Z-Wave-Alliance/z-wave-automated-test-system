@@ -87,6 +87,12 @@ namespace Zats.Services
             return new HtmlFile(Path.Combine(ReportManager.TestCaseFolder, Path.ChangeExtension(fname, "html")));
         }
 
+        public string CreateCsvFile(string nameWithoutExtension)
+        {
+            var fname = ReportManager.GetFileName(ReportManager.TestCaseFolder, nameWithoutExtension, null, false);
+            return Path.Combine(ReportManager.TestCaseFolder, Path.ChangeExtension(fname, "csv"));
+        }
+
         public string GetTestRunFolder()
         {
             return ReportManager.TestRunFolder;

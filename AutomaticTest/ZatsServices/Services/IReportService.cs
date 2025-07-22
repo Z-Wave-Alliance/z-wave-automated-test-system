@@ -18,6 +18,7 @@ namespace Zats.Services
         void LogWarning(string text);
         event Action<string, string, LogLevels> OnLog;
         HtmlFile CreateHtmlFile(string repFile);
+        string CreateCsvFile(string nameWithoutExtension);
         string GetTestRunFolder();
         DateTime GetTestRunTimeStamp();
     }

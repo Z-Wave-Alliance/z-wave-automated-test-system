@@ -2198,5 +2198,15 @@ namespace Zats.Services
         {
             throw new NotImplementedException();
         }
+
+        public bool NVMBackupWriteSession(Alias controller, IList<byte> data, int offset = 0, byte packetSize = 64)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IList<byte> NVMBackupReadSession(Alias controller, int offset = 0, byte packetSize = 64, bool tillEOF = true)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

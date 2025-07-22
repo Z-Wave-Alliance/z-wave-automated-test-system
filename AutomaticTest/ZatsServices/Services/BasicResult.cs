@@ -774,7 +774,7 @@ namespace Zats.Services
                 : base(value)
             {
                 NormalTxPower = value.NormalTxPower;
-                Measured0dBmPower = value.NormalTxPower;
+                Measured0dBmPower = value.Measured0dBmPower;
             }
         }
 

@@ -471,11 +471,11 @@ namespace Zats.Services {
         
         HTTP,
         
-        MQTT,
-
         ZIGBEE,
-
+        
         SSH,
+        
+        MQTT,
     }
     
     [System.Serializable]

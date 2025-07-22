@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-using ZWave.Enums;
+using System.Collections.Generic;
 
 namespace Zats.Services
 {
@@ -123,6 +123,24 @@ namespace Zats.Services
         BasicResult.NvmBackupRestoreOpen NvmBackupRestoreOpen(Alias deviceNumber);
         BasicResult.NvmBackupRestoreRead NvmBackupRestoreRead(Alias deviceNumber, byte length, int offset);
         BasicResult.NvmBackupRestoreWrite NvmBackupRestoreWrite(Alias deviceNumber, byte length, int offset, byte[] data);
+        /// <summary>
+        /// Write data to NVM3 during one NVM Open/Close session.
+        /// </summary>
+        /// <param name="controller">Controller Device Alias.</param>
+        /// <param name="data">Data to write to NVM, will be auto-split by <paramref name="packetSize"/>.</param>
+        /// <param name="offset">Start address to write. Default = 0.</param>
+        /// <param name="packetSize">Size to split written data. Default = 64.</param>
+        /// <returns>Completed session state.</returns>
+        bool NVMBackupWriteSession(Alias controller, IList<byte> data, int offset = 0, byte packetSize = 64);
+        /// <summary>
+        /// Read data from NVM during one NVM Open/Close session.
+        /// </summary>
+        /// <param name="controller">Controller Device Alias.</param>
+        /// <param name="offset">Start address to read. Default = 0.</param>
+        /// <param name="packetSize">Size to split read data. Default = 64.</param>
+        /// <param name="tillEOF">Read parameter, in case of true will read till the end of file (full NVM), otherwise <paramref name="packetSize"/>.</param>
+        /// <returns>NVM Read data.</returns>
+        IList<byte> NVMBackupReadSession(Alias controller, int offset = 0, byte packetSize = 64, bool tillEOF = true);
         BasicResult.RandomByte RandomByte(Alias deviceNumber);
         bool Reconnect(Alias deviceNumber);
         BasicResult.Void RediscoveryNeeded(Alias endDeviceNumber, Alias nodeNumber);

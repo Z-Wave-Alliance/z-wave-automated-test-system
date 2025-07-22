@@ -557,5 +557,20 @@ namespace Zats.Services
         {
             throw new NotImplementedException();
         }
+
+        public BasicResult.GetPriorityRoute GetPriorityRoute(Alias controllerNumber, Node node)
+        {
+            throw new NotImplementedException();
+        }
+
+        public BasicResult.GetRoutingInfo GetRoutingInfo(Alias controllerNumber, Node node, byte removeBadLinks, byte removeNonRepeaters)
+        {
+            throw new NotImplementedException();
+        }
+
+        public BasicResult.RequestNodeNeighborUpdate RequestNodeNeighborUpdate(Alias controller, Node node)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

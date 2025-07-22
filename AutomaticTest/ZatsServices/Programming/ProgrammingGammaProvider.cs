@@ -77,8 +77,15 @@ namespace Zats.Services
             args = $"device pageerase --region @lockbits {devicePort} {deviceId}";
             ret = ProgrammerAction(args, "Erase DSK", 30000, out string output);
             Thread.Sleep(10000); // wait for adapter restore 
-            args = $"adapter reset {devicePort}";
-            ret = ProgrammerAction(args, "Reset Adapter", 30000, out output);
+            ret = BoardHardReset(deviceHostClient);
+            return ret;
+        }
+
+        public int BoardHardReset(DeviceHostClient deviceHostClient)
+        {
+            var devicePort = GetHostClientPortWithArg(deviceHostClient);
+            var args = $"adapter reset {devicePort}";
+            var ret = ProgrammerAction(args, "Reset Adapter", 30000, out string output);
             Thread.Sleep(10000); // wait for adapter restore 
             return ret;
         }
@@ -198,7 +205,7 @@ namespace Zats.Services
                     // Retry if a invalid PUK is found
                     // PUK's are generated at boot time and if the boot takes
                     // longer than expected, we'll get a false negative result
-                    if(!output.Contains("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"))
+                    if (!output.Contains("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"))
                     {
                         break;
                     }
@@ -290,7 +297,7 @@ namespace Zats.Services
             throw new NotImplementedException();
         }
 
-        private int ProgramSampleWithBootLoaderImageAndKeysInternal(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths, string bootLoaderPath)
+        private int ProgramSampleWithBootLoaderImageAndKeysInternal(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, BootloaderPath bootloaderPaths)
         {
             int ret = 0;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
@@ -307,13 +314,14 @@ namespace Zats.Services
                     ret = ProgrammerAction(args, "Reset", 30000, out output);
                 }
 
-                if (ret == 0 && new[] { "ZGM13", "ZG13", "RZ13", "ZG14" }.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)) && bootLoaderPath != null)
+                if (ret == 0 && DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)) &&
+                    File.Exists(bootloaderPaths?.Bootloader))
                 {
                     args = string.Format($"device pageerase --region @bootloader {devicePort} {deviceId}");
                     ProgrammerAction(args, "Erase Bootloader", 30000, out output);
                 }
 
-                if (ret == 0 && new[] { "ZGM13", "ZG13", "RZ13", "ZG14" }.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)))
+                if (ret == 0 && DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)))
                 {
                     args = string.Format($"device pageerase --region @lockbits {devicePort} {deviceId}");
                     ProgrammerAction(args, "Erase Lockbits", 30000, out output);
@@ -325,29 +333,39 @@ namespace Zats.Services
                     ProgrammerAction(args, "Erase User Data", 30000, out output);
                 }
 
+                if (ret == 0 && File.Exists(bootloaderPaths?.Bootloader))
+                {
+                    args = string.Format($"flash \"{bootloaderPaths.Bootloader}\" {devicePort} {deviceId}");
+                    ret = ProgrammerAction(args, "Program Bootloader", 30000, out output);
+                }
+
                 if (ret == 0 && samplePath != null)
                 {
                     args = string.Format($"flash \"{samplePath}\" --address 0x0 {devicePort} {deviceId}");
                     ret = ProgrammerAction(args, "Program Flash", 60000, out output);
                 }
 
+                if (ret == 0 && File.Exists(bootloaderPaths?.EncryptKey) && File.Exists(bootloaderPaths?.KeysToken))
+                {
+                    var tokenfiles = string.Concat(
+                        $"--tokenfile \"{bootloaderPaths.EncryptKey}\"",
+                        " ",
+                        $"--tokenfile \"{bootloaderPaths.KeysToken}\"");
+
+                    args = string.Format($"flash --tokengroup znet {tokenfiles} {devicePort} {deviceId}");
+                    ret = ProgrammerAction(args, "Program Keys", 30000, out output);
+                }
+
+                if (ret == 0) //+
+                {
+                    args = string.Format($"device reset {devicePort} {deviceId}");
+                    ret = ProgrammerAction(args, "Reset", 30000, out output);
+                }
+
                 if (ret == 0 && region != null)
                 {
                     args = string.Format($"flash --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ:0x{(byte)region:X2} {devicePort} {deviceId}");
                     ret = ProgrammerAction(args, $"Set Z-Wave Region {region}=0x{(byte)region:X2}", 30000, out output);
-                }
-
-                if (ret == 0 && bootLoaderPath != null)
-                {
-                    args = string.Format($"flash \"{bootLoaderPath}\" {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Program Bootloader", 30000, out output);
-                }
-
-                if (ret == 0 && tokenPaths != null && tokenPaths.Length > 0)
-                {
-                    var tokenfiles = tokenPaths.Select(x => $"--tokenfile \"{x}\"").Aggregate((x, y) => $"{x} {y}");
-                    args = string.Format($"flash --tokengroup znet {tokenfiles} {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Program Keys", 30000, out output);
                 }
 
                 if (ret != 0)
@@ -367,8 +385,7 @@ namespace Zats.Services
                 var sclient = deviceHostClient.SClient;
                 int delay = 2000;
                 args = string.Format($"device reset {devicePort} {deviceId}");
-                if (sclient != null && sclient.TransportClient.IsOpen
-                    && Path.GetFileName(samplePath).IndexOf("serialapi", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (sclient != null && sclient.TransportClient.IsOpen && IsSerialApi(deviceHostClient.Library))
                 {
                     var serialApiExpectToken = deviceHostClient.SClient.Expect(new ByteIndex[] { 0x00, 0x0A }, delay, null);
                     ProgrammerAction(args, "Reset", 30000, out output);
@@ -391,24 +408,24 @@ namespace Zats.Services
             return ret;
         }
 
-        public int ProgramBootLoader(DeviceHostClient deviceHostClient, string[] tokenPaths, string bootLoaderPath)
+        public int ProgramBootLoader(DeviceHostClient deviceHostClient, BootloaderPath bootloaderPath)
         {
-            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, ZWaveRegions.REGION_DEFAULT, null, tokenPaths, bootLoaderPath);
+            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, ZWaveRegions.REGION_DEFAULT, null, bootloaderPath);
         }
 
         public int ProgramSample(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, bool isAddS2Keypair, byte[] prk, byte[] puk)
         {
-            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, null, null);
+            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, null);
         }
 
-        public int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths)
+        public int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, BootloaderPath bootloaderPath)
         {
-            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, tokenPaths, null);
+            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, bootloaderPath);
         }
 
-        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths, string bootLoaderPath)
+        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, BootloaderPath bootloaderPath)
         {
-            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, tokenPaths, bootLoaderPath);
+            return ProgramSampleWithBootLoaderImageAndKeysInternal(deviceHostClient, region, samplePath, bootloaderPath);
         }
 
         public int BackUpSample(DeviceHostClient deviceHostClient, string backUpPath)
@@ -496,9 +513,10 @@ namespace Zats.Services
             throw new NotImplementedException();
         }
 
-        public int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath)
+        public int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath, bool isSeries2 = false)
         {
-            var args = $"gbl create \"{gblFilePath}\" --app \"{hexFilePath}\" --sign {signKeyFilePath} --encrypt {encryptKeyFilePath} --compress lz4";
+            var compressParam = isSeries2 ? "lzma" : "lz4"; // important to use correct compress param for specific Series: "lz4" for 700 and "lzma" for 800!
+            var args = $"gbl create \"{gblFilePath}\" --app \"{hexFilePath}\" --sign {signKeyFilePath} --encrypt {encryptKeyFilePath} --compress {compressParam}";
             int ret = ProgrammerAction(args, "Create .gbl File", 30000, out string output);
             return ret;
         }
@@ -554,17 +572,70 @@ namespace Zats.Services
             return ret;
         }
 
-        private string getDeviceIdentifierWithArg(DeviceHost deviceHost) {
-            if (deviceHost == null) {
+        private string getDeviceIdentifierWithArg(DeviceHost deviceHost)
+        {
+            if (deviceHost == null)
+            {
                 return "--device Cortex-M4";
             }
-            
-            switch(deviceHost.ChipSeries) {
+
+            switch (deviceHost.ChipSeries)
+            {
                 case "ZGM230_BRD2603A":
                     return "--device ZGM230SB27HGN3";
                 default:
                     return "--device Cortex-M4";
             }
+        }
+
+        /// <summary>
+        /// Read NVM3 to specific file and retrive Application Framework API Version
+        /// </summary>
+        /// <param name="deviceHostClient">Device host information.</param>
+        /// <returns>Z-Wave Application Framework API Version from NVM3: [APP_VERSION, APP_REVISION, APP_PATCH]</returns>
+        public byte[] ReadZafApiVersionFromNVM(DeviceHostClient deviceHostClient)
+        {
+            //commander nvm3 read - o nvm.s37 - s < SerialNo >
+            //commander nvm3 parse .\nvm.s37--key < Key >
+
+            //ZAF_Base_Key:
+            const string ZAF_KEY = "0x50000"; // FILE_ID_ZW_VERSION from https://confluence.silabs.com/display/ZWAVE/NVM+usage+with+Z-Wave#NVMusagewithZWave-ZAFkeys
+            const string nvmFolder = "_NVMs";
+            const string ext = ".s37";
+
+            int ret = 0;
+            var result = new byte[3];
+
+            var fileName = deviceHostClient.Host.JName + ext;
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), nvmFolder);
+            Directory.CreateDirectory(folder);
+            var path = Path.Combine(folder, fileName);
+            var devicePort = GetHostClientPortWithArg(deviceHostClient);
+            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var args = $"nvm3 read -o {path} {devicePort} {deviceId}";
+            ret = ProgrammerAction(args, $"Read NVM3", 3000, out string output);
+            if (ret >= 0)
+            {
+                args = $"nvm3 parse {path} --key {ZAF_KEY} "; //--json
+                ret = ProgrammerAction(args, $"Parse ZAF Key from NVM3", 3000, out output);
+                if (ret >= 0)
+                {
+                    string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                    if (lines != null && lines.Count() > 0)
+                    {
+                        var magicId = "00000000: ";
+                        var dataLen = 4; // otherwise read it from output
+                        var data = lines.FirstOrDefault(x => x.StartsWith(magicId))?.Replace(magicId, "").Replace("-", "").Replace(":", "").Trim().Split(' ');
+                        if (data != null && data.Length >= dataLen)
+                        {
+                            result[0] = Convert.ToByte(data[2], 16);
+                            result[1] = Convert.ToByte(data[1], 16);
+                            result[2] = Convert.ToByte(data[0], 16);
+                        }
+                    }
+                }
+            }
+            return result;
         }
     }
 }

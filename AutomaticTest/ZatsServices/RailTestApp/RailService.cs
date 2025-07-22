@@ -32,6 +32,7 @@ namespace Zats.Services
         {
             var device = DeviceManager.GetDeviceHostClient(deviceNumber).SClient as TextDevice;
             var res = device.RequestLine(data, expectData, timeoutMs);
+            Thread.Sleep(50); // wait a little after perform request to get complete text result callback.
             return new TextActionResult.Request(res);
         }
 

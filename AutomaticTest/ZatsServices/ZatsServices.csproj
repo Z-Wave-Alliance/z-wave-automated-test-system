@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -212,7 +212,41 @@
     <Compile Include="RailTestApp\RailService.cs" />
     <Compile Include="RailTestApp\RailCommands.cs" />
     <Compile Include="RailTestApp\RailZWaveRegions.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\IDoorLookKeypadProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\ILEDBulbProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\IMultilevelSensorProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\IPowerStripProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\ISensorPirProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\ISwitchOnOffProvider.cs" />
+    <Compile Include="SampleApplication\BaseApplicationProviders\IWallControllerProvider.cs" />
+    <Compile Include="SampleApplication\ISampleApplicationProviderBase.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\SilinkProviders\DoorLockKeyPad.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\SilinkProviders\MultilevelSensor.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\SilinkProviders\SampleApplicationSilinkBase.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\SilinkProviders\SensorPIR.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\Silink\SilinkManager.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\IOHandlers\SilinkAdminIOHandler.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\Silink\SilinkApplicationProvider.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\Silink\SilinkConstants.cs" />
     <Compile Include="Services\IMessageBox.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\DoorLockKeyPad.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\LEDBulb.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\MultilevelSensor.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\PowerStrip.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\SampleApplicationCLIBase.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\SensorPIR.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\SwitchOnOff.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\CLIProviders\WallController.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\DoorLockKeyPad.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\LEDBulb.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\MultilevelSensor.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\PowerStrip.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\SampleApplicationIOBase.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\SensorPIR.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\SwitchOnOff.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\HMIProviders\IOProviders\WallController.cs" />
+    <Compile Include="SampleApplication\IIOHandler.cs" />
+    <Compile Include="SampleApplication\SiliconLabs\IOHandlers\ManipulatorIOHandler.cs" />
     <Compile Include="Services\IUicDeviceAsyncService.cs" />
     <Compile Include="TasksAccessPoint\TasksAccessPoint.cs" />
     <Compile Include="DeviceMappingAttribute.cs" />
@@ -296,7 +330,7 @@
     <Compile Include="Services\ApplicationToken.cs" />
     <Compile Include="Services\BasicResult.cs" />
     <Compile Include="Services\BasicToken.cs" />
-    <Compile Include="Services\ButtonActions.cs" />
+    <Compile Include="Services\HMIActions.cs" />
     <Compile Include="Services\DebugToken.cs" />
     <Compile Include="Services\ILibzwaveipService.cs" />
     <Compile Include="Services\ISecurityS2.cs" />
@@ -702,8 +736,9 @@
       <Version>13.0.3</Version>
     </PackageReference>
     <PackageReference Include="Telnet">
-      <Version>0.11.3</Version>
+      <Version>0.12.0</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

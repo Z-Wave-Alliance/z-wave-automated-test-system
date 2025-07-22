@@ -4,9 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Utils.UI.Enums;
 using Zats.Services.PreconfiguredDevices;
+using Zats.Services.QuirkDatabase;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Devices;
@@ -17,7 +20,6 @@ using ZWave.BasicApplication.TransportService;
 using ZWave.Devices;
 using ZWave.Layers;
 using ZWave.Security.S2;
-using Zats.Services.QuirkDatabase;
 
 
 namespace Zats.Services
@@ -1362,7 +1364,7 @@ namespace Zats.Services
             Device device = DeviceManager.GetDevice(deviceNumber);
             device.MemoryGetId();
             return new BasicActionToken.Void(device.SessionClient.ExecuteAsync(
-                new ZWave.BasicApplication.CommandClasses.MultiChannelSupport (device.Network, TXO, EndPointCcs)));
+                new ZWave.BasicApplication.CommandClasses.MultiChannelSupport(device.Network, TXO, EndPointCcs)));
         }
 
         public void AddAssociationSupport(Alias deviceNumber)
@@ -1477,6 +1479,7 @@ namespace Zats.Services
 
         public string GetFile(Alias deviceNumber, string ending, DevKits devKit, params string[] regexFilters)
         {
+            string ret = null;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             var frequency = deviceHostClient.Frequency;
             var lib = deviceHostClient.Library;
@@ -1494,8 +1497,22 @@ namespace Zats.Services
             else
             {
                 var chs = (ChipSeries)Enum.Parse(typeof(ChipSeries), chipSeries);
-                return DeviceManager.GetLatestFilePath(new[] { lib }, chs, frequency, ending, devKit, regexFilters);
+                ret = DeviceManager.GetLatestFilePath(new[] { lib }, chs, frequency, ending, devKit, regexFilters);
+                if (!string.IsNullOrEmpty(ret)) return ret;
+
+                //prepare .gbl if it doesn't exist for possible OTA test to avoid all test changes:
+                if (regexFilters.Any(x => x.Contains(".gbl")))
+                {
+                    var fp = DeviceManager.GetLatestFilePath(new[] { deviceHostClient.Library }, chs, deviceHostClient.Frequency, ending, DevKits.Default, ".hex");
+                    if (File.Exists(fp))
+                    {
+                        var blp = DeviceManager.FileSystemManager.GetBootloaderPath(deviceHostClient, null);
+                        var isSeres2 = DeviceManager.IsZW080x(deviceNumber);
+                        ret = DeviceManager.GblCreateCustom(fp, null, blp, isSeres2);
+                    }
+                }
             }
+            return ret;
         }
 
         public string GetFile(LibTypes library, ChipSeries chipSeries, DevKits devKit, params string[] regexFilters)
@@ -1748,7 +1765,8 @@ namespace Zats.Services
                     specific = 0x03; //SPECIFIC_TYPE_SECURE_KEYPAD_DOOR_LOCK
                     devOpt = ZWave.Enums.DeviceOptions.FreqListeningMode1000ms;
                     break;
-                case LibTypes.LEDBulb: case LibTypes.LEDBulb_v4:
+                case LibTypes.LEDBulb:
+                case LibTypes.LEDBulb_v4:
                     specificCC.AddRange(new byte[] { COMMAND_CLASS_SWITCH_COLOR_V3.ID, COMMAND_CLASS_SWITCH_MULTILEVEL_V4.ID, COMMAND_CLASS_SWITCH_BINARY_V2.ID });
                     generic = GenericTypes.SWITCH_MULTILEVEL;
                     specific = 0x02;
@@ -1797,11 +1815,6 @@ namespace Zats.Services
                     COMMAND_CLASS_SWITCH_MULTILEVEL_V4.ID, COMMAND_CLASS_THERMOSTAT_MODE_V3.ID, COMMAND_CLASS_THERMOSTAT_SETPOINT_V3.ID});
                     generic = GenericTypes.SWITCH_BINARY;
                     specific = 0x01; //SPECIFIC_TYPE_POWER_SWITCH_BINARY
-                    break;
-                case LibTypes.KeyFob: // imptlement if needed or remove it.
-                    specificCC.AddRange(new byte[] { COMMAND_CLASS_BASIC.ID });
-                    generic = GenericTypes.GENERIC_CONTROLLER; //GENERIC_TYPE_GENERIC_CONTROLLER
-                    specific = 0x01; //SPECIFIC_TYPE_PORTABLE_REMOTE_CONTROLLER
                     break;
                 case LibTypes.Meter:
                     specificCC.AddRange(new byte[] { COMMAND_CLASS_METER_V6.ID });
@@ -2036,7 +2049,7 @@ namespace Zats.Services
                 else
                 {
                     AddCommandClassSupport(deviceNumber, 0, ccSupport, false);
-                }                
+                }
             }
 
             // PowerLevel from Zwave not Cert.
@@ -2163,7 +2176,7 @@ namespace Zats.Services
             {
                 ret.Add(device.SessionClient.ExecuteAsync(
                     new ZWave.BasicApplication.CommandClasses.MultiChannelSupport(device.Network, TXO)));
-            }          
+            }
 
             #region Version CC Application Responses
             // register Version CC responses for CMDs not handled by Support tasks.
@@ -2212,7 +2225,7 @@ namespace Zats.Services
             List<ActionToken> ret = new List<ActionToken>();
             Device device = DeviceManager.GetDevice(deviceNumber);
             //device.Network = new NetworkViewPoint();
-            device.CancelRunningActionsByType(typeof(ResponseDataExOperation));  
+            device.CancelRunningActionsByType(typeof(ResponseDataExOperation));
 
             CommandClassesSupportHandlerModify ccSuportHandlerModify = new CommandClassesSupportHandlerModify();
 
@@ -2229,7 +2242,7 @@ namespace Zats.Services
                     //byte byteToRemove = COMMAND_CLASS_ALARM.ID;
                     //fullCmd = fullCmd.Where(val => val != byteToRemove).ToArray();
                     break;
-            }         
+            }
 
             allSupportCommandClassesForDevice.AddRange(ccSuportHandlerModify.GetDefaultCommandClassSupportsForCCIdsQuirk(fullCmd.ToList()));
 
@@ -2258,7 +2271,7 @@ namespace Zats.Services
                     AddCommandClassSupport(deviceNumber, 0, ccSupport, false);
                 }
             }
-            
+
             // PowerLevel from Zwave not Cert.
             ret.Add(device.SessionClient.ExecuteAsync(
                 new ZWave.BasicApplication.CommandClasses.PowerLevelSupport(device.Network)));
@@ -2399,6 +2412,75 @@ namespace Zats.Services
         public BasicToken.Void[] SetApplicationCmd(Alias deviceNumber, bool IsS0, bool IsS2, LibTypes Library, byte[] wakeUpInterval, byte zwavePlusVersion)
         {
             throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public byte[] GetAppVersionFromFile(string fromFilePath)
+        {
+            //# The application properties section is identified by a magic string with
+            //# the following hex values "13 b7 79 fa c9 25 dd b7 ad f3 cf e0 f1 b6 14 b8".
+            //# Then follows 16 bytes of various non-version specific content and then
+            //# finally three bytes containing Patch_Level, Minor_Version, Major_Version
+            //# (in that order).
+            const string SEACH_MAGIC_LINE = "13B779FAC925DDB7ADF3CFE0F1B614B8";
+            const int NORMAL_LINE_LEN = 32;
+            var lines = File.ReadAllLines(fromFilePath);
+            var exLines = lines.Select(x => x.Length > NORMAL_LINE_LEN + 9 ? x.Substring(9, NORMAL_LINE_LEN) : "");
+            var txt = string.Concat(exLines);
+            var idx = txt.LastIndexOf(SEACH_MAGIC_LINE) + SEACH_MAGIC_LINE.Length + 32; //32 = 16 bytes
+
+            var versionTxt = txt.Substring(idx, 8);
+            var version = new byte[3];
+            version[0] = Convert.ToByte(versionTxt.Substring(4, 2), 16);
+            version[1] = Convert.ToByte(versionTxt.Substring(2, 2), 16);
+            version[2] = Convert.ToByte(versionTxt.Substring(0, 2), 16);
+            return version;
+        }
+
+        /// <inheritdoc/>
+        public string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null)
+        {
+            return DownloadFileFromUrlAsync(url, destinationFolder, fileName).GetAwaiter().GetResult();
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName = null)
+        {
+            if (string.IsNullOrEmpty(destinationFolder))
+            {
+                destinationFolder = Path.GetTempPath();
+            }
+            if (!Directory.Exists(destinationFolder))
+            {
+                Directory.CreateDirectory(destinationFolder);
+            }
+            if (string.IsNullOrEmpty(fileName))
+            {
+                fileName = Path.GetFileName(new Uri(url).LocalPath);
+            }
+            string destFilePath = Path.Combine(destinationFolder, fileName);
+
+            try
+            {
+                using (var httpClient = new System.Net.Http.HttpClient())
+                {
+                    httpClient.Timeout = TimeSpan.FromMinutes(5);
+                    var response = await httpClient.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var content = await response.Content.ReadAsByteArrayAsync();
+
+                    File.WriteAllBytes(destFilePath, content);
+
+                    Log($"Successfully downloaded file to {destFilePath} ({content.Length} bytes)", LogLevels.Information);
+                    return destFilePath;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to download file from {url}: {ex.Message}", LogLevels.Error);
+                throw;
+            }
         }
     }
 }

@@ -30,6 +30,13 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+        <xs:element name="DefaultBootloaderInfos" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="DefaultBootloaderInfo" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -88,6 +95,16 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     <xs:complexType>
       <xs:attribute name="Pattern" type="xs:string" use="required" />
     </xs:complexType>
+  </xs:element>
+
+  <!-- **** DefaultBootloaderInfo *********************************************************************** -->
+  <xs:element name="DefaultBootloaderInfo">
+    <xs:complexType>
+  	  <xs:attribute name="Pattern" type="xs:string" use="required" />
+      <xs:attribute name="SignKeyFileName" type="xs:string" use="optional" />
+      <xs:attribute name="EncryptKeyFileName" type="xs:string" use="optional" />
+      <xs:attribute name="KeyTokensFileName" type="xs:string" use="optional" />
+	</xs:complexType>
   </xs:element>
 
 </xs:schema>

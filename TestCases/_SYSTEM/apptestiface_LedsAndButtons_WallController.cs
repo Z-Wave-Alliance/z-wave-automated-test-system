@@ -28,20 +28,20 @@ namespace ZatsTests
             Delay(16000);
             var watcher = ZnifferService.ExpectData(2000);
             watcher.SetUpWatch(new COMMAND_CLASS_CENTRAL_SCENE_V3.CENTRAL_SCENE_NOTIFICATION());
-            TestInterfaceService.ButtonActions.WallController_Key01(Secondary);
+            TestInterfaceService.HMIActions.WallController_Key01(Secondary);
             watcher.WaitCompletedSignal();
 
             Delay(3000);
             watcher = ZnifferService.ExpectData(2000);
             watcher.SetUpWatch(new COMMAND_CLASS_SUPERVISION.SUPERVISION_GET());
-            TestInterfaceService.ButtonActions.WallController_Key02(Secondary);
+            TestInterfaceService.HMIActions.WallController_Key02(Secondary);
 
             watcher.WaitCompletedSignal();
 
             Delay(3000);
             watcher = ZnifferService.ExpectData(2000);
             watcher.SetUpWatch(new COMMAND_CLASS_SUPERVISION.SUPERVISION_GET());
-            TestInterfaceService.ButtonActions.WallController_Key03(Secondary);
+            TestInterfaceService.HMIActions.WallController_Key03(Secondary);
             watcher.WaitCompletedSignal();
         }
     }

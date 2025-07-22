@@ -12,6 +12,13 @@ namespace Zats.Services
 {
     public abstract partial class ZatsCodeTestCase
     {
+        private string _outputMessage;
+        public string OutputMessage => _outputMessage;
+        public void SetOutputMessage(string outputMessage)
+        {
+            _outputMessage = outputMessage;
+        }
+
         public TransmitOptions TX_OPTIONS = TransmitOptions.Ack | TransmitOptions.AutoRoute | TransmitOptions.Explore;
         public TransmitSecurityOptions TX_SEC_OPTIONS = TransmitSecurityOptions.S2_TXOPTION_VERIFY_DELIVERY;
 

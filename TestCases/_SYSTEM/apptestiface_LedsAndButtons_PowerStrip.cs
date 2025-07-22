@@ -28,7 +28,7 @@ namespace ZatsTests
 
             ReportService.LogTitle("BTN0 toggle");
             var expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_SWITCH_BINARY_V2.SWITCH_BINARY_REPORT(), 2000);
-            TestInterfaceService.ButtonActions.PowerStrip_OnOff(PowerStrip);
+            TestInterfaceService.HMIActions.PowerStrip_OnOff(PowerStrip);
             Inconclusive(expDataToken.WaitCompletedSignal());
 
             expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_SWITCH_BINARY_V2.SWITCH_BINARY_REPORT(), 2000);
@@ -37,7 +37,7 @@ namespace ZatsTests
 
             ReportService.LogTitle("BTN2 toggle");
             expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_SWITCH_MULTILEVEL_V4.SWITCH_MULTILEVEL_REPORT(), 2000);
-            TestInterfaceService.ButtonActions.PowerStrip_DimOnOff(PowerStrip);
+            TestInterfaceService.HMIActions.PowerStrip_DimOnOff(PowerStrip);
             Inconclusive(expDataToken.WaitCompletedSignal());
 
             expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_SWITCH_MULTILEVEL_V4.SWITCH_MULTILEVEL_REPORT(), 2000);
@@ -46,12 +46,12 @@ namespace ZatsTests
 
             ReportService.LogTitle("BTN3 toggle");
             expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_NOTIFICATION_V9.NOTIFICATION_REPORT(), 33000);
-            TestInterfaceService.ButtonActions.PowerStrip_ToggleNotify(PowerStrip);
+            TestInterfaceService.HMIActions.PowerStrip_ToggleNotify(PowerStrip);
             Inconclusive(expDataToken.WaitCompletedSignal());
 
             //ReportService.LogTitle("BTN1 hold");
             //expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION(), 10000);
-            //TestInterfaceService.ButtonActions.Sample_Reset(PowerStrip);
+            //TestInterfaceService.HMIActions.Sample_Reset(PowerStrip);
             //Inconclusive(expDataToken.WaitCompletedSignal());
         }
     }

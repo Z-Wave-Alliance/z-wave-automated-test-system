@@ -3,10 +3,8 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Utils;
 using Utils.UI.Enums;
-using ZWave.Enums;
 
 namespace Zats.Services
 {
@@ -53,103 +51,50 @@ namespace Zats.Services
             return DeviceManager.GetSecurityStatusInfo(deviceNumber);
         }
 
-        private BootloaderPath GetBootloaderPath(DevKits devKit, string[] regexFilters, BootloaderPath ret, DeviceHostClient deviceClient, string[] fileNamePatterns, string encryptKeyFileName, string signKeyFileName)
+        private BootloaderPath GetOTABootloaderPath(Alias deviceNumber, params string[] regexFilters)
         {
-            string path = null;
-            foreach (var fileNamePattern in fileNamePatterns)
+            var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
+            var cs = deviceClient.Host.ChipSeries.Replace("xG28_", "").Replace("ZGM230S_", "");
+            var bootLoaderSearchPatern = new[]
             {
-                path = DeviceManager.FileSystemManager.GetLatestFilePath(fileNamePattern, devKit, regexFilters);
-                if (path != null && File.Exists(path))
-                {
-                    break;
-                }
-            }
+                $"*ota-*{cs}*.s37",
+                "OTA-bootloader-fg13-combined.s37"
+            };
 
-            if (path != null && File.Exists(path))
-            {
-                ret = new BootloaderPath
-                {
-                    EncryptKey = Path.Combine(Path.GetDirectoryName(path), encryptKeyFileName),
-                    SignKey = Path.Combine(Path.GetDirectoryName(path), signKeyFileName),
-                    Bootloader = path
-                };
-                if (!File.Exists(ret.EncryptKey))
-                {
-                    var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
-                    ret.EncryptKey = Path.Combine(location, encryptKeyFileName);
-                }
-                if (!File.Exists(ret.SignKey))
-                {
-                    var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
-                    ret.SignKey = Path.Combine(location, signKeyFileName);
-                }
-            }
-            else
-            {
-                AssertionException.Throw($"Bootloader file for {deviceClient.Host.ChipSeries} not found");
-            }
-
-            return ret;
+            return DeviceManager.FileSystemManager.
+                GetBootloaderPath(deviceClient, bootLoaderSearchPatern, regexFilters);
         }
 
-        private BootloaderPath GetOTABootloaderPath(Alias deviceNumber, DevKits devKit, params string[] regexFilters)
+        private BootloaderPath GetOTWBootloaderPath(Alias deviceNumber, bool isSerialApiController, params string[] regexFilters)
         {
             BootloaderPath ret = null;
             var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            if (deviceClient.Host.ChipSeries.Contains("xG28"))
-            {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"ota-*{deviceClient.Host.ChipSeries.Replace("xG28_", "")}*.s37", "OTA-bootloader-fg13-combined.s37" },
-                    DeviceManager.SampleEncryptKeyFileName, DeviceManager.SampleSignKeyFileName);
-                return ret;
-            }
-            else
-            {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"ota-*{deviceClient.Host.ChipSeries}*.s37", "OTA-bootloader-fg13-combined.s37" },
-                    DeviceManager.SampleEncryptKeyFileName, DeviceManager.SampleSignKeyFileName);
-                return ret;
-            }
-                
-        }
-
-        private BootloaderPath GetOTWBootloaderPath(Alias deviceNumber, bool isSerialApiController, DevKits devKit, params string[] regexFilters)
-        {
-            BootloaderPath ret = null;
-            var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
+            string[] bl_names;
             if (deviceClient.Host.ChipSeries.Contains("ZG14"))
             {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg14-combined.s37" },
-                    DeviceManager.ControllerEncryptKeyFileName, DeviceManager.ControllerSignKeyFileName);
+                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg14-combined.s37" };
             }
             else if (deviceClient.Host.ChipSeries.Contains("xG28"))
             {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"otw-*{deviceClient.Host.ChipSeries.Replace("xG28_", "")}*.s37", "OTW-bootloader-fg14-combined.s37" },
-                    DeviceManager.ControllerEncryptKeyFileName, DeviceManager.ControllerSignKeyFileName);
+                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries.Replace("xG28_", "")}*.s37", "OTW-bootloader-fg14-combined.s37" };
             }
             else if (isSerialApiController && !deviceClient.Host.ChipSeries.Contains("ZGM13") && !deviceClient.Host.ChipSeries.Contains("ZG13") && !deviceClient.Host.ChipSeries.Contains("RZ13"))
             {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" },
-                    DeviceManager.ControllerEncryptKeyFileName, DeviceManager.ControllerSignKeyFileName);
+                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" };
             }
             else
             {
-                ret = GetBootloaderPath(devKit, regexFilters, ret, deviceClient, new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" },
-                    DeviceManager.SampleEncryptKeyFileName, DeviceManager.SampleSignKeyFileName);
+                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" };
             }
+            ret = DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, bl_names, regexFilters);
             return ret;
         }
 
-        private BootloaderPath GetBootloaderKeysPath(Alias deviceNumber, bool isSerialApiController, DevKits devKit, params string[] regexFilters)
+        private BootloaderPath GetBootloaderKeysPath(Alias deviceNumber, bool isSerialApiController, params string[] regexFilters)
         {
             BootloaderPath ret = null;
             var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            if (isSerialApiController && !deviceClient.Host.ChipSeries.Contains("ZGM13") && !deviceClient.Host.ChipSeries.Contains("ZG13") && !deviceClient.Host.ChipSeries.Contains("RZ13"))
-            {
-                ret = DeviceManager.GetBootloaderKeysPath(DeviceManager.ControllerEncryptKeyFileName, DeviceManager.ControllerSignKeyFileName);
-            }
-            else
-            {
-                ret = DeviceManager.GetBootloaderKeysPath(DeviceManager.SampleEncryptKeyFileName, DeviceManager.SampleSignKeyFileName);
-            }
+            ret = DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, null, regexFilters);
             return ret;
         }
 
@@ -157,8 +102,8 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetOTABootloaderPath(deviceNumber, DevKits.Default);
-            ret = DeviceManager.ProgramBootLoader(deviceHostClient, new string[] { bootloader.EncryptKey, bootloader.SignKey }, bootloader.Bootloader);
+            var bootloader = GetOTABootloaderPath(deviceNumber);
+            ret = DeviceManager.ProgramBootLoader(deviceHostClient, bootloader);
             return ret;
         }
 
@@ -166,8 +111,8 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetOTWBootloaderPath(deviceNumber, true, DevKits.Default);
-            ret = DeviceManager.ProgramBootLoader(deviceHostClient, new string[] { bootloader.EncryptKey, bootloader.SignKey }, bootloader.Bootloader);
+            var bootloader = GetOTWBootloaderPath(deviceNumber, true);
+            ret = DeviceManager.ProgramBootLoader(deviceHostClient, bootloader);
             return ret;
         }
 
@@ -175,8 +120,8 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetBootloaderKeysPath(deviceNumber, filePath.Contains("SerialAPI_Controller"), DevKits.Default);
-            ret = DeviceManager.ProgramSampleWithBootLoaderKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, new string[] { bootloader.EncryptKey, bootloader.SignKey });
+            var bootloader = GetBootloaderKeysPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
+            ret = DeviceManager.ProgramSampleWithBootLoaderKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
@@ -185,8 +130,12 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetOTABootloaderPath(deviceNumber, DevKits.Default);
-            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, new string[] { bootloader.EncryptKey, bootloader.SignKey }, bootloader.Bootloader);
+            var tempBasePath = DeviceManager.FileSystemManager.BasePath;
+            var srcRoot = Directory.GetParent(filePath);
+            DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
+            var bootloader = GetOTABootloaderPath(deviceNumber);
+            DeviceManager.FileSystemManager.BasePath = tempBasePath;
+            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
@@ -195,8 +144,12 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetOTWBootloaderPath(deviceNumber, filePath.Contains("SerialAPI_Controller"), DevKits.Default);
-            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, new string[] { bootloader.EncryptKey, bootloader.SignKey }, bootloader.Bootloader);
+            var tempBasePath = DeviceManager.FileSystemManager.BasePath;
+            var srcRoot = Directory.GetParent(filePath);
+            DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
+            var bootloader = GetOTWBootloaderPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
+            DeviceManager.FileSystemManager.BasePath = tempBasePath;
+            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
@@ -214,6 +167,14 @@ namespace Zats.Services
                     if (!DeviceManager.IsOptionDisabled(ZWaveSet.NodeIdBase2, deviceNumber))
                     {
                         device.SerialApiSetNodeIdBaseType(2);
+                    }
+                    if (device.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
+                    {
+                        var rfregion = (ZWave.BasicApplication.Enums.RfRegions)(Enum.Parse(typeof(ZWave.BasicApplication.Enums.RfRegions), deviceHostClient.Frequency));
+                        device.SetRfRegion(rfregion);
+                        device.SoftReset(); // After serialAPI Setup required! impacts on max Payload size:
+                        device.GetMaxPayloadSize();
+                        device.GetMaxLRPayloadSize();
                     }
                 }
             }
@@ -258,11 +219,11 @@ namespace Zats.Services
             }
         }
 
-        private string GblCreateWithCustomKeys(string hexFilePath)
+        private string GblCreateWithCustomKeys(string hexFilePath, bool isSeries2 = false)
         {
             string gblFilePath = Path.GetFileName(hexFilePath).Replace(".hex", ".gbl");
             gblFilePath = Path.Combine(Path.GetTempPath(), gblFilePath);
-            return DeviceManager.GblCreateCustom(hexFilePath, gblFilePath);
+            return DeviceManager.GblCreateCustom(hexFilePath, gblFilePath, null, isSeries2);
         }
 
         public int SetHomeId(Alias deviceNumber, byte[] homeId)
@@ -287,6 +248,17 @@ namespace Zats.Services
             DeviceManager.ResetSample(deviceHostClient);
 
             return null;
+        }
+
+        /// <summary>
+        /// Read NVM3 to specific file and retrive Application Framework API Version
+        /// </summary>
+        /// <param name="deviceHostClient">Device host information.</param>
+        /// <returns>Z-Wave Application Framework API Version from NVM3: [APP_VERSION, APP_REVISION, APP_PATCH]</returns>
+        public byte[] GetApplicationVersion(Alias deviceNumber)
+        {
+            var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
+            return DeviceManager.GetZafApiVersion(deviceHostClient);
         }
     }
 

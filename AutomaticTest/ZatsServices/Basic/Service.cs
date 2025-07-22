@@ -1594,6 +1594,68 @@ namespace Zats.Services
             return new BasicResult.NvmBackupRestoreWrite(res);
         }
 
+
+        public bool NVMBackupWriteSession(Alias controller, IList<byte> data, int offset = 0, byte packetSize = 64)
+        {
+            var res = false;
+            if (NvmBackupRestoreOpen(controller))
+            {
+                List<byte[]> nvmData = Tools.ArraySplit(data.ToArray(), packetSize);
+                for (int i = 0; i < nvmData.Count; i++)
+                {
+                    var nvmWriteRes = NvmBackupRestoreWrite(controller, packetSize, offset, nvmData[i]);
+                    offset += packetSize;
+                    if (nvmWriteRes.Status == NvmBackupRestoreStatuses.Error)
+                    {
+                        break;
+                    }
+                    else if (nvmWriteRes.Status == NvmBackupRestoreStatuses.EOF ||
+                            nvmWriteRes.Status == NvmBackupRestoreStatuses.OK)
+                    {
+                        res = true;
+                    }
+                }
+                NvmBackupRestoreClose(controller);
+
+                SoftReset(controller);
+            }
+            return res;
+        }
+
+        public IList<byte> NVMBackupReadSession(Alias controller, int offset = 0, byte packetSize = 64, bool tillEOF = true)
+        {
+            var nvmReadData = new List<byte>();
+            var openRes = NvmBackupRestoreOpen(controller);
+            if (openRes)
+            {
+                Log($"NVM Size = {openRes.NvmSize}", LogLevels.Information); //Expceted for diagnostic openRes.NvmSize > offset + packetSize;
+                bool done = false;
+                while (!done)
+                {
+                    var readResult = NvmBackupRestoreRead(controller, packetSize, offset);
+                    if (readResult && readResult.Data != null)
+                    {
+                        nvmReadData.AddRange(readResult.Data);
+                        offset += packetSize;
+                        if (!tillEOF ||
+                            (tillEOF &&
+                            readResult.Status == NvmBackupRestoreStatuses.EOF ||
+                            readResult.Status == NvmBackupRestoreStatuses.Error))
+                        {
+                            done = true;
+                        }
+                    }
+                    else
+                    {
+                        done = true;
+                    }
+                }
+                NvmBackupRestoreClose(controller);
+            }
+            return nvmReadData;
+        }
+
+
         public BasicResult.FirmwareUpdateNvmInit FirmwareUpdateNvmInit(Alias deviceNumber)
         {
             Device device = DeviceManager.GetDevice(deviceNumber);

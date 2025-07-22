@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+﻿using System;
 using System.Collections.Generic;
-using TransmitOptions = Zats.Services.TransmitOptions;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using Utils;
+using Utils.UI.Enums;
 using ZWave;
+using ZWave.BasicApplication;
 using ZWave.BasicApplication.Devices;
 using ZWave.BasicApplication.Operations;
-using System.IO;
-using ZWave.BasicApplication;
-using Utils.UI.Enums;
-using ZWave.CommandClasses;
 using ZWave.BasicApplication.Tasks;
-using System;
-using ZWave.Security;
-using System.Linq;
 using ZWave.Devices;
+using ZWave.Enums;
+using ZWave.Security;
 
 namespace Zats.Services
 {
@@ -547,7 +546,7 @@ namespace Zats.Services
                     if (ret == 0xFF)
                     {
                         completedFirmwareUpdateSignal.Reset();
-                        completedFirmwareUpdateSignal.WaitOne(60*60*1000); // 60 min timeout
+                        completedFirmwareUpdateSignal.WaitOne(60 * 60 * 1000); // 60 min timeout
                     }
                     controller.Cancel(aToken);
                 }
@@ -874,6 +873,28 @@ namespace Zats.Services
             RequestNodeNeighborUpdateResult res = controller.RequestNodeNeighborDiscovery(node, nodeType, 180000);
             return new BasicActionResult.RequestNodeNeighborUpdate(res);
         }
+
+        public BasicResult.RequestNodeNeighborUpdate RequestNodeNeighborUpdate(Alias deviceNumber, Node node)
+        {
+            Controller controller = (Controller)DeviceManager.GetDevice(deviceNumber);
+            RequestNodeNeighborUpdateResult res = controller.RequestNodeNeighborUpdate(node, 180000);
+            return new BasicActionResult.RequestNodeNeighborUpdate(res);
+        }
+
+        public BasicResult.GetPriorityRoute GetPriorityRoute(Alias controllerNumber, Node node)
+        {
+            Controller device = (Controller)DeviceManager.GetDevice(controllerNumber);
+            GetPriorityRouteResult res = device.GetPriorityRoute(node);
+            return new BasicResult.GetPriorityRoute(res);
+        }
+
+        public BasicResult.GetRoutingInfo GetRoutingInfo(Alias controllerNumber, Node node, byte removeBadLinks, byte removeNonRepeaters)
+        {
+            Controller controller = (Controller)DeviceManager.GetDevice(controllerNumber);
+            GetRoutingInfoResult res = controller.GetRoutingInfo(node, removeBadLinks, removeNonRepeaters);
+            return new BasicResult.GetRoutingInfo(res);
+        }
+
 
         #endregion
     }

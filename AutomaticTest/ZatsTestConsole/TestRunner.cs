@@ -624,7 +624,7 @@ namespace ZatsTestConsole
                                             TestCaseResult res = TestCaseResult.Fail;
                                             managersContainer.SetReportFoldersAndFiles(tcDefinition.Name, frequency);
                                             consoleOutPut.SetArchiveDumpFile(managersContainer.ReportManager.TestCaseFolder, managersContainer.ReportManager.TestCaseLogName);
-                                            if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI)
+                                            if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI) // - save output for all.
                                             {
                                                 var curDir = Directory.GetCurrentDirectory();
                                                 var debugOutPath = Path.Combine(curDir,
@@ -664,7 +664,7 @@ namespace ZatsTestConsole
                                             {
                                                 res = TestCaseResult.Fail;
                                                 consoleOutPut.ReportToConsole(tc.GetLastFailure(), "", LogLevels.Fail);
-                                                consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter);
+                                                consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
                                                 testcase.Item = new testsuiteTestcaseFailure()
                                                 {
                                                     type = "skipped",
@@ -772,7 +772,7 @@ namespace ZatsTestConsole
                                                         tc.AddFailure("Not enough connected devices");
                                                     }
                                                     _stopWatch.Stop();
-                                                    consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter);
+                                                    consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
                                                     testcase.time = _stopWatch.ElapsedMilliseconds / 1000;
                                                     testsuite.time += testcase.time;
                                                 }
@@ -793,6 +793,7 @@ namespace ZatsTestConsole
                                                     managersContainer.ZipManager.InterfaceName = null;
                                                     managersContainer.ZnifferManager.FinalizeDevice();
                                                     managersContainer.ReportManager.FinalizeDevice();
+                                                    managersContainer.MeshRouterManager.FinalizeDevices();
 
                                                     managersContainer.CloseStorageWriters();
                                                     Thread.Sleep(300);

@@ -8,7 +8,7 @@ namespace Zats.Services
         void SetLearnMode(Alias deviceNumber);
         void ButtonSinglePress_UserInput(Alias deviceNumber, byte ButtonNumber);
         ServiceSettings Settings { get; set; }
-        ButtonActions ButtonActions { get; }
+        HMIActions HMIActions { get; }
         LibTypes GetLibrary(Alias endDevice);
         byte[] GetDSK(Alias deviceNumber, int numberOfBytes);
         BasicResult.AddNode AddNode(Alias primary, Alias doorLock, Alias deviceDebugNumber = new Alias());

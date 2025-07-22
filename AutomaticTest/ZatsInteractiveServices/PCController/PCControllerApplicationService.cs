@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
 using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Utils;
 using Utils.UI.Enums;
 using Zats.Services.PreconfiguredDevices;
@@ -1021,6 +1023,21 @@ namespace Zats.Services
         }
 
         public void CancelAllRunningSupportCommands(Alias deviceNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] GetAppVersionFromFile(string fromFilePath)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName = null)
         {
             throw new NotImplementedException();
         }

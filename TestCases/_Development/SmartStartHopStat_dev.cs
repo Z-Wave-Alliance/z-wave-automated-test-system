@@ -98,7 +98,7 @@ namespace ZatsTests
                         communicationErrors++;
                     }
                     /*ReportService.LogTitle("Reset node locally. It should be included back with Smart Start");
-                    TestInterfaceService.ButtonActions.Sample_Reset(DUT);
+                    TestInterfaceService.HMIActions.Sample_Reset(DUT);
                     Delay(20000, "Delay until reset is complete");*/
 
                     var NWERes = TestInterfaceService.ExcludeNode(Primary, DUT, Modes.NodeOptionNetworkWide | Modes.NodeAny);

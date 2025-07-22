@@ -47,6 +47,7 @@ namespace ZatsTestConsole
                     _programmingService = new ProgrammerService(managers.DeviceManager);
                     _service = new Service(managers.DeviceManager);
                     _testInterfaceService = new TestInterfaceService(managers.EmulatedDeviceManager, managers.DeviceManager, managers.DebugDeviceManager);
+                    _testInterfaceService = TestInterfaceBuilder((TestInterfaceService)_testInterfaceService);
                     _debugService = new DebugService(managers.DebugDeviceManager, managers.DeviceManager);
                     _manualService = new ManualService(managers.DeviceManager);
                     _asyncService = new AsyncService(managers.DeviceManager);
@@ -79,7 +80,9 @@ namespace ZatsTestConsole
                     _programmingService = new ProgrammerService(managers.DeviceManager);
                     _service = new PCControllerService(managers.PCControllerDeviceManager, managers.DeviceManager);
                     _testInterfaceService = new TestInterfaceService(managers.EmulatedDeviceManager, managers.DeviceManager, managers.DebugDeviceManager);
+                    _testInterfaceService = TestInterfaceBuilder((TestInterfaceService)_testInterfaceService);
                     var _testInterfaceServiceBasic = new TestInterfaceService(managers.EmulatedDeviceManager, managers.DeviceManager, managers.DebugDeviceManager);
+                    _testInterfaceServiceBasic = TestInterfaceBuilder((TestInterfaceService)_testInterfaceServiceBasic);
                     _testInterfaceService = new PCControllerTestInterfaceService(managers.PCControllerDeviceManager, managers.DeviceManager, _testInterfaceServiceBasic);
                     _asyncService = new PCControllerAsyncService(managers.PCControllerDeviceManager, managers.DeviceManager);
                     _parallelService = new PCControllerParallelService(managers.PCControllerDeviceManager, managers.DeviceManager, new ParallelService(managers.DeviceManager));
@@ -177,6 +180,15 @@ namespace ZatsTestConsole
         internal MessageBoxImpl GetMessageBoxProvider()
         {
             return _messageBox;
+        }
+
+        private TestInterfaceService TestInterfaceBuilder(TestInterfaceService testInterfaceService)
+        {
+            if (_cmdLineSettings.UseCLI)
+            {
+                testInterfaceService.HMIActions.UseCLI = true; // otherwise use manipulator for backward compatibility.
+            }
+            return testInterfaceService;
         }
     }
 }

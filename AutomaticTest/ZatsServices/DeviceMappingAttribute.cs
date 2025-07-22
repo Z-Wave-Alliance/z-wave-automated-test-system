@@ -31,7 +31,7 @@ namespace Zats.Services
             }
             else if (library == LibTypes.Sample)
             {
-                Libraries = new[] { LibTypes.SwitchOnOff, LibTypes.DoorLockKeyPad, LibTypes.LEDBulb, LibTypes.PowerStrip, LibTypes.SensorPIR, LibTypes.WallController, LibTypes.MultilevelSensor, LibTypes.KeyFob };
+                Libraries = new[] { LibTypes.SwitchOnOff, LibTypes.DoorLockKeyPad, LibTypes.LEDBulb, LibTypes.PowerStrip, LibTypes.SensorPIR, LibTypes.WallController, LibTypes.MultilevelSensor };
             }
             else
             {
@@ -121,7 +121,7 @@ namespace Zats.Services
             }
             else if (library == LibTypes.Sample)
             {
-                Libraries = new[] { LibTypes.SwitchOnOff, LibTypes.DoorLockKeyPad, LibTypes.LEDBulb, LibTypes.PowerStrip, LibTypes.SensorPIR, LibTypes.WallController, LibTypes.MultilevelSensor, LibTypes.KeyFob };
+                Libraries = new[] { LibTypes.SwitchOnOff, LibTypes.DoorLockKeyPad, LibTypes.LEDBulb, LibTypes.PowerStrip, LibTypes.SensorPIR, LibTypes.WallController, LibTypes.MultilevelSensor };
             }
             else
             {

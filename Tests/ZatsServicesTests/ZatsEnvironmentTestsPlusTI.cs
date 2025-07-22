@@ -78,7 +78,7 @@ namespace ZatsServicesTests
 
             var gammaProgrammerMock = new Mock<IProgrammingProvider>();
             gammaProgrammerMock.Setup(x => x.ProgramSample(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<byte[]>(), It.IsAny<byte[]>())).Returns(0);
-            gammaProgrammerMock.Setup(x => x.ProgramSampleWithBootLoaderKeys(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<string[]>())).Returns(0);
+            gammaProgrammerMock.Setup(x => x.ProgramSampleWithBootLoaderImageAndKeys(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<BootloaderPath>())).Returns(0);
 
             var basicSessionLayerMock = new Mock<ISessionLayer>();
             basicSessionLayerMock.Setup(x => x.CreateClient(It.IsAny<ushort>()))

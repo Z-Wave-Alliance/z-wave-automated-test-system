@@ -29,7 +29,6 @@ namespace Zats.Services
         RailTest = ZWave.Enums.Libraries.RailTest,
         Thermostat = ZWave.Enums.Libraries.Thermostat,
         MultilevelSwitch = ZWave.Enums.Libraries.MultilevelSwitch,
-        KeyFob = ZWave.Enums.Libraries.KeyFob,
         Meter = ZWave.Enums.Libraries.Meter,
         BarrierOperator = ZWave.Enums.Libraries.BarrierOperator,
         MultiNotificationSensor = ZWave.Enums.Libraries.MultiNotificationSensor,

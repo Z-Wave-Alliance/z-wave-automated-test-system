@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-using System;
-using System.Linq;
+﻿using System;
 using System.IO;
+using System.Linq;
 using Utils;
 using Utils.Events;
 using Utils.UI.Enums;
 using Zats.Services;
-using UicApplication;
+using Zats.Services.MeshNetworkRacks;
 using ZWave;
 using ZWave.Layers;
 using ZWave.Xml.Application;
 using ZWave.Xml.FrameHeader;
-using Zats.Services.MeshNetworkRacks;
-using Zats.Services.Telemetry;
-using System.Diagnostics;
 
 namespace ZatsTestConsole
 {
@@ -73,7 +70,9 @@ namespace ZatsTestConsole
             InstrumentsManager = new InstrumentsManager(zatsInstruments);
             InstrumentsManager.OnConnected += TransportLayer_Connected;
             InstrumentsManager.OnDataTransmitted += TransportLayer_DataTransmitted;
-            DeviceManager = new DeviceManager(settings.RunServiceType == RunServiceType.LinkFramework, alphaProgrammer, gammaProgrammer, fileSystemManager, frameDefinition)
+            DeviceManager = new DeviceManager(settings.RunServiceType == RunServiceType.LinkFramework,
+                alphaProgrammer, gammaProgrammer, fileSystemManager, frameDefinition,
+                settings.UseCLI)
             {
                 CurrentProfile = activeProfile,
                 ZWaveDefinition = zWaveDefinition

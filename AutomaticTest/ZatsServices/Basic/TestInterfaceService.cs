@@ -15,11 +15,11 @@ namespace Zats.Services
     {
         private const int INCLUSION_TIMEOUT_MS = 65000;
         private const int INCLUSION_NODE_FOUND_TIMEOUT_MS = 15000;
-        private const int INCLUSION_ADDING_REMOVING_TIMEOUT_MS = 15000;
+        private const int INCLUSION_ADDING_REMOVING_TIMEOUT_MS = 5000;
         private const int INCLUSION_LEARN_READY_TIMEOUT_MS = 15000;
         private const int INCLUSION_MAX_TIMOUT_MS = 250000;
 
-        public ButtonActions ButtonActions { get; }
+        public HMIActions HMIActions { get; }
         private IEmulatedDeviceManager EmulatedDeviceManager { get; set; }
         private DeviceManager DeviceManager { get; set; }
         private DebugDeviceManager DebugDeviceManager { get; set; }
@@ -27,7 +27,7 @@ namespace Zats.Services
         public TestInterfaceService(IEmulatedDeviceManager emulatedDeviceManager,
             DeviceManager deviceManager, DebugDeviceManager debugDeviceManager)
         {
-            ButtonActions = new ButtonActions(deviceManager);
+            HMIActions = new HMIActions(deviceManager);
             EmulatedDeviceManager = emulatedDeviceManager;
             DeviceManager = deviceManager;
             DebugDeviceManager = debugDeviceManager;
@@ -52,7 +52,7 @@ namespace Zats.Services
 
         public void SetLearnMode(Alias deviceNumber)
         {
-            ButtonActions.Sample_LearnMode(deviceNumber);
+            HMIActions.Sample_LearnMode(deviceNumber);
         }
 
         public void ButtonSinglePress_UserInput(Alias deviceNumber, byte ButtonNumber)
@@ -286,6 +286,7 @@ namespace Zats.Services
         public BasicResult.RemoveNode ExcludeNode(Alias controllerNumber, Alias testInterfaceNumber, Modes mode)
         {
             DeviceManager.DisableSmartStart(controllerNumber);
+            DeviceManager.ResetSample(DeviceManager.GetDeviceHostClient(testInterfaceNumber));
             Controller controller = (Controller)DeviceManager.GetDevice(controllerNumber);
 
             var removeToken = controller.ExcludeNode((ZWave.Enums.Modes)mode, INCLUSION_TIMEOUT_MS, null);
@@ -293,19 +294,16 @@ namespace Zats.Services
 
             int attempts = 4;
             var IsAddingRemovingEndDeviceReceived = false;
-            var expNS = GetLibrary(testInterfaceNumber) == LibTypes.KeyFob ?
-                ZWave.BasicApplication.Enums.NodeStatuses.AddingRemovingController :
-                ZWave.BasicApplication.Enums.NodeStatuses.AddingRemovingEndDevice;
+            var expNS = ZWave.BasicApplication.Enums.NodeStatuses.NodeFound;
             while (attempts > 0 && !IsAddingRemovingEndDeviceReceived)
             {
                 attempts--;
-                SetLearnMode(testInterfaceNumber); //ButtonActions.KeyFob_LearnModeNWE(testInterfaceNumber);
+                SetLearnMode(testInterfaceNumber);
                 IsAddingRemovingEndDeviceReceived = controller.WaitNodeStatusSignal(expNS, INCLUSION_ADDING_REMOVING_TIMEOUT_MS);
             }
             var removeRes = (ExclusionResult)removeToken.WaitCompletedSignal();
             if (!removeRes)
             {
-                DeviceManager.ResetSample(DeviceManager.GetDeviceHostClient(testInterfaceNumber));
                 removeToken = controller.ExcludeNode(ZWave.Enums.Modes.NodeOptionNetworkWide | (ZWave.Enums.Modes)mode, INCLUSION_TIMEOUT_MS, null);
                 controller.WaitNodeStatusSignal(ZWave.BasicApplication.Enums.NodeStatuses.LearnReady, INCLUSION_LEARN_READY_TIMEOUT_MS);
 
@@ -314,7 +312,8 @@ namespace Zats.Services
                 while (attempts > 0 && !IsAddingRemovingEndDeviceReceived)
                 {
                     attempts--;
-                    SetLearnMode(testInterfaceNumber); //ButtonActions.KeyFob_LearnModeNWE(testInterfaceNumber);
+                    DeviceManager.ResetSample(DeviceManager.GetDeviceHostClient(testInterfaceNumber));
+                    SetLearnMode(testInterfaceNumber);
                     IsAddingRemovingEndDeviceReceived = controller.WaitNodeStatusSignal(expNS, INCLUSION_ADDING_REMOVING_TIMEOUT_MS);
                 }
                 removeRes = (ExclusionResult)removeToken.WaitCompletedSignal();
@@ -382,7 +381,7 @@ namespace Zats.Services
             bool is700 = deviceHostClient.HasJName;
             if (is700)
             {
-                ret = DeviceManager.ProgramBootLoader(deviceHostClient, new string[] { bootloaderPath.EncryptKey, bootloaderPath.SignKey }, bootloaderPath.Bootloader);
+                ret = DeviceManager.ProgramBootLoader(deviceHostClient, bootloaderPath);
             }
             return ret;
         }

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Zats.Services.PreconfiguredDevices;
 using Zats.Services.QuirkDatabase;
 
@@ -146,6 +147,29 @@ namespace Zats.Services
         BasicToken.Void[] SetApplicationQuirkResponse(Alias deviceNumber, QuirckLibrary library, byte[] fullCmd);
         BasicToken.Void[] SetApplicationQuirkResponse(Alias deviceNumber, QuirckLibrary library, byte[] fullCmd, byte[] wakeUpInterval, byte zWavePlusersion, int groupings = 1);
         void CancelAllRunningSupportCommands(Alias deviceNumber);
+
+        /// <summary>
+        /// Retrive Application Framework API Version.
+        /// </summary>
+        /// <param name="fromFilePath">HEX file source.</param>
+        /// <returns>>Z-Wave Application Framework API Version from NVM3: [APP_VERSION, APP_REVISION, APP_PATCH]</returns>
+        byte[] GetAppVersionFromFile(string fromFilePath);
+        /// <summary>
+        /// Downloads a file from the specified URI and saves it to the destination folder.
+        /// </summary>
+        /// <param name="url">The URL of the file to download.</param>
+        /// <param name="destinationFolder">The destination folder where the file will be saved.</param>
+        /// <param name="fileName">Optional file name to use for saving. If not specified, the name will be extracted from the URI.</param>
+        /// <returns>The full path to the downloaded file.</returns>
+        string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null);
+        /// <summary>
+        /// Downloads a file from the specified URI asynchronously and saves it to the destination folder.
+        /// </summary>
+        /// <param name="url">The URL of the file to download.</param>
+        /// <param name="destinationFolder">The destination folder where the file will be saved.</param>
+        /// <param name="fileName">Optional file name to use for saving. If not specified, the name will be extracted from the URI.</param>
+        /// <returns>The full path to the downloaded file.</returns>
+        Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName = null);
     }
 
     public class Parameters

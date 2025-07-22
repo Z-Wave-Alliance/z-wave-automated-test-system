@@ -77,6 +77,8 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
 			<xs:enumeration value="TCP" />
 			<xs:enumeration value="DTLS1" />
 			<xs:enumeration value="HTTP" />
+			<xs:enumeration value="ZIGBEE" />
+			<xs:enumeration value="SSH" />
       <xs:enumeration value="MQTT" />
     </xs:restriction>
 	</xs:simpleType>

@@ -14,12 +14,24 @@ namespace Zats.Services
 {
     public class FileSystemManager : IFileSystemManager
     {
+        private const string RESOURSES_FOLDER = "Resources";
+        private const string FilePatternDefinitionName = "FilePatternDefinition.xml";
+
+        private string _defaultResourcesPath;
+        private FilePatternDefinition _definition = null;
+
         public Profile CurrentProfile { get; set; }
         public string BasePath { get; set; }
         private Action<bool, string> _logAction;
         public FileSystemManager(Action<bool, string> logAction)
         {
             _logAction = logAction;
+            _defaultResourcesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER);
+            if (_definition == null)
+            {
+                var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "XmlFiles");
+                _definition = GetFilePatternDefinition(location, FilePatternDefinitionName);
+            }
         }
 
         private FilePatternDefinition GetFilePatternDefinition(string path, string fileName)
@@ -93,7 +105,6 @@ namespace Zats.Services
             return GetLatestFilePath(lib, chipSeries, frequency, null, devKit, filters);
         }
 
-        FilePatternDefinition _definition = null;
         public string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, string ending, DevKits devKit, params string[] filters)
         {
             string resultFilePath = null;
@@ -104,11 +115,6 @@ namespace Zats.Services
 
             if (!requiresSpecific.Contains(chipSeries))
             {
-                if (_definition == null)
-                {
-                    var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "XmlFiles");
-                    _definition = GetFilePatternDefinition(location, "FilePatternDefinition.xml");
-                }
                 var binPat = _definition?.BinaryPatterns?.FirstOrDefault(x => x.ChipSeries == chipSeries.ToString());
                 if (binPat == null)
                 {
@@ -123,7 +129,8 @@ namespace Zats.Services
                         }).ToArray();
                     }
                 }
-                string devkitsRootFolders = BasePath + ";" + Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
+
+                string devkitsRootFolders = BasePath + ";" + _defaultResourcesPath;
                 if (!string.IsNullOrEmpty(devkitsRootFolders))
                 {
                     var folders = devkitsRootFolders.Split(';');
@@ -161,7 +168,7 @@ namespace Zats.Services
                         }
                         else //use hardcoded files from resources:
                         {
-                            var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
+                            var location = _defaultResourcesPath;
                             var rtResourceName = string.Empty;
                             switch (lib)
                             {
@@ -175,6 +182,11 @@ namespace Zats.Services
                                         .Select(x => x.ToString()).Contains(chipSeries))
                                     {
                                         rtResourceName = "rt8230.hex";
+                                    }
+                                    else if ((new[] { ChipSeries.xG28_BRD4400C, ChipSeries.xG28_BRD4401C })
+                                        .Select(x => x.ToString()).Contains(chipSeries))
+                                    {
+                                        rtResourceName = "rtxG28.hex";
                                     }
                                     else if ((new[] { ChipSeries.ZG14_BRD4201A, ChipSeries.ZG14_BRD4206A, ChipSeries.ZG14_BRD4208A })
                                      .Select(x => x.ToString()).Contains(chipSeries))
@@ -357,12 +369,67 @@ namespace Zats.Services
             }
             return resultFilePath;
         }
+
+        public BootloaderPath GetBootloaderPath(DeviceHostClient deviceHostClient, string[] specificFileNamePattern, params string[] regexFilters)
+        {
+            BootloaderPath ret = new BootloaderPath();
+            if (DeviceManager.IsTerminalApplication(deviceHostClient.Library)) return ret;
+
+            bool isSpecialCase = DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x));
+            var isSerialApiControlled = !DeviceManager.IsSampleApplication(deviceHostClient.Library);
+            var isSAPI = isSerialApiControlled && !isSpecialCase;
+            var defaultSearchPattern = string.Empty;
+            if (_definition != null && _definition.DefaultBootloaderInfos != null && _definition.DefaultBootloaderInfos.Length > 1)
+            {
+                //Set predefined keys from RESOURSES_FOLDER:
+                var idx = isSAPI ? 1 : 0;
+                var keyTokensFileName = _definition.DefaultBootloaderInfos?[idx].KeyTokensFileName;
+                var encryptKeyFileName = _definition.DefaultBootloaderInfos?[idx].EncryptKeyFileName;
+                var signKeyFileName = _definition.DefaultBootloaderInfos?[idx].SignKeyFileName;
+
+                var idxBrd = deviceHostClient.Host.ChipSeries.ToLower().IndexOf("brd");
+                var brdNumber = string.Concat(deviceHostClient.Host.ChipSeries.Skip(idxBrd)); // specify filter for board from chip version.
+                defaultSearchPattern = _definition.DefaultBootloaderInfos?[idx].Pattern.Replace("{brdNumber}", brdNumber);
+
+                var location = _defaultResourcesPath;
+                ret.KeysToken = Path.Combine(location, keyTokensFileName);
+                ret.EncryptKey = Path.Combine(location, encryptKeyFileName);
+                ret.SignKey = Path.Combine(location, signKeyFileName);
+            }
+
+            var expectedFileNames = specificFileNamePattern ?? new[] { defaultSearchPattern };
+            foreach (var item in expectedFileNames)
+            {
+                var bootloaderFilePath = GetLatestFilePath(item, DevKits.Default, regexFilters);
+                ret.Bootloader = bootloaderFilePath;
+
+                //try to update keys if exists from detected bootloader path:
+                if (!string.IsNullOrEmpty(bootloaderFilePath) && File.Exists(bootloaderFilePath))
+                {
+                    var newKeysToken = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.KeysToken));
+                    if (File.Exists(newKeysToken))
+                        ret.KeysToken = newKeysToken;
+                    var newEncKey = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.EncryptKey));
+                    if (File.Exists(newEncKey))
+                        ret.EncryptKey = newEncKey;
+                    var newsignKey = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.SignKey));
+                    if (File.Exists(newsignKey))
+                        ret.SignKey = newsignKey;
+
+                    break;
+                }
+            }
+
+            return ret;
+        }
+
     }
 
     public class BootloaderPath
     {
         public string EncryptKey { get; set; }
         public string SignKey { get; set; }
+        public string KeysToken { get; set; }
         public string Bootloader { get; set; }
     }
 }

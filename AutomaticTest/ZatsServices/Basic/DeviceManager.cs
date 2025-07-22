@@ -17,6 +17,7 @@ using Utils.UI.Enums;
 using Zats.Services.Configuration;
 using Zats.Services.Constants;
 using Zats.Services.Enums;
+using Zats.Services.SampleApplication;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Devices;
@@ -35,13 +36,11 @@ namespace Zats.Services
 {
     public class DeviceManager : DeviceManagerBase
     {
+        private readonly bool _useCLIforEndDevice;
         public event EventHandler<EventArgs<SessionAttachment>> OnConnected;
         public ZWave.Enums.TransmitOptions TX_OPTIONS = ZWave.Enums.TransmitOptions.TransmitOptionAcknowledge | ZWave.Enums.TransmitOptions.TransmitOptionAutoRoute | ZWave.Enums.TransmitOptions.TransmitOptionExplore;
         public bool IsSkipCheckPortExists { get; set; }
-        public const string SampleEncryptKeyFileName = "sample_encrypt.key";
-        public const string SampleSignKeyFileName = "sample_sign.key-tokens.txt";
-        public const string ControllerEncryptKeyFileName = "zg14_encrypt.key";
-        public const string ControllerSignKeyFileName = "zg14_sign.key-tokens.txt";
+        static public readonly string[] SpecificChips = new[] { "ZGM13", "ZG13", "RZ13", "ZG14" };
 
         private readonly List<ChipSeries> ChipSeriesWithControllerPriority =
             new List<ChipSeries>
@@ -80,14 +79,19 @@ namespace Zats.Services
             return _gammaProgrammer.GetChipSeries(deviceClientHost);
         }
 
-        internal string GblCreateCustom(string hexFilePath, string gblFilePath)
+        internal string GblCreateCustom(string hexFilePath, string gblFilePath, BootloaderPath blp, bool isSeries2 = false)
         {
             string ret = null;
-            var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
-            var encryptKeyPath = Path.Combine(location, "custom_encrypt.key");
-            var signKeyPath = Path.Combine(location, "custom_sign.key-tokens.txt");
+            if (string.IsNullOrEmpty(gblFilePath))
+            {
+                gblFilePath = hexFilePath.Replace(".hex", ".gbl"); //put in the same place as original.
+            }
 
-            if (_gammaProgrammer.GblCreate(hexFilePath, gblFilePath, signKeyPath, encryptKeyPath) == 0)
+            var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
+            var encryptKeyPath = blp?.EncryptKey ?? Path.Combine(location, "sample_encrypt.key");
+            var signKeyPath = blp?.SignKey ?? Path.Combine(location, "sample_sign.key");
+
+            if (_gammaProgrammer.GblCreate(hexFilePath, gblFilePath, signKeyPath, encryptKeyPath, isSeries2) == 0)
             {
                 ret = gblFilePath;
             }
@@ -104,9 +108,11 @@ namespace Zats.Services
             IProgrammingProvider alphaProgrammer,
             IProgrammingProvider gammaProgrammer,
             IFileSystemManager fileSystemManager,
-            FrameDefinition frameDefinition)
+            FrameDefinition frameDefinition,
+            bool useCLIforEndDevice = false)
             : base()
         {
+            _useCLIforEndDevice = useCLIforEndDevice;
             _alphaProgrammer = alphaProgrammer;
             _gammaProgrammer = gammaProgrammer;
             FileSystemManager = fileSystemManager;
@@ -130,6 +136,7 @@ namespace Zats.Services
             SecurityS2 = new SecurityS2(this);
             FirmwareUpdateMD = new FirmwareUpdateMD(this);
             IncludeSettings = new IncludeSettings();
+            SilinkManager = new SilinkManager(this);
         }
 
         public ConcurrentDictionary<Alias, DeviceHostClient> Devices = new ConcurrentDictionary<Alias, DeviceHostClient>();
@@ -180,6 +187,8 @@ namespace Zats.Services
         public SortedList<ZWaveSet, Alias[]> DisableOptions { get; set; }
         public IIncludeSettings IncludeSettings { get; set; }
         public IFileSystemManager FileSystemManager { get; set; }
+        public SilinkManager SilinkManager { get; private set; }
+
         public ZWaveDefinition ZWaveDefinition { get; set; }
         public static string IncludeUsbVcpRegexFilter = "USBVCP";
         public static string ExcludeUsbVcpRegexFilter = @"^(?!.*USBVCP).*$";
@@ -193,8 +202,7 @@ namespace Zats.Services
             Parallel.ForEach(filteredItems, item =>
             {
                 LoadDSK(item.Value);
-                Devices[item.Key].SClient?.Dispose();
-                Devices[item.Key].PClient?.Dispose();
+                FinalizeDevice(item.Value);
                 if (Devices.TryRemove(item.Key, out DeviceHostClient oldDhc))
                 {
                     item.Value.DeviceAlias = item.Key;
@@ -555,7 +563,6 @@ namespace Zats.Services
                 Libraries.SwitchOnOff,
                 Libraries.WallController,
                 Libraries.MultilevelSensor,
-                Libraries.KeyFob
             }.Contains(library);
         }
 
@@ -743,8 +750,7 @@ namespace Zats.Services
                         }
                         if ((hostClient.HasSName && hostClient.SClient == null) || (hostClient.HasPName && hostClient.PClient == null))
                         {
-                            hostClient.SClient?.Dispose();
-                            hostClient.PClient?.Dispose();
+                            FinalizeDevice(hostClient);
                         }
                         else
                             deviceHostClients.Add(hostClient);
@@ -773,8 +779,7 @@ namespace Zats.Services
 
                     Parallel.ForEach(dhcClients, item =>
                     {
-                        item.SClient?.Dispose();
-                        item.PClient?.Dispose();
+                        FinalizeDevice(item);
                     });
                 }
             }
@@ -1243,9 +1248,9 @@ namespace Zats.Services
             Log($"{SecuritySchemes.S2_TEMP}:         " + GetLastTempNetworkKey(controller, SecuritySchemes.S2_TEMP, false)?.ToHexString(), LogLevels.Information);
         }
 
-        internal int ProgramBootLoader(DeviceHostClient deviceHostClient, string[] tokenPaths, string bootLoaderPath)
+        internal int ProgramBootLoader(DeviceHostClient deviceHostClient, BootloaderPath bootLoaderPath)
         {
-            return _gammaProgrammer.ProgramBootLoader(deviceHostClient, tokenPaths, bootLoaderPath);
+            return _gammaProgrammer.ProgramBootLoader(deviceHostClient, bootLoaderPath);
         }
 
         public void ResetAllBoards(Profile activeProfile)
@@ -1261,8 +1266,7 @@ namespace Zats.Services
                         var dhc = new DeviceHostClient(host, BasicApplicationLayer, null);
                         dhc.PClient = BasicApplicationLayer.CreateTestInterfaceDevice(dhc.PClient);
                         _alphaProgrammer.ResetSample(dhc);
-                        dhc.SClient?.Dispose();
-                        dhc.PClient?.Dispose();
+                        FinalizeDevice(dhc);
                     }
                 }
                 else
@@ -1271,8 +1275,7 @@ namespace Zats.Services
                     {
                         var dhc = new DeviceHostClient(host);
                         _gammaProgrammer.ResetSample(dhc);
-                        dhc.SClient?.Dispose();
-                        dhc.PClient?.Dispose();
+                        FinalizeDevice(dhc);
                     }
                 }
             });
@@ -1340,31 +1343,32 @@ namespace Zats.Services
             }
             else
             {
-                BootloaderPath bootloaderPath = null;
-                bool isSerialApiController = new[] { "SerialAPI_Controller", "serial_api_controller" }.Any(x => samplePath.Contains(x));
-                if (isSerialApiController && !deviceHostClient.Host.ChipSeries.Contains("ZGM13") && !deviceHostClient.Host.ChipSeries.Contains("ZG13") && !deviceHostClient.Host.ChipSeries.Contains("RZ13"))
-                {
-                    bootloaderPath = GetBootloaderKeysPath(ControllerEncryptKeyFileName, ControllerSignKeyFileName);
-                }
-                else
-                {
-                    bootloaderPath = GetBootloaderKeysPath(SampleEncryptKeyFileName, SampleSignKeyFileName);
-                }
+                BootloaderPath bootloaderPath = FileSystemManager.GetBootloaderPath(deviceHostClient, null);
                 if (_gammaProgrammer != null)
                 {
-                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderKeys(deviceHostClient, region, samplePath, new string[] { bootloaderPath.EncryptKey, bootloaderPath.SignKey });
+                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, bootloaderPath);
                 }
             }
             if (deviceHostClient.SClient != null && IsSerialApi(deviceHostClient.Library))
             {
-                var ver = new VersionOperation();
-                ver.Token.LogEntryPointSource = deviceHostClient.SClient.DataSource == null ? "" : deviceHostClient.SClient.DataSource.SourceName;
-                var verRes = (VersionResult)deviceHostClient.SClient.SessionClient.ExecuteAsync(ver).WaitCompletedSignal();
-                if (verRes)
+                var isVersionDetected = false;
+                for (int i = 0; i < 2 && !isVersionDetected; i++)
                 {
-                    deviceHostClient.Library = verRes.Library;
+                    if (i > 0 && _gammaProgrammer != null)
+                    {
+                        (_gammaProgrammer as ProgrammingGammaProvider).BoardHardReset(deviceHostClient);
+                        Reconnect(deviceHostClient);
+                    }
+                    var ver = new VersionOperation();
+                    ver.Token.LogEntryPointSource = deviceHostClient.SClient.DataSource == null ? "" : deviceHostClient.SClient.DataSource.SourceName;
+                    var verRes = (VersionResult)deviceHostClient.SClient.SessionClient.ExecuteAsync(ver).WaitCompletedSignal();
+                    if (verRes)
+                    {
+                        deviceHostClient.Library = verRes.Library;
+                        isVersionDetected = true;
+                    }
                 }
-                else
+                if (!isVersionDetected)
                 {
                     $"no firmware at {deviceHostClient.SClient.DataSource}"._DLOG();
                 }
@@ -1373,21 +1377,21 @@ namespace Zats.Services
         }
 
 
-        public int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions region, string samplePath, string[] tokenPaths)
+        public int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions region, string samplePath, BootloaderPath bootloaderPath)
         {
             var exitCode = 0;
             if (string.IsNullOrEmpty(deviceHostClient.Host.JName))
             {
                 if (_alphaProgrammer != null)
                 {
-                    exitCode = _alphaProgrammer.ProgramSampleWithBootLoaderKeys(deviceHostClient, region, samplePath, tokenPaths);
+                    exitCode = _alphaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, bootloaderPath);
                 }
             }
             else
             {
                 if (_gammaProgrammer != null)
                 {
-                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderKeys(deviceHostClient, region, samplePath, tokenPaths);
+                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, bootloaderPath);
                 }
             }
             if (deviceHostClient.SClient != null && IsSerialApi(deviceHostClient.Library))
@@ -1407,21 +1411,21 @@ namespace Zats.Services
             return exitCode;
         }
 
-        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions region, string samplePath, string[] tokenPaths, string bootLoaderPath)
+        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions region, string samplePath, BootloaderPath bootloaderPath)
         {
             var exitCode = 0;
             if (string.IsNullOrEmpty(deviceHostClient.Host.JName))
             {
                 if (_alphaProgrammer != null)
                 {
-                    exitCode = _alphaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, tokenPaths, bootLoaderPath);
+                    exitCode = _alphaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, bootloaderPath);
                 }
             }
             else
             {
                 if (_gammaProgrammer != null)
                 {
-                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, tokenPaths, bootLoaderPath);
+                    exitCode = _gammaProgrammer.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, region, samplePath, bootloaderPath);
                 }
             }
             if (deviceHostClient.SClient != null && IsSerialApi(deviceHostClient.Library))
@@ -1439,15 +1443,6 @@ namespace Zats.Services
                 }
             }
             return exitCode;
-        }
-
-        public BootloaderPath GetBootloaderKeysPath(string encryptKeyFileName, string signKeyFileName)
-        {
-            BootloaderPath ret = new BootloaderPath();
-            var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
-            ret.EncryptKey = Path.Combine(location, encryptKeyFileName);
-            ret.SignKey = Path.Combine(location, signKeyFileName);
-            return ret;
         }
 
         public int RenewDsk(DeviceHostClient deviceHostClient)
@@ -1782,6 +1777,8 @@ namespace Zats.Services
                     var textClient = TextApplicationLayer.CreateTextDevice(deviceHostClient.SClient);
                     textClient.IsAllowEmptyResponse = true;
                     client = textClient;
+                    (_gammaProgrammer as ProgrammingGammaProvider)?.BoardHardReset(deviceHostClient);
+                    Reconnect(deviceHostClient);
                     deviceHostClient.SClient = client;
                     break;
                 case Libraries.DoorLockKeyPad:
@@ -1791,8 +1788,11 @@ namespace Zats.Services
                 case Libraries.SwitchOnOff:
                 case Libraries.WallController:
                 case Libraries.MultilevelSensor:
-                case Libraries.KeyFob:
-                    if (deviceHostClient.PClient != null)
+                    if (_useCLIforEndDevice && _ZW080xList.Select(x => x.ToString()).Contains(deviceHostClient.Host.ChipSeries))
+                    {
+                        SilinkManager.Init(deviceHostClient);
+                    }
+                    else if (deviceHostClient.PClient != null)
                     {
                         client = BasicApplicationLayer.CreateTestInterfaceDevice(deviceHostClient.PClient);
                         deviceHostClient.PClient = client;
@@ -1859,69 +1859,58 @@ namespace Zats.Services
             if (client != null)
             {
                 client.SessionClient.AddSubstituteManager(new SettingsSubstituteManager(client.Network));
+                var deviceOption = ZWave.Enums.DeviceOptions.Listening;
+                var genericType = (byte)GenericTypes.STATIC_CONTROLLER;
+                var specificType = SpecificTypes.PC_CONTROLLER;
+
                 switch (client.Library)
                 {
                     case Libraries.InstallerLib:
                     case Libraries.ControllerStaticLib:
                     case Libraries.ControllerBridgeLib:
-                        if (!IsOptionDisabled(ZWaveSet.NodeIdBase2, item.DeviceAlias))
-                        {
-                            client.SerialApiSetNodeIdBaseType(2);
-                        }
-                        client.MemoryGetId();
-                        client.SerialApiGetInitData();
-                        client.SerialApiGetLRNodes();
-                        client.ApplicationNodeInformation(ZWave.Enums.DeviceOptions.Listening, (byte)GenericTypes.STATIC_CONTROLLER, SpecificTypes.PC_CONTROLLER, cmdClasses);
-                        client.Network.SetApplicationNodeInformation(ZWave.Enums.DeviceOptions.Listening, (byte)GenericTypes.STATIC_CONTROLLER, SpecificTypes.PC_CONTROLLER, cmdClasses);
-                        client.SerialApiGetCapabilities();
-                        if (client.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
-                        {
-                            client.GetMaxPayloadSize();
-                            client.GetMaxLRPayloadSize();
-                        }
+                        deviceOption = ZWave.Enums.DeviceOptions.Listening;
+                        genericType = (byte)GenericTypes.STATIC_CONTROLLER;
+                        specificType = SpecificTypes.PC_CONTROLLER;
                         break;
                     case Libraries.ControllerPortableLib:
-                        if (!IsOptionDisabled(ZWaveSet.NodeIdBase2, item.DeviceAlias))
-                        {
-                            client.SerialApiSetNodeIdBaseType(2);
-                        }
-                        client.MemoryGetId();
-                        client.SerialApiGetInitData();
-                        client.SerialApiGetLRNodes();
-                        client.ApplicationNodeInformation(ZWave.Enums.DeviceOptions.NoneListening, (byte)GenericTypes.GENERIC_CONTROLLER, SpecificTypes.PORTABLE_REMOTE_CONTROLLER, cmdClasses);
-                        client.Network.SetApplicationNodeInformation(ZWave.Enums.DeviceOptions.NoneListening, (byte)GenericTypes.GENERIC_CONTROLLER, SpecificTypes.PC_CONTROLLER, cmdClasses);
-                        client.SerialApiGetCapabilities();
-                        if (client.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
-                        {
-                            client.GetMaxPayloadSize();
-                            client.GetMaxLRPayloadSize();
-                        }
+                        deviceOption = ZWave.Enums.DeviceOptions.NoneListening;
+                        genericType = (byte)GenericTypes.GENERIC_CONTROLLER;
+                        specificType = SpecificTypes.PORTABLE_REMOTE_CONTROLLER;
                         break;
                     case Libraries.EndDeviceLib:
                     case Libraries.EndDeviceLegacyLib:
                     case Libraries.EndDeviceLegacyRoutingLib:
                     case Libraries.TestController:
-                        if (!IsOptionDisabled(ZWaveSet.NodeIdBase2, item.DeviceAlias))
-                        {
-                            client.SerialApiSetNodeIdBaseType(2);
-                        }
-                        client.MemoryGetId();
-                        client.SerialApiGetInitData();
-                        client.SerialApiGetLRNodes();
-                        client.ApplicationNodeInformation(ZWave.Enums.DeviceOptions.Listening,
-                            (byte)GenericTypes.SWITCH_MULTILEVEL, SpecificTypes.NOT_USED, cmdClasses);
-                        client.Network.SetApplicationNodeInformation(ZWave.Enums.DeviceOptions.Listening, (byte)GenericTypes.SWITCH_MULTILEVEL, SpecificTypes.NOT_USED, cmdClasses);
-                        client.ApplicationNodeInformationCmdClasses(cmdClasses, cmdClasses, cmdClasses);
-                        client.SerialApiGetCapabilities();
-                        if (client.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
-                        {
-                            client.GetMaxPayloadSize();
-                            client.GetMaxLRPayloadSize();
-                        }
+                        deviceOption = ZWave.Enums.DeviceOptions.Listening;
+                        genericType = (byte)GenericTypes.SWITCH_MULTILEVEL;
+                        specificType = SpecificTypes.NOT_USED;
                         break;
                     default:
                         break;
                 }
+                PresetSerialAPIDevice(item, client, cmdClasses, deviceOption, genericType, specificType);
+            }
+        }
+
+        private void PresetSerialAPIDevice(DeviceHostClient item, Device client, byte[] cmdClasses, ZWave.Enums.DeviceOptions deviceOption, byte genericType, byte specificType)
+        {
+            if (!IsOptionDisabled(ZWaveSet.NodeIdBase2, item.DeviceAlias))
+            {
+                client.SerialApiSetNodeIdBaseType(2);
+            }
+            client.MemoryGetId();
+            client.SerialApiGetInitData();
+            client.SerialApiGetLRNodes();
+            client.ApplicationNodeInformation(deviceOption, genericType, specificType, cmdClasses);
+            client.Network.SetApplicationNodeInformation(deviceOption, genericType, specificType, cmdClasses);
+            client.SerialApiGetCapabilities();
+            if (client.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
+            {
+                var rfregion = (ZWave.BasicApplication.Enums.RfRegions)(Enum.Parse(typeof(ZWave.BasicApplication.Enums.RfRegions), item.Frequency));
+                client.SetRfRegion(rfregion);
+                client.SoftReset(); // After serialAPI Setup required! impacts on max Payload size:
+                client.GetMaxPayloadSize();
+                client.GetMaxLRPayloadSize();
             }
         }
 
@@ -1970,9 +1959,13 @@ namespace Zats.Services
                     .Where(x => required.DevKit == x.DevKit)
                     .Where(x => !string.IsNullOrWhiteSpace(required.FileNameFilter) ? new Regex(required.FileNameFilter, RegexOptions.IgnoreCase).Match(x.FileName).Success : true));
 
-                // Filter for TI required
-                candidates = candidates
-                    .Where(x => (required.IsTestInterface && x.HasPName) || (!required.IsTestInterface && x.HasSName)).ToList();
+                if (!_useCLIforEndDevice ||
+                    !(_useCLIforEndDevice && _ZW080xList.Contains(required.ChipSeries))) //Skip Manipulator's requirement for 800s with CLI enabled.
+                {
+                    //Filter for TI required to use Manipulator boards togher with Sample app's board (in case of CLI we don't need it).
+                    candidates = candidates
+                        .Where(x => (required.IsTestInterface && x.HasPName) || (!required.IsTestInterface && x.HasSName)).ToList();
+                }
 
                 // Filter by alias
                 if (required.HasAlias && availableList.Where(x => x.Host.Alias == required.Alias).Any())
@@ -2171,8 +2164,7 @@ namespace Zats.Services
                 {
                     if (Devices.TryRemove(number, out DeviceHostClient dhc))
                     {
-                        dhc.SClient?.Dispose();
-                        dhc.PClient?.Dispose();
+                        FinalizeDevice(dhc);
                     }
                 });
             }
@@ -2180,6 +2172,13 @@ namespace Zats.Services
             {
                 agex.Message._DLOG();
             }
+        }
+
+        private void FinalizeDevice(DeviceHostClient dhc)
+        {
+            SilinkManager.Disconnect(dhc);
+            dhc.SClient?.Dispose();
+            dhc.PClient?.Dispose();
         }
 
         SimpleToken smartStartToken = null;
@@ -2504,6 +2503,20 @@ namespace Zats.Services
         {
             return Devices;
         }
+
+        /// <summary>
+        /// Read NVM3 to specific file and retrive Application Framework API Version
+        /// </summary>
+        /// <param name="deviceHostClient">Device host information.</param>
+        /// <returns>Z-Wave Application Framework API Version from NVM3: [APP_VERSION, APP_REVISION, APP_PATCH]</returns>
+        public byte[] GetZafApiVersion(DeviceHostClient deviceHostClient)
+        {
+            if (deviceHostClient.HasJName && _gammaProgrammer != null)
+            {
+                return (_gammaProgrammer as ProgrammingGammaProvider).ReadZafApiVersionFromNVM(deviceHostClient);
+            }
+            return new byte[0];
+        }
     }
 
     public class UnknownDevice
@@ -2594,7 +2607,6 @@ namespace Zats.Services
                         SClient.DataSource = sds;
                     }
                 }
-
                 if (!string.IsNullOrEmpty(Host.PName))
                 {
                     if (IPAddress.TryParse(Host.PName, out IPAddress ipAddress))

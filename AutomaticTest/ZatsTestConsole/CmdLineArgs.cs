@@ -122,6 +122,11 @@ namespace ZatsTestConsole
         public static CmdLineArgument IP_FILTER = new CmdLineArgument("-ipf", "--ip-filter",
             "Filter for IP addresses", false, "[masks] | filename with masks");
         /// <summary>
+        /// Use CLI to interact with End Device, available since 7.22.0 version.
+        /// </summary>
+        public static CmdLineArgument USE_CLI = new CmdLineArgument("-ucli", "--use-cli",
+            "Use CLI to manipulate the DUTs' behavior.", false, "command");        
+        /// <summary>
         /// Print HELP text
         /// </summary>
         public static CmdLineArgument HELP = new CmdLineArgument("-h", "--help",
@@ -156,6 +161,7 @@ namespace ZatsTestConsole
                     COMMANDER_APP_PATH,
                     TEST_BEDS_FILTER,
                     IP_FILTER,
+                    USE_CLI,
                     HELP,
                 };
             }
@@ -260,6 +266,7 @@ namespace ZatsTestConsole
         public string TestBedsFilter;
         public string CommanderAppPath;
         public string IPFilter;
+        public bool UseCLI;
         public bool HasHelp;
         public string Help;
 

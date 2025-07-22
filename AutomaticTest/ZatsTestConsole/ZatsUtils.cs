@@ -153,6 +153,7 @@ namespace ZatsTestConsole
                         errorMsgs.AppendLine(CmdLineArgs.GetHelp(CmdLineArgs.COMMANDER_APP_PATH));
                     }
                 }
+                cmdLineSettings.UseCLI = commands.ContainsKey(CmdLineArgs.USE_CLI);
             }
             if (cmdLineSettings.HasParseError)
             {
@@ -688,9 +689,6 @@ namespace ZatsTestConsole
                     break;
                 case LibTypes.RailTest:
                     ret = Libraries.RailTest;
-                    break;
-                case LibTypes.KeyFob:
-                    ret = Libraries.KeyFob;
                     break;
                 case LibTypes.NoLib:
                     ret = Libraries.NoLib;

@@ -264,17 +264,13 @@ namespace Zats.Services
             return ret;
         }
 
-        public int ProgramBootLoader(DeviceHostClient deviceHostClient, string[] tokenPaths, string bootLoaderPath)
+        public int ProgramBootLoader(DeviceHostClient deviceHostClient, BootloaderPath bootloaderPath)
         {
             throw new NotImplementedException();
         }
 
-        public int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths)
-        {
-            throw new NotImplementedException();
-        }
 
-        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths, string bootLoaderPath)
+        public int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, BootloaderPath bootloaderPath)
         {
             throw new NotImplementedException();
         }
@@ -307,7 +303,7 @@ namespace Zats.Services
             return ret;
         }
 
-        public int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath)
+        public int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath, bool isSeries2 = false)
         {
             throw new NotImplementedException();
         }

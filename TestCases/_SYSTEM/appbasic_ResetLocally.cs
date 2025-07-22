@@ -73,7 +73,7 @@ namespace ZatsTests
             ReportService.LogText("4. Initiate Device reset locally (currently HOLD S1 for 10 seconds) on node ID2.");
             var tsZT = ZnifferService.CollectData(30000).SetUpWatch(new COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION(), HeaderTypes.SINGLECAST, false);
 
-            TestInterfaceService.ButtonActions.Sample_Reset(dut);
+            TestInterfaceService.HMIActions.Sample_Reset(dut);
 
             Delay(12000);
             var tsZR = tsZT.WaitCompletedSignal();
@@ -92,7 +92,7 @@ namespace ZatsTests
             zToken2.SetUpWatch(0, 255, new ZWAVE_CMD_CLASS.NODE_INFO());
 
             Delay(1000);
-            TestInterfaceService.ButtonActions.Sample_LearnMode(dut);
+            TestInterfaceService.HMIActions.Sample_LearnMode(dut);
 
             AssertIsTrue(!zToken1.WaitCompletedSignal() && zToken2.WaitCompletedSignal(),
                                     "Node ID changed to 0x00, with different homeID successfully",
@@ -122,7 +122,7 @@ namespace ZatsTests
             ReportService.LogText("8. Initiate Device reset locally (currently HOLD S1 for 10 seconds) on node ID2.");
             var zt = ZnifferService.ExpectData(30000).SetUpWatch(new COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION(), HeaderTypes.BROADCAST, false);
 
-            TestInterfaceService.ButtonActions.Sample_Reset(dut);
+            TestInterfaceService.HMIActions.Sample_Reset(dut);
             var zr = zt.WaitCompletedSignal();
             {
                 AssertIsTrue(!zr, "8. No Broadcast.");
@@ -138,7 +138,7 @@ namespace ZatsTests
             Delay(1000);
             for (int i = 0; i < 3; i++)
             {
-                TestInterfaceService.ButtonActions.Sample_LearnMode(dut);
+                TestInterfaceService.HMIActions.Sample_LearnMode(dut);
             }
 
             AssertIsTrue(!zToken1.WaitCompletedSignal() && zToken2.WaitCompletedSignal(),

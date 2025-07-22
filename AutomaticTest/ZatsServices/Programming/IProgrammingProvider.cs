@@ -8,9 +8,8 @@ namespace Zats.Services
     {
         int ProgramSample(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, bool isAddS2Keypair, byte[] prk, byte[] puk);
         int BackUpSample(DeviceHostClient deviceHostClient, string backUpPath);
-        int ProgramBootLoader(DeviceHostClient deviceHostClient, string[] tokenPaths, string bootLoaderPath);
-        int ProgramSampleWithBootLoaderKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths);
-        int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, string[] tokenPaths, string bootLoaderPath);
+        int ProgramBootLoader(DeviceHostClient deviceHostClient, BootloaderPath bootloaderPath);
+        int ProgramSampleWithBootLoaderImageAndKeys(DeviceHostClient deviceHostClient, ZWaveRegions? region, string samplePath, BootloaderPath bootloaderPath);
         bool HasFirmware(DeviceHostClient deviceHostClient);
         string GetChipSeries(DeviceHostClient deviceHostClient);
         int SetHomeId(DeviceHostClient deviceHostClient, byte[] homeId);
@@ -20,7 +19,7 @@ namespace Zats.Services
         byte[] GetDsk(DeviceHostClient deviceHostClient);
         byte[] GetPrk(DeviceHostClient deviceHostClient);
         int Run(DeviceHostClient deviceClientHost, string args);
-        int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath);
+        int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath, bool isSeries2 = false);
         string GetVersion();
         int RenewDsk(DeviceHostClient deviceHostClient);
         string GetSecurityStatusInfo(DeviceHostClient deviceHostClient);

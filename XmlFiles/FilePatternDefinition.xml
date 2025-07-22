@@ -16,9 +16,8 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     <LibToken Library="SensorPIR" Token="SensorPIR,zwave_soc_sensor_pir" />
     <LibToken Library="SwitchOnOff" Token="SwitchOnOff,zwave_soc_switch_on_off" />
     <LibToken Library="WallController" Token="WallController,zwave_soc_wall_controller" />
-    <LibToken Library="ZnifferPTI" Token="ZnifferPTI,zwave_ncp_zniffer_pti" />
+    <LibToken Library="ZnifferPTI" Token="ZnifferPTI,zwave_ncp_zniffer_pti,zwave_ncp_zniffer" />
     <LibToken Library="MultilevelSensor" Token="MultilevelSensor,zwave_soc_multilevel_sensor" />
-    <LibToken Library="KeyFob" Token="KeyFob,zwave_soc_key_fob" />
     <LibToken Library="RAILTest" Token="railtest" SkipFrequency="true"/>
   </LibTokens>
   <PathFilters>
@@ -30,6 +29,7 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     <BinaryPattern ChipSeries="ZGM230S_BRD4205A">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4205A*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4205A*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4205A{End}.*"/>
         <PathFilter Pattern="*{Lib}*ZGM230SA*{Freq}{End}.*"/>
         <PathFilter Pattern="*{Lib}*ZGM230S*{Freq}{End}.*"/>
@@ -38,6 +38,7 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     <BinaryPattern ChipSeries="ZGM230S_BRD4205B">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4205B*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4205B*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4205B{End}.*"/>
         <PathFilter Pattern="*{Lib}*ZGM230SB*{Freq}{End}.*"/>
         <PathFilter Pattern="*{Lib}*ZGM230S*{Freq}{End}.*"/>
@@ -46,36 +47,42 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     <BinaryPattern ChipSeries="xG28_BRD4400A">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4400A*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4400A*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4400A{End}.*"/>
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="xG28_BRD4401A">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4401A*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4401A*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4401A{End}.*"/>
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="xG28_BRD4400B">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4400B*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4400B*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4400B{End}.*"/>
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="xG28_BRD4401B">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4401B*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4401B*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4401B{End}.*"/>
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="xG28_BRD4400C">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4400C*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4400C*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4400C{End}.*"/>
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="xG28_BRD4401C">
       <PathFilters>
         <PathFilter Pattern="*{Lib}*BRD4401C*{Freq}{End}.*"/>
+		<PathFilter Pattern="*{Lib}*BRD4401C*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4401C{End}.*"/>
       </PathFilters>
     </BinaryPattern>
@@ -141,4 +148,14 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
       </PriorityRegexFilters>
     </BinaryPattern>
   </BinaryPatterns>
+  <DefaultBootloaderInfos>
+    <DefaultBootloaderInfo Pattern="*bootloader*ota*{brdNumber}*.s37"
+	      SignKeyFileName="sample_sign.key"
+	      EncryptKeyFileName="sample_encrypt.key"
+	      KeyTokensFileName="sample_sign.key-tokens.txt" />
+    <DefaultBootloaderInfo Pattern="*bootloader*otw*{brdNumber}*.s37"
+          SignKeyFileName="controller_sign.key"
+          EncryptKeyFileName="controller_encrypt.key"
+          KeyTokensFileName="controller_sign.key-tokens.txt"/>
+  </DefaultBootloaderInfos>
 </FilePatternDefinition>

@@ -75,6 +75,7 @@ namespace ZatsServicesTests
                 .Returns<Libraries, string, string, string, DevKits, string[]>((l, c, f, e, d, s) => l.ToString());
             fileSystemManagerMock.Setup(x => x.GetLatestFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DevKits>(), It.IsAny<string[]>()))
                 .Returns<Libraries, string, string, DevKits, string[]>((l, c, f, d, s) => l.ToString());
+            fileSystemManagerMock.Setup(x => x.GetBootloaderPath(It.IsAny<DeviceHostClient>(), It.IsAny<string[]>(), It.IsAny<string[]>())).Returns(new BootloaderPath());
 
             var alphaProgrammerMock = new Mock<IProgrammingProvider>();
             alphaProgrammerMock.Setup(x => x.ProgramSample(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -110,9 +111,9 @@ namespace ZatsServicesTests
                             updated.Add(act, lib);
                     }
                 });
-            gammaProgrammerMock.Setup(x => x.ProgramSampleWithBootLoaderKeys(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<string[]>()))
+            gammaProgrammerMock.Setup(x => x.ProgramSampleWithBootLoaderImageAndKeys(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<BootloaderPath>()))
                 .Returns(0)
-                .Callback<DeviceHostClient, ZWaveRegions?, string, string[]>((dhc, region, path, tokens) =>
+                .Callback<DeviceHostClient, ZWaveRegions?, string, BootloaderPath>((dhc, region, path, bootloaderPath) =>
                 {
                     var act = actualVersions.FirstOrDefault(x => x.Value.Item2.JName == dhc.Host.JName).Key;
                     Enum.TryParse(path, out Libraries lib);

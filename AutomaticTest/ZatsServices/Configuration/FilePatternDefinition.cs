@@ -18,6 +18,8 @@ namespace Zats.Services {
         
         private ObservableCollection<BinaryPattern> binaryPatterns;
         
+        private DefaultBootloaderInfo[] defaultBootloaderInfos;
+        
         [XmlArrayItem("LibToken", IsNullable=false)]
         public ObservableCollection<LibToken> LibTokens {
             get {
@@ -48,6 +50,17 @@ namespace Zats.Services {
             set {
                 binaryPatterns = value;
                 RaisePropertyChanged("BinaryPatterns");
+            }
+        }
+        
+        [XmlArrayItem("DefaultBootloaderInfo", IsNullable=false)]
+        public DefaultBootloaderInfo[] DefaultBootloaderInfos {
+            get {
+                return defaultBootloaderInfos;
+            }
+            set {
+                defaultBootloaderInfos = value;
+                RaisePropertyChanged("DefaultBootloaderInfos");
             }
         }
         
@@ -241,6 +254,73 @@ namespace Zats.Services {
             set {
                 excludeUsbVcpRegexFilter = value;
                 RaisePropertyChanged("ExcludeUsbVcpRegexFilter");
+            }
+        }
+        
+        public event PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            PropertyChangedEventHandler propertyChanged = PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    [System.Serializable]
+    [XmlType(AnonymousType=true)]
+    [XmlRoot(Namespace="", IsNullable=false)]
+    public partial class DefaultBootloaderInfo : object, INotifyPropertyChanged {
+        
+        private string pattern;
+        
+        private string signKeyFileName;
+        
+        private string encryptKeyFileName;
+        
+        private string keyTokensFileName;
+        
+        [XmlAttribute]
+        public string Pattern {
+            get {
+                return pattern;
+            }
+            set {
+                pattern = value;
+                RaisePropertyChanged("Pattern");
+            }
+        }
+        
+        [XmlAttribute]
+        public string SignKeyFileName {
+            get {
+                return signKeyFileName;
+            }
+            set {
+                signKeyFileName = value;
+                RaisePropertyChanged("SignKeyFileName");
+            }
+        }
+        
+        [XmlAttribute]
+        public string EncryptKeyFileName {
+            get {
+                return encryptKeyFileName;
+            }
+            set {
+                encryptKeyFileName = value;
+                RaisePropertyChanged("EncryptKeyFileName");
+            }
+        }
+        
+        [XmlAttribute]
+        public string KeyTokensFileName {
+            get {
+                return keyTokensFileName;
+            }
+            set {
+                keyTokensFileName = value;
+                RaisePropertyChanged("KeyTokensFileName");
             }
         }
         

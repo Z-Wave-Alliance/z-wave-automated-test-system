@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils;
+using Utils.Extensions;
 using ZWave.Layers;
 
 namespace Zats.Services.MeshNetworkRacks
@@ -32,6 +34,12 @@ namespace Zats.Services.MeshNetworkRacks
 
             available.Remove(device);
             AddNewDevice(requiredDevice.Key, device);
+            var d = GetDevice(requiredDevice.Key);
+            d?.CommandRequest($":00:MN?");
+            d?.CommandRequest($":00:SN?");
+            d?.CommandRequest($":00:FIRMWARE?");
+            d?.CommandRequest($"HOP:ATT?");
+            d?.CommandRequest($":SL:CHAN:1:2:3:4:SETATT:0.0"); //Enable all channels by default.
 
             return true;
         }
@@ -69,6 +77,25 @@ namespace Zats.Services.MeshNetworkRacks
                 if (_devices.Keys.Contains(alias))
                     return _devices[alias];
                 return null;
+            }
+        }
+
+        public void FinalizeDevices()
+        {
+            if (_devices == null || _devices.Count == 0) return;
+
+            var numbers = _devices.Keys.ToArray();
+            try
+            {
+                numbers.DoForEach(number =>
+                {
+                    var d = GetDevice(number);
+                    d?.CommandRequest($":SL:CHAN:1:2:3:4:SETATT:0.0"); //Enable all channels by default.
+                });
+            }
+            catch (AggregateException agex)
+            {
+                agex.Message._DLOG();
             }
         }
     }

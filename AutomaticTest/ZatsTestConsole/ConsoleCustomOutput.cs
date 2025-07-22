@@ -560,7 +560,7 @@ namespace ZatsTestConsole
             }
         }
 
-        internal void ReportResultToConsole(TestCaseDefinition tcDefinition, TestCaseResult result, Stopwatch timeInfo, int runCounter, int tcCounter)
+        internal void ReportResultToConsole(TestCaseDefinition tcDefinition, TestCaseResult result, Stopwatch timeInfo, int runCounter, int tcCounter, String tcMessage = "")
         {
             lock (_consoleLocker)
             {
@@ -613,6 +613,8 @@ namespace ZatsTestConsole
                 ConsoleWriteTotal($"{tcDefinition.Name}", ConsoleColor.White);
                 ConsoleWriteTotal(" ");
                 ConsoleWriteTotal($"{desc}", ConsoleColor.Yellow);
+                ConsoleWriteTotal(" | ");
+                ConsoleWriteTotal($"{tcMessage}", ConsoleColor.White);
                 ConsoleWriteLineTotal();
 
                 ConsoleWriteLine(result.ToString(), color);

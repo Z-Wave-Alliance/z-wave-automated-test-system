@@ -37,8 +37,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-	  <Compile Include="_Development\**\*.cs" />
-	  <Compile Include="_SYSTEM\**\*.cs" />
+    <Compile Include="_Development\**\*.cs" />
+    <Compile Include="_SYSTEM\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AutomaticTest\ZatsServices\ZatsServices.csproj">

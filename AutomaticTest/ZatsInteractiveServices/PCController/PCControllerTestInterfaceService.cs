@@ -27,7 +27,7 @@ namespace Zats.Services
 
         public ServiceSettings Settings { get => _testInterfaceService.Settings; set => _testInterfaceService.Settings = value; }
 
-        public ButtonActions ButtonActions => _testInterfaceService.ButtonActions;
+        public HMIActions HMIActions => _testInterfaceService.HMIActions;
 
         public void ButtonSinglePress_UserInput(Alias deviceNumber, byte ButtonNumber)
         {

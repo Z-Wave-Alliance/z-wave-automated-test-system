@@ -45,10 +45,28 @@ namespace Zats.Services
         BasicResult.Transmit SendDataMulti(Alias senderNumber, Node[] receiverNodeIds, byte[] data, TransmitOptions txOptions);
         BasicResult.Transmit SendDataMultiEx(Alias senderNumber, Node[] receiverNodeIds, byte groupId, byte[] data, SecuritySchemes scheme);
         BasicResult.Transmit SendDataMultiBridge(Alias bridgeNumber, Node srcNode, Node[] receiverNodeIds, byte[] data, TransmitOptions txOptions);
-        BasicResult.SetPriorityRoute SetPriorityRoute(Alias controllerNumber, Node node, Node priority0, Node priority1, Node priority2, Node priority3, byte routespeed);
         BasicResult.Transmit SendNop(Alias senderNumber, Node node, TransmitOptions txOptions);
+        /// <summary>
+        /// <para>GetPriorityRoute is a function that can be used to read out the priority route from the protocol.</para>
+        /// </summary>
+        /// <param name="controllerNumber">Serial API Controller Alias</param>
+        /// <param name="node">Destiantion Node</param>
+        /// <returns>Priority roure (repeaters Ids) and Route speed.</returns>
+        BasicResult.GetPriorityRoute GetPriorityRoute(Alias controllerNumber, Node node);
+        BasicResult.SetPriorityRoute SetPriorityRoute(Alias controllerNumber, Node node, Node priority0, Node priority1, Node priority2, Node priority3, byte routespeed);
+        /// <summary>
+        /// <para>GetRoutingInfo is a function that can be used to read out neighbor information from the protocol.</para>
+        /// </summary>
+        /// <param name="controllerNumber">Serial API Controller Alias</param>
+        /// <param name="node">Destiantion Node</param>
+        /// <param name="removeBadLinks">Remove bad link from routing info.
+        /// Bad links are a short list of nodes which recently has failed to answer a transmission.</param>
+        /// <param name="removeNonRepeaters">Remove non-repeaters from the routing info.</param>
+        /// <returns>Neigbors list.</returns>
+        BasicResult.GetRoutingInfo GetRoutingInfo(Alias controllerNumber, Node node, byte removeBadLinks, byte removeNonRepeaters);
         BasicResult.Void SetRoutingInfo(Alias controllerNumber, Node node, byte[] nodeMask);
         byte ActivteFirmwareUpdate(Alias deviceNumber, Node node, string filePath);
         BasicResult.RequestNodeNeighborUpdate RequestNodeNeighborDiscovery(Alias controllerNumber, Node node, byte nodeType);
+        BasicResult.RequestNodeNeighborUpdate RequestNodeNeighborUpdate(Alias controller, Node node);
     }
 }

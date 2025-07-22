@@ -380,13 +380,17 @@ namespace ZatsServicesTests
                 dht.Library = Libraries.ControllerBridgeLib;
                 return 0;
             });
-            _gammaProgrammer.Setup(x => x.ProgramSampleWithBootLoaderKeys(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<string[]>())).Returns(
-                (DeviceHostClient dhc, ZWaveRegions region, string filePath, string[] tokens) =>
-                {
-                    var dht = available.FirstOrDefault(x => x.SNumber.ToString() == dhc.Host.JName);
-                    dht.Library = Libraries.ControllerBridgeLib;
-                    return 0;
-                });
+            _gammaProgrammer.Setup(x => x.ProgramSampleWithBootLoaderImageAndKeys(
+                It.IsAny<DeviceHostClient>(),
+                It.IsAny<ZWaveRegions?>(),
+                It.IsAny<string>(),
+                It.IsAny<BootloaderPath>())).Returns(
+                    (DeviceHostClient dhc, ZWaveRegions region, string filePath, string[] tokens) =>
+                    {
+                        var dht = available.FirstOrDefault(x => x.SNumber.ToString() == dhc.Host.JName);
+                        dht.Library = Libraries.ControllerBridgeLib;
+                        return 0;
+                    });
             _gammaProgrammer.Setup(x => x.GetChipSeries(It.IsAny<DeviceHostClient>())).Returns(ChipSeries.ZGM130S_BRD4207A.ToString());
 
             _fileSystemManager = new Mock<IFileSystemManager>();
