@@ -6,13 +6,13 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\z-wave-tools-core\UicApplication\UicApplication_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\UicApplication\UicApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
     <PackageReference Include="MQTTnet" Version="3.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Telnet" Version="0.11.3" />

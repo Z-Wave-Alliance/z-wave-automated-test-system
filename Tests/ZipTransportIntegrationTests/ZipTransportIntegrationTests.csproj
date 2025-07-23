@@ -45,11 +45,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
+    <ProjectReference Include="..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
       <Project>{8ACFB772-98F3-48FE-85AE-3F06DA2EA60B}</Project>
       <Name>ZipApplication</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils.csproj">
+    <ProjectReference Include="..\z-wave-tools-core\Utils\Utils.csproj">
       <Project>{6C298CDF-2B64-4BE7-B9D4-449D5F30E57F}</Project>
       <Name>Utils</Name>
     </ProjectReference>

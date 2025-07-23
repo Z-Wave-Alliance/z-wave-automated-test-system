@@ -7,19 +7,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1. ZWave Dll", "1. ZWave Dl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2. ZATS", "2. ZATS", "{01DD5ED5-BA0A-4D88-B9FE-F55000DC5EC2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicApplication_netcore", "..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj", "{85523A2A-B191-4B14-BF26-D799A4A82730}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicApplication_netcore", "z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj", "{85523A2A-B191-4B14-BF26-D799A4A82730}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProgrammerApplication_netcore", "..\z-wave-tools-core\ProgrammerApplication\ProgrammerApplication_netcore.csproj", "{C0FA5DDF-DC2F-4B2B-8262-7FFF6ABDA02A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProgrammerApplication_netcore", "z-wave-tools-core\ProgrammerApplication\ProgrammerApplication_netcore.csproj", "{C0FA5DDF-DC2F-4B2B-8262-7FFF6ABDA02A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils_netcore", "..\z-wave-tools-core\Utils\Utils_netcore.csproj", "{4AAB694B-1C7B-44D5-8787-327A5BD8E15A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils_netcore", "z-wave-tools-core\Utils\Utils_netcore.csproj", "{4AAB694B-1C7B-44D5-8787-327A5BD8E15A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZipApplication_netcore", "..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj", "{C8FF8EDC-7EE2-42C9-9065-EA6DF08631B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZipApplication_netcore", "z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj", "{C8FF8EDC-7EE2-42C9-9065-EA6DF08631B0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZnifferApplication_netcore", "..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj", "{5F48750D-23E9-471E-9CCF-BC7A4E6963A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZnifferApplication_netcore", "z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj", "{5F48750D-23E9-471E-9CCF-BC7A4E6963A2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave_netcore", "..\z-wave-tools-core\ZWave\ZWave_netcore.csproj", "{F73EE47D-BB2E-4716-81E1-A5652C32B70C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave_netcore", "z-wave-tools-core\ZWave\ZWave_netcore.csproj", "{F73EE47D-BB2E-4716-81E1-A5652C32B70C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWaveXml_netcore", "..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj", "{1DB3CEF4-EE62-4184-8DC7-6899606471F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWaveXml_netcore", "z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj", "{1DB3CEF4-EE62-4184-8DC7-6899606471F7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZatsServices_netcore", "AutomaticTest\ZatsServices\ZatsServices_netcore.csproj", "{DB4C620F-7C34-4247-AA69-AF8103E0A3A9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -32,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestCases_netcore", "TestCa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZatsProgrammer_netcore", "AutomaticTest\ZatsProgrammer\ZatsProgrammer_netcore.csproj", "{2D5A8E46-C82E-4970-BE70-31D749288CA1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UicApplication_netcore", "..\z-wave-tools-core\UicApplication\UicApplication_netcore.csproj", "{8AADC7BE-FA1F-46BE-9A69-47365209981D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UicApplication_netcore", "z-wave-tools-core\UicApplication\UicApplication_netcore.csproj", "{8AADC7BE-FA1F-46BE-9A69-47365209981D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZatsInteractiveServices_netcore", "AutomaticTest\ZatsInteractiveServices\ZatsInteractiveServices_netcore.csproj", "{D02762D5-A898-4F71-99C6-1CCD7032D280}"
 EndProject

@@ -6,7 +6,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
