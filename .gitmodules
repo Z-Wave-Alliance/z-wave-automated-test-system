@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+[submodule "z-wave-tools-core"]
+	path = z-wave-tools-core
+	url = git@github.com:Z-Wave-Alliance/z-wave-tools-core.git
