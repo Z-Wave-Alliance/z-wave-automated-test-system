@@ -189,9 +189,14 @@ namespace Zats.Services
                 if (simulatedDeltaTime > 0)
                 {
                     reportedDeltaTime = simulatedDeltaTime;
+                    rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
+                        reportedPreviousValue, reportedSize, reportedPrecision);
                 }
-                rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
-                                              reportedPreviousValue, reportedSize, reportedPrecision);
+                else
+                {
+                    rpt.previousMeterValue = null;
+                }
+
                 rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
 
                 return rpt;
@@ -252,9 +257,14 @@ namespace Zats.Services
                 if (simulatedDeltaTime > 0)
                 {
                     reportedDeltaTime = simulatedDeltaTime;
+                    rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
+                        reportedPreviousValue, reportedSize, reportedPrecision);
                 }
-                rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
-                                              reportedPreviousValue, reportedSize, reportedPrecision);
+                else
+                {
+                    rpt.previousMeterValue = null;
+                }
+
                 rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
 
                 return rpt;
@@ -328,9 +338,13 @@ namespace Zats.Services
                 if (simulatedDeltaTime > 0)
                 {
                     reportedDeltaTime = simulatedDeltaTime;
+                    rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
+                        reportedPreviousValue, reportedSize, reportedPrecision);
                 }
-                rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
-                                              reportedPreviousValue, reportedSize, reportedPrecision);
+                else
+                {
+                    rpt.previousMeterValue = null;
+                }
 
                 rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
                 //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: MeterReport V4+. rateType: {2}, scale: {3}, value: {4}",
