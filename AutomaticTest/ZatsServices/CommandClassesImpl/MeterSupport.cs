@@ -612,7 +612,7 @@ namespace Zats.Services
 
                     foreach (MeterValue scaleData in MeterSupportData.MeterValues)
                     {
-                        if (MeterSupportData.IsAccumulating(scaleData.ScaleNumber))
+                        if (MeterSupportData.IsAccumulating(scaleData.ScaleNumber) == false)
                         {
                             continue; // ignore non accumulating scales
                         }
@@ -654,10 +654,10 @@ namespace Zats.Services
                                 requestedRateType, requestedScaleNumber, resetValue);
 
                     MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
-                    if ((requestedScaleData != null)                                    // invalid scale request -> ignore command
-                     && MeterSupportData.IsAccumulating(requestedScaleData.ScaleNumber) // ignore non accumulating scales
-                     && requestedMeterType == MeterSupportData.MeterType                // invalid meter type request -> ignore command
-                     && (requestedRateType <= 0x02)                                     // invalid rate type request -> ignore command
+                    if ((requestedScaleData != null)                                                // invalid scale request -> ignore command
+                     && MeterSupportData.IsAccumulating(requestedScaleData.ScaleNumber) == false    // ignore non accumulating scales
+                     && requestedMeterType == MeterSupportData.MeterType                            // invalid meter type request -> ignore command
+                     && (requestedRateType <= 0x02)                                                 // invalid rate type request -> ignore command
                      && ((requestedRateType & (byte) MeterSupportData.SupportedRateTypes) != 0 || requestedRateType == 0x00))
                     {
                         MeterResetOccured = true;   // Blocks the RuntimeTimer thread for 3 seconds to keep the reset value for an immediately following Meter.Get/Meter.Report
