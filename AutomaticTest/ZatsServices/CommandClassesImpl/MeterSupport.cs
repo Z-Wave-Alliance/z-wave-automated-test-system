@@ -612,9 +612,10 @@ namespace Zats.Services
                 {
                     CommandClassSupportUtils.ReportAddLog(MeterSupportData.LogLevel, "{0} CC @ {1}: MeterReset V2-V5 accepted.",
                                 CommandClassShortName, EndPointName);
+
                     foreach (MeterValue scaleData in MeterSupportData.MeterValues)
                     {
-                        if (scaleData.ScaleNumber.IsAccumulating() == false)
+                        if (MeterSupportData.IsAccumulating(scaleData.ScaleNumber))
                         {
                             continue; // ignore non accumulating scales
                         }
@@ -656,10 +657,10 @@ namespace Zats.Services
                                 requestedRateType, requestedScaleNumber, resetValue);
 
                     MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
-                    if ((requestedScaleData != null)                        // invalid scale request -> ignore command
-                     && requestedScaleData.ScaleNumber.IsAccumulating()     // ignore non accumulating scales
-                     && requestedMeterType == MeterSupportData.MeterType    // invalid meter type request -> ignore command
-                     && (requestedRateType <= 0x02)                         // invalid rate type request -> ignore command
+                    if ((requestedScaleData != null)                                    // invalid scale request -> ignore command
+                     && MeterSupportData.IsAccumulating(requestedScaleData.ScaleNumber) // ignore non accumulating scales
+                     && requestedMeterType == MeterSupportData.MeterType                // invalid meter type request -> ignore command
+                     && (requestedRateType <= 0x02)                                     // invalid rate type request -> ignore command
                      && ((requestedRateType & (byte) MeterSupportData.SupportedRateTypes) != 0 || requestedRateType == 0x00))
                     {
                         MeterResetOccured = true;   // Blocks the RuntimeTimer thread for 3 seconds to keep the reset value for an immediately following Meter.Get/Meter.Report
@@ -902,6 +903,25 @@ namespace Zats.Services
                     throw new Exception($"Unmapped Notification Type: {MeterType}!");
             }
         }
+
+        public bool IsAccumulating(ScaleNames scale)
+        {
+            switch (MeterType)
+            {
+                case MeterTypeNames.Electric:
+                    return ((ElectricScaleNames)scale).IsAccumulating();
+                case MeterTypeNames.Gas:
+                    return ((GasScaleNames)scale).IsAccumulating();
+                case MeterTypeNames.Water:
+                    return ((WaterScaleNames)scale).IsAccumulating();
+                case MeterTypeNames.Heating:
+                    return ((HeatingScaleNames)scale).IsAccumulating();
+                case MeterTypeNames.Cooling:
+                    return ((CoolingScaleNames)scale).IsAccumulating();
+                
+            }
+            return false;
+        }
     }
 
     public static class MeterSupportUtils
@@ -915,9 +935,9 @@ namespace Zats.Services
             scale2 = isScale2Needed ? (ByteValue)((byte)scaleName - 8) : ByteValue.Empty;
         }
 
-        public static bool IsAccumulating(this ScaleNames scaleName)
+        public static bool IsAccumulating<T>(this T scaleName)
         {
-            var field = typeof(ScaleNames).GetField(scaleName.ToString());
+            var field = typeof(T).GetField(scaleName.ToString());
             var attribute = field.GetCustomAttribute<CategoryAttribute>();
             return attribute != null && attribute.Category == MeasurementMode.Accumulating;
         }
