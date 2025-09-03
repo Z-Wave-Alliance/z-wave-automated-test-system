@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Utils;
 using Utils.UI.Enums;
+using ZWave.BasicApplication.Devices;
 using ZWave.BasicApplication.Operations;
 using ZWave.Xml.Application;
 
@@ -2208,5 +2209,11 @@ namespace Zats.Services
         {
             throw new NotImplementedException();
         }
+
+        public Device GetDevice(Alias deviceNumber)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Zats.Services.PreconfiguredDevices;
 using Zats.Services.QuirkDatabase;
+using ZWave.BasicApplication.Devices;
 
 
 namespace Zats.Services
@@ -149,6 +150,8 @@ namespace Zats.Services
         BasicToken.Void[] SetApplicationQuirkResponse(Alias deviceNumber, QuirckLibrary library, byte[] fullCmd);
         BasicToken.Void[] SetApplicationQuirkResponse(Alias deviceNumber, QuirckLibrary library, byte[] fullCmd, byte[] wakeUpInterval, byte zWavePlusersion, int groupings = 1);
         void CancelAllRunningSupportCommands(Alias deviceNumber);
+
+        Device GetDevice(Alias deviceNumber);
 
         /// <summary>
         /// Retrive Application Framework API Version.

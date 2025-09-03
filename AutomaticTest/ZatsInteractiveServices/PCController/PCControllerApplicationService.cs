@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+/// SPDX-License-Identifier: BSD-3-Clause
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 using System;
-﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Utils;
 using Utils.UI.Enums;
 using Zats.Services.PreconfiguredDevices;
 using Zats.Services.QuirkDatabase;
+using ZWave.BasicApplication.Devices;
 
 namespace Zats.Services
 {
@@ -1036,8 +1036,8 @@ namespace Zats.Services
         public byte[] GetAppVersionFromFile(string fromFilePath)
         {
             throw new NotImplementedException();
-        }
 
+        }
         public string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null)
         {
             throw new NotImplementedException();
@@ -1047,5 +1047,11 @@ namespace Zats.Services
         {
             throw new NotImplementedException();
         }
+
+        public Device GetDevice(Alias deviceNumber)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }
