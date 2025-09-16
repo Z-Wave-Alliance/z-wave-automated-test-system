@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-License-Identifier: BSD-3-Clause
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.IO;
 using System.Linq;
@@ -373,10 +374,10 @@ namespace Zats.Services
         public BootloaderPath GetBootloaderPath(DeviceHostClient deviceHostClient, string[] specificFileNamePattern, params string[] regexFilters)
         {
             BootloaderPath ret = new BootloaderPath();
-            if (DeviceManager.IsTerminalApplication(deviceHostClient.Library)) return ret;
+            if (deviceHostClient.Library.IsTerminalApplication()) return ret;
 
             bool isSpecialCase = DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x));
-            var isSerialApiControlled = !DeviceManager.IsSampleApplication(deviceHostClient.Library);
+            var isSerialApiControlled = !deviceHostClient.Library.IsSampleApplication();
             var isSAPI = isSerialApiControlled && !isSpecialCase;
             var defaultSearchPattern = string.Empty;
             if (_definition != null && _definition.DefaultBootloaderInfos != null && _definition.DefaultBootloaderInfos.Length > 1)

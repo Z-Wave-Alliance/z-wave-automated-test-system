@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-License-Identifier: BSD-3-Clause
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,7 @@ using ZWave.BasicApplication.Security;
 using ZWave.BasicApplication.Tasks;
 using ZWave.BasicApplication.TransportService;
 using ZWave.Devices;
+using ZWave.Enums;
 using ZWave.Layers;
 using ZWave.Security.S2;
 
@@ -1111,11 +1113,16 @@ namespace Zats.Services
             Device device = DeviceManager.GetDevice(deviceNumber);
             device.MemoryGetId();
             device.Network.TransportServiceMaxSegmentSize = maxFrameSize;
-            var transportService = new TransportServiceManager(device.Network,
-                new TransportServiceManagerInfo(TXO,
-                    TransportServiceManagerSendDataSubstitutionCallback)
-                );
-            device.SessionClient.AddSubstituteManager(transportService);
+
+            // For the End Device SAPI Transport Service encapsulation is handled by the SAPI firmware.
+            if (!device.Library.IsSerialApiEndDevice() && !device.Library.IsSampleApplication())
+            {
+                var transportService = new TransportServiceManager(device.Network,
+                    new TransportServiceManagerInfo(TXO,
+                        TransportServiceManagerSendDataSubstitutionCallback)
+                    );
+                device.SessionClient.AddSubstituteManager(transportService);
+            }
         }
 
         /// <summary>
@@ -1168,7 +1175,9 @@ namespace Zats.Services
         {
             Device device = DeviceManager.GetDevice(deviceNumber);
             SecurityManager securityManager = null;
-            if (DeviceManager.IsSerialApiController(device.Library) || device.Library == ZWave.Enums.Libraries.EndDeviceSysTestLib)
+
+            // For the End Device SAPI security encapsulation is handled by the SAPI firmware.
+            if (!device.Library.IsSerialApiEndDevice() && !device.Library.IsSampleApplication())
             {
                 if (device.ChipType != ZWave.Enums.ChipTypes.ZW070x)
                 {

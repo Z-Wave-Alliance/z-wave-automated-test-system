@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+/// SPDX-License-Identifier: BSD-3-Clause
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -545,53 +545,14 @@ namespace Zats.Services
             });
         }
 
-        public static bool IsTerminalApplication(Libraries library)
-        {
-            return new[]
-            {
-                Libraries.RailTest
-            }.Contains(library);
-        }
-
-        public static bool IsSampleApplication(Libraries library)
-        {
-            return new[]
-            {
-                Libraries.DoorLockKeyPad,
-                Libraries.LEDBulb,
-                Libraries.PowerStrip,
-                Libraries.SensorPIR,
-                Libraries.SwitchOnOff,
-                Libraries.WallController,
-                Libraries.MultilevelSensor,
-            }.Contains(library);
-        }
-
         public static bool IsSerialApiController(Libraries library)
         {
-            return new[]
-            {
-                Libraries.ControllerBridgeLib,
-                Libraries.ControllerPortableLib,
-                Libraries.ControllerStaticLib,
-                Libraries.InstallerLib
-            }.Contains(library);
+            return library.IsSerialApiController();
         }
 
         public static bool IsSerialApi(Libraries library)
         {
-            return new[]
-            {
-                Libraries.ControllerBridgeLib,
-                Libraries.ControllerPortableLib,
-                Libraries.ControllerStaticLib,
-                Libraries.InstallerLib,
-                Libraries.EndDeviceSysTestLib,
-                Libraries.EndDeviceLib,
-                Libraries.EndDeviceLegacyLib,
-                Libraries.EndDeviceLegacyRoutingLib,
-                Libraries.TestController
-            }.Contains(library);
+            return library.IsSerialApi();
         }
 
         internal void ReportTestFramesAndExtensionOverrides(Alias controllerNumber)
@@ -2395,7 +2356,7 @@ namespace Zats.Services
 
         public void LoadDSK(DeviceHostClient deviceHostClient)
         {
-            if (IsTerminalApplication(deviceHostClient.Library))
+            if (deviceHostClient.Library.IsTerminalApplication())
             {
 
             }
