@@ -1907,9 +1907,11 @@ namespace Zats.Services
             client.SerialApiGetCapabilities();
             if (client.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
             {
-                var rfregion = (ZWave.BasicApplication.Enums.RfRegions)(Enum.Parse(typeof(ZWave.BasicApplication.Enums.RfRegions), item.Frequency));
-                client.SetRfRegion(rfregion);
-                client.SoftReset(); // After serialAPI Setup required! impacts on max Payload size:
+                if (Enum.TryParse(item.Frequency, out ZWave.BasicApplication.Enums.RfRegions rfRegion))
+                {
+                    client.SetRfRegion(rfRegion);
+                    client.SoftReset(); // After serialAPI Setup required! impacts on max Payload size
+                }
                 client.GetMaxPayloadSize();
                 client.GetMaxLRPayloadSize();
             }
