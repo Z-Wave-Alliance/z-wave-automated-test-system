@@ -50,6 +50,7 @@ jobs:
         with:
           token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           path: 'z-wave-automated-test-system'
+          submodules: "recursive"
 
       - id: describe
         name: Describe HEAD
@@ -57,24 +58,6 @@ jobs:
           git config --system --add safe.directory ${PWD}
           echo "describe=$(git -C ${{ github.event.repository.name }} describe --tags --always)" >> $GITHUB_OUTPUT
         shell: bash
-
-      # TODO: https://github.com/Z-Wave-Alliance/z-wave-tools-core/issues/5
-      - name: Checkout z-wave-tools-core
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
-          repository: 'Z-Wave-Alliance/z-wave-tools-core'
-          path: 'z-wave-tools-core'
-          ref: 'v25.1.1'          
-
-      # TODO: https://github.com/Z-Wave-Alliance/z-wave-pc-zniffer/issues/6
-      - name: Checkout z-wave-blobs
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
-          repository: 'Z-Wave-Alliance/z-wave-blobs'
-          path: 'z-wave-blobs'
-          ref: 'v0.1.0'
 
       - name: Add MSBuild.exe to Path
         uses: microsoft/setup-msbuild@v1.1

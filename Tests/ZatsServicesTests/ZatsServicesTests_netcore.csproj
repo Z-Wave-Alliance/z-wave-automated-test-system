@@ -17,9 +17,9 @@
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils.csproj" />
-    <ProjectReference Include="..\..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj" />
-    <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave.csproj" />
+    <ProjectReference Include="..\z-wave-tools-core\Utils\Utils.csproj" />
+    <ProjectReference Include="..\z-wave-tools-core\ZWaveXml\ZWaveXml.csproj" />
+    <ProjectReference Include="..\z-wave-tools-core\ZWave\ZWave.csproj" />
     <ProjectReference Include="..\..\AutomaticTest\ZatsServices\ZatsServices.csproj" />
     <ProjectReference Include="..\..\AutomaticTest\ZatsTestConsole\ZatsTestConsole.csproj" />
   </ItemGroup>

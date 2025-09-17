@@ -1,4 +1,6 @@
-﻿using System;
+﻿// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;

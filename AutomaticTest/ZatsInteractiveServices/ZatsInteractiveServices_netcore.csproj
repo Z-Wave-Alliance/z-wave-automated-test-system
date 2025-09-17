@@ -7,12 +7,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj" />
-    <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\BasicApplication\BasicApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZipApplication\ZipApplication_netcore.csproj" />
+    <ProjectReference Include="..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
     <ProjectReference Include="..\ZatsServices\ZatsServices_netcore.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
