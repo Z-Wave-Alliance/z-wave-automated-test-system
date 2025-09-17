@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
     <PackageReference Include="MQTTnet" Version="3.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="Telnet" Version="0.11.3" />
     <PackageReference Include="Grpc" Version="2.46.5" />
     <PackageReference Include="Grpc.Core" Version="2.46.5" />
@@ -34,5 +35,10 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="CommandClassesImpl\Definitions\MultilevelSensorTypes.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

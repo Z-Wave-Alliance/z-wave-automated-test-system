@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
@@ -20,13 +21,18 @@ using Utils.UI.Enums;
 
 namespace Zats.Services
 {
-    public class AntiTheftUnlockSupport : CommandClassSupport
+    [CommandClassName("Anti-Theft Unlock Command Class")]
+    [CommandClassId(COMMAND_CLASS_ANTITHEFT_UNLOCK.ID)]
+    [MinVersion(1)]
+    [MaxVersion(1)]
+    public class AntiTheftUnlockSupport : AntiTheftSupportBase
     {
-        private AntiTheftSupportData AntiTheftSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return AntiTheftSupportData; }
+            set { AntiTheftSupportData = (AntiTheftSupportData)value; }
+        }
 
-        private readonly string CommandClassName = "Anti-Theft Unlock CC";
-        private string EndPointName = "";
-        private readonly int LogLevel;  // shortcut for SupportData.LogLevel
         private SvResultNames ResultForSv = SvResultNames.Undefined;
 
         public AntiTheftUnlockSupport()
@@ -36,61 +42,46 @@ namespace Zats.Services
         public AntiTheftUnlockSupport(AntiTheftSupportData antiTheftSupportData)
             : base(COMMAND_CLASS_ANTITHEFT_UNLOCK.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 1;
             AntiTheftSupportData = antiTheftSupportData;
-            LogLevel = AntiTheftSupportData.LogLevel;
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                EndPointName = ReceivedAchData.DstNode.EndPointId == 0 ? " @ Root" : string.Format(" @ EP {0}", ReceivedAchData.DstNode.EndPointId);
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && AntiTheftSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && AntiTheftSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_GET.ID)
+                    if (command[1] == COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareStateReport();
+                        rpt = PrepareUnlockStateReport();
                     }
                     else if (command[1] == COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_SET.ID)
                     {
-                        ResultForSv = HandleUnlockSetCommand(command);
+                        ResultForSv = HandleUnlockSetCmd(command);
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(Network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
 
-        private byte[] PrepareStateReport()
-        {
-            COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_REPORT rpt = new COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_STATE_REPORT() { };
-            rpt.properties1.state = (byte) AntiTheftSupportData.State;
-            rpt.properties1.restricted = (byte) (AntiTheftSupportData.IsRestricted ? 0x01 : 0x00);
-            rpt.properties1.antiTheftHintLength = (byte) AntiTheftSupportData.AntiTheftHint.Count;
-            rpt.antiTheftHint = AntiTheftSupportData.AntiTheftHint;
-            rpt.manufacturerId = CommandClassSupportUtils.UInt64ToByteField(AntiTheftSupportData.ManufacturerId, 2);
-            rpt.zWaveAllianceLockingEntityId = CommandClassSupportUtils.UInt64ToByteField(AntiTheftSupportData.LockingEntityId, 2);
-            return rpt;
-        }
-
-        public SvResultNames HandleUnlockSetCommand(byte[] command)
+        public SvResultNames HandleUnlockSetCmd(byte[] command)
         {
             COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_SET setCmd = command;
 
@@ -99,25 +90,27 @@ namespace Zats.Services
                 if (setCmd.magicCode.SequenceEqual(AntiTheftSupportData.MagicCode))
                 {
                     AntiTheftSupportData.State = AntiTheftStateNames.Unlocked;
-                    AntiTheftSupportData.MagicCode = new List<byte> { };
+                    AntiTheftSupportData.MagicCode = new List<byte>();
                     AntiTheftSupportData.ManufacturerId = 0;
-                    AntiTheftSupportData.AntiTheftHint = new List<byte> { };
+                    AntiTheftSupportData.AntiTheftHint = new List<byte>();
                     AntiTheftSupportData.LockingEntityId = 0;
                     AntiTheftSupportData.IsRestricted = false;
-                    CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Unlock Set command accepted. Magic Code: {2}.",
-                                CommandClassName, EndPointName, setCmd.magicCode.ToHexString());
+                    CommandClassSupportUtils.ReportAddLog(AntiTheftSupportData.LogLevel, 
+                                "{0} CC @ {1}: Unlock Set command accepted. Magic Code: {2}.",
+                                CommandClassShortName, EndPointName, setCmd.magicCode.ToHexString());
                     return SvResultNames.Successful;
                 }
             }
-            CommandClassSupportUtils.ReportAddLog(LogLevel, "{0}{1}: Unlock Set command ignored. Received Magic Code: {2} - Stored Magic Code: {3}.",
-                        CommandClassName, EndPointName, setCmd.magicCode.ToHexString(), AntiTheftSupportData.MagicCode.ToHexString());
+            CommandClassSupportUtils.ReportAddLog(AntiTheftSupportData.LogLevel, 
+                        "{0} CC @ {1}: Unlock Set command ignored. Received Magic Code: {2} - Stored Magic Code: {3}.",
+                        CommandClassShortName, EndPointName, setCmd.magicCode.ToHexString(), AntiTheftSupportData.MagicCode.ToHexString());
             return SvResultNames.Failed;
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
-            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
+            if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != CommandClassId)
             {
                 supervisionReport.status = (byte) SvStatusNames.NoSupport;
                 return;
@@ -128,7 +121,9 @@ namespace Zats.Services
             {
                 case COMMAND_CLASS_ANTITHEFT_UNLOCK.ANTITHEFT_UNLOCK_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
+                    {
                         supervisionReport.status = (byte) SvStatusNames.Success;
+                    }
                     break;
             }
             ResultForSv = SvResultNames.Undefined;

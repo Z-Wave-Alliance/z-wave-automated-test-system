@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -55,7 +56,7 @@ namespace ZatsTestConsole
             Tools.StartDebugOutputWorker();
             StorageHeader = new StorageHeader();
             _cmdLineSettings = ZatsUtils.ParseArguments(Environment.GetCommandLineArgs());
-            var consoleOutPut = new ConsoleCustomOutput(_cmdLineSettings.IsLessOutput, _cmdLineSettings.IsOutputColorFormated);
+            var consoleOutPut = new ConsoleCustomOutput(_cmdLineSettings.IsLessOutput, _cmdLineSettings.IsOutputColorFormated , _cmdLineSettings.UseStartStopTags);
 
             if (_cmdLineSettings.HasHelp)
             {
@@ -521,335 +522,356 @@ namespace ZatsTestConsole
                     var testsuites = new testsuites();
                     testsuites.testsuite = new Collection<testsuitesTestsuite>();
                     ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);
-                    foreach (var freq in _cmdLineSettings.Frequencies)
+                    foreach (string freq in _cmdLineSettings.Frequencies)
                     {
-                        foreach (var dutName in _cmdLineSettings.DutNames ?? new[] { "" })
+                        string rfRegion = freq?.Trim();
+                        if (string.IsNullOrEmpty(rfRegion))
                         {
-                            var frequency = freq?.Trim();
-                            if (string.IsNullOrEmpty(frequency))
-                            {
-                                continue;
-                            }
-                            servicesContainer.SetupFrequency(frequency);
-                            servicesContainer.SetupDutName(dutName);
-                            List<TestCaseDefinition> testCasesDefinitions = PrepareTestCaseMetadata(testTypes, consoleOutPut, dutName, frequency);
+                            continue;
+                        }
 
-                            var zatsCache = ZatsUtils.LoadZatsCache(Directory.GetCurrentDirectory());
-                            if (zatsCache == null)
+                        LongRangeChannels[] lrChannels = new LongRangeChannels[0];
+                        if (_cmdLineSettings.LongRangeChannels?.Contains(LongRangeChannels.ChannelA) ?? false)
+                        {
+                            lrChannels = lrChannels.Append(LongRangeChannels.ChannelA).ToArray();
+                        }
+                        if (_cmdLineSettings.LongRangeChannels?.Contains(LongRangeChannels.ChannelB) ?? false)
+                        {
+                            lrChannels = lrChannels.Append(LongRangeChannels.ChannelB).ToArray();
+                        }
+                        // Fallback
+                        if (lrChannels.Length == 0)
+                        {
+                            lrChannels = new LongRangeChannels[] { LongRangeChannels.ChannelA };
+                        }
+
+                        foreach (LongRangeChannels lrChannel in lrChannels)
+                        {
+                            foreach (string dutName in _cmdLineSettings.DutNames ?? new[] { "" })
                             {
-                                zatsCache = new ZatsCache();
-                                zatsCache.ProgrammingResults = new Collection<ProgrammingResult>();
-                                ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
-                            }
-                            managersContainer.DeviceManager.ZatsCache = zatsCache;
-                            List<TestCaseDefinition> extraTCs = new List<TestCaseDefinition>();
-                            bool isFirstTCRunIndex = false;
-                            for (int runCounter = 1; runCounter <= _cmdLineSettings.NumberOfRuns; runCounter++)
-                            {
-                                for (int extraRunCounter = 1; extraRunCounter <= _cmdLineSettings.NumberOfExtraRuns; extraRunCounter++)
+                                servicesContainer.SetupFrequency(rfRegion);
+                                servicesContainer.SetupDutName(dutName);
+                                List<TestCaseDefinition> testCasesDefinitions = PrepareTestCaseMetadata(testTypes, consoleOutPut, dutName, rfRegion);
+
+                                var zatsCache = ZatsUtils.LoadZatsCache(Directory.GetCurrentDirectory());
+                                if (zatsCache == null)
                                 {
-                                    isFirstTCRunIndex = true;
-                                    if ((_cmdLineSettings.NumberOfExtraRuns > 1 && extraRunCounter > 1)
-                                        || (_cmdLineSettings.NumberOfRuns > 1 && runCounter > 1))
+                                    zatsCache = new ZatsCache();
+                                    zatsCache.ProgrammingResults = new Collection<ProgrammingResult>();
+                                    ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
+                                }
+                                managersContainer.DeviceManager.ZatsCache = zatsCache;
+                                List<TestCaseDefinition> extraTCs = new List<TestCaseDefinition>();
+                                bool isFirstTCRunIndex = false;
+                                for (int runCounter = 1; runCounter <= _cmdLineSettings.NumberOfRuns; runCounter++)
+                                {
+                                    for (int extraRunCounter = 1; extraRunCounter <= _cmdLineSettings.NumberOfExtraRuns; extraRunCounter++)
                                     {
-                                        testCasesDefinitions = extraTCs ?? testCasesDefinitions;
-                                        extraTCs = new List<TestCaseDefinition>();
-                                    }
-                                    int tcCounter = 0;
-                                    bool connectSucceeded = false;
-                                    bool setupSucceeded = false;
-                                    TestCaseDefinition tcDefinitionHigh = null;
-
-                                    while (testCasesDefinitions.Count > 0)
-                                    {
-                                        var tcDefinition = testCasesDefinitions.First();
-                                        if (tcDefinition.TestType is IUserInteractive)
+                                        isFirstTCRunIndex = true;
+                                        if ((_cmdLineSettings.NumberOfExtraRuns > 1 && extraRunCounter > 1)
+                                            || (_cmdLineSettings.NumberOfRuns > 1 && runCounter > 1))
                                         {
+                                            testCasesDefinitions = extraTCs ?? testCasesDefinitions;
+                                            extraTCs = new List<TestCaseDefinition>();
                                         }
-                                        if (!ZatsSettings.SaveInclusionState
-                                            && (_cmdLineSettings.ChipSeries == "7" || _cmdLineSettings.ChipSeries == "8"))
+                                        int tcCounter = 0;
+                                        bool connectSucceeded = false;
+                                        bool setupSucceeded = false;
+                                        TestCaseDefinition tcDefinitionHigh = null;
+
+                                        while (testCasesDefinitions.Count > 0)
                                         {
-                                            tcDefinition = null;
-                                            if (tcDefinitionHigh != null && connectSucceeded && setupSucceeded) // prev TC
+                                            var tcDefinition = testCasesDefinitions.First();
+                                            if (tcDefinition.TestType is IUserInteractive)
                                             {
-                                                tcDefinition = GetNextTcDefinition(testCasesDefinitions, tcDefinitionHigh);
                                             }
-                                            if (tcDefinition == null)
+                                            if (!ZatsSettings.SaveInclusionState
+                                                && (_cmdLineSettings.ChipSeries == "7" || _cmdLineSettings.ChipSeries == "8"))
                                             {
-                                                tcDefinitionHigh = testCasesDefinitions.OrderByDescending(t => t.Devices.Count).FirstOrDefault();
-                                                tcDefinition = tcDefinitionHigh;
-                                            }
-                                        }
-                                        testCasesDefinitions.Remove(tcDefinition);
-
-                                        connectSucceeded = false;
-                                        setupSucceeded = false;
-
-                                        testsuitesTestsuite testsuite = testsuites.testsuite.FirstOrDefault(x => x.name == tcDefinition.GroupingKey);
-                                        if (testsuite == null)
-                                        {
-                                            testsuite = new testsuitesTestsuite()
-                                            {
-                                                package = "ZATS",
-                                                timestamp = DateTime.Now,
-                                                errors = 0,
-                                                failures = 0,
-                                                hostname = Environment.MachineName,
-                                                name = tcDefinition.GroupingKey,
-                                                time = 0,
-                                                testcase = new Collection<testsuiteTestcase>()
-                                            };
-                                            testsuites.testsuite.Add(testsuite);
-                                            ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);
-                                        }
-
-                                        tcCounter++;
-                                        testsuite.tests++;
-                                        var testcase = new testsuiteTestcase()
-                                        {
-                                            classname = $"{tcDefinition.Name}",
-                                            name = $"{tcDefinition.Description}"
-                                        };
-                                        var extTC = testsuite.testcase.FirstOrDefault(x => x.classname == testcase.classname && x.Item != null);
-                                        if (extTC != null)
-                                        {
-                                            testsuite.testcase.Remove(extTC);
-                                            testsuite.tests--;
-                                            testsuite.failures--;
-                                        }
-                                        testsuite.testcase.Add(testcase);
-
-                                        if (ret == 0 || _cmdLineSettings.IgnoreMode == IgnoreModes.Fail)
-                                        {
-                                            TestCaseResult res = TestCaseResult.Fail;
-                                            managersContainer.SetReportFoldersAndFiles(tcDefinition.Name, frequency);
-                                            consoleOutPut.SetArchiveDumpFile(managersContainer.ReportManager.TestCaseFolder, managersContainer.ReportManager.TestCaseLogName);
-                                            if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI) // - save output for all.
-                                            {
-                                                var curDir = Directory.GetCurrentDirectory();
-                                                var debugOutPath = Path.Combine(curDir,
-                                                    managersContainer.ReportManager.TestRunFolder,
-                                                    //managersContainer.ReportManager.TestCaseLogName,
-                                                    "debug_output.txt");
-                                                Tools.CreateDebugLogFile(debugOutPath, false);
-                                                if (!tcDefinition.DisableOptions.Any(x => x.Key == ZWaveSet.NodeIdBase2))
+                                                tcDefinition = null;
+                                                if (tcDefinitionHigh != null && connectSucceeded && setupSucceeded) // prev TC
                                                 {
-                                                    tcDefinition.DisableOptions.Add(ZWaveSet.NodeIdBase2, null);
+                                                    tcDefinition = GetNextTcDefinition(testCasesDefinitions, tcDefinitionHigh);
+                                                }
+                                                if (tcDefinition == null)
+                                                {
+                                                    tcDefinitionHigh = testCasesDefinitions.OrderByDescending(t => t.Devices.Count).FirstOrDefault();
+                                                    tcDefinition = tcDefinitionHigh;
                                                 }
                                             }
-                                            consoleOutPut.ReportTestCaseInformationToConsole(tcDefinition);
-                                            var tc = (ZatsCodeTestCase)Activator.CreateInstance(tcDefinition.TestType);
-                                            bool isSkipTestCase = false;
-                                            if (tc is IUserInteractive tcinteractive)
+                                            testCasesDefinitions.Remove(tcDefinition);
+
+                                            connectSucceeded = false;
+                                            setupSucceeded = false;
+
+                                            testsuitesTestsuite testsuite = testsuites.testsuite.FirstOrDefault(x => x.name == tcDefinition.GroupingKey);
+                                            if (testsuite == null)
                                             {
-                                                tcinteractive.MessageBox = servicesContainer.GetMessageBoxProvider();
-                                                isSkipTestCase = !__isTestCaceSpecified;
-                                                tc.AddFailure("Interactive Test Case was not specified.");
-                                            }
-                                            bool tcInitializeSucceeded = false;
-                                            if (!isSkipTestCase)
-                                            {
-                                                try
+                                                testsuite = new testsuitesTestsuite()
                                                 {
-                                                    servicesContainer.SetupTestCaseWithReportService(ref tc);
-                                                    tc.Initialize();
-                                                    tcInitializeSucceeded = true;
-                                                }
-                                                catch (Exception ex)
-                                                {
-                                                    tc.AddFailure(ex.Message);
-                                                }
-                                            }
-                                            if (!tcInitializeSucceeded)
-                                            {
-                                                res = TestCaseResult.Fail;
-                                                consoleOutPut.ReportToConsole(tc.GetLastFailure(), "", LogLevels.Fail);
-                                                consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
-                                                testcase.Item = new testsuiteTestcaseFailure()
-                                                {
-                                                    type = "skipped",
-                                                    Value = tc.GetLastFailure()
+                                                    package = "ZATS",
+                                                    timestamp = DateTime.Now,
+                                                    errors = 0,
+                                                    failures = 0,
+                                                    hostname = Environment.MachineName,
+                                                    name = tcDefinition.GroupingKey,
+                                                    time = 0,
+                                                    testcase = new Collection<testsuiteTestcase>()
                                                 };
-                                                testsuite.failures++;
+                                                testsuites.testsuite.Add(testsuite);
+                                                ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);
                                             }
-                                            else
+
+                                            tcCounter++;
+                                            testsuite.tests++;
+                                            var testcase = new testsuiteTestcase()
                                             {
-                                                try
+                                                classname = $"{tcDefinition.Name}",
+                                                name = $"{tcDefinition.Description}"
+                                            };
+                                            var extTC = testsuite.testcase.FirstOrDefault(x => x.classname == testcase.classname && x.Item != null);
+                                            if (extTC != null)
+                                            {
+                                                testsuite.testcase.Remove(extTC);
+                                                testsuite.tests--;
+                                                testsuite.failures--;
+                                            }
+                                            testsuite.testcase.Add(testcase);
+
+                                            if (ret == 0 || _cmdLineSettings.IgnoreMode == IgnoreModes.Fail)
+                                            {
+                                                TestCaseResult res = TestCaseResult.Fail;
+                                                managersContainer.SetReportFoldersAndFiles(tcDefinition.Name, rfRegion);
+                                                consoleOutPut.SetArchiveDumpFile(managersContainer.ReportManager.TestCaseFolder, managersContainer.ReportManager.TestCaseLogName);
+                                                if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI) // - save output for all.
                                                 {
-                                                    if (_cmdLineSettings.RunMode != RunModes.Readonly || !ZatsSettings.SaveInclusionState)
+                                                    var curDir = Directory.GetCurrentDirectory();
+                                                    var debugOutPath = Path.Combine(curDir,
+                                                        managersContainer.ReportManager.TestRunFolder,
+                                                        //managersContainer.ReportManager.TestCaseLogName,
+                                                        "debug_output.txt");
+                                                    Tools.CreateDebugLogFile(debugOutPath, false);
+                                                    if (!tcDefinition.DisableOptions.Any(x => x.Key == ZWaveSet.NodeIdBase2))
                                                     {
-                                                        if (_cmdLineSettings.RunMode == RunModes.Clean ||
-                                                            _cmdLineSettings.RunMode == RunModes.Overwrite && isFirstTCRunIndex)
-                                                        {
-                                                            isFirstTCRunIndex = false;
-                                                            managersContainer.DeviceManager.EraseAllBoards(ActiveProfile);
-                                                            ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
-                                                        }
-                                                        else
-                                                        {
-                                                            managersContainer.DeviceManager.ResetAllBoards(ActiveProfile);
-                                                        }
-                                                        consoleOutPut.ConsoleWriteLine();
+                                                        tcDefinition.DisableOptions.Add(ZWaveSet.NodeIdBase2, null);
                                                     }
-                                                    managersContainer.SetSubscribtionForServicesLogs(consoleOutPut.ReportToConsole);
-                                                    managersContainer.ResetFilterServicesLogs(new[] { LogLevels.Diagnostic });
-                                                    managersContainer.OpenStorageWriters();
-                                                    setupSucceeded = zatsEnvironment.SetUp(ActiveProfile, tcDefinition,
-                                                        _cmdLineSettings, ZatsSettings, consoleOutPut, frequency, runCounter, tcCounter);
-                                                    servicesContainer.SetupTestCaseWithServices(ref tc);
-                                                    servicesContainer.ResetServicesSettings(ref tc);
-                                                    ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
-                                                    if (setupSucceeded)
+                                                }
+                                                consoleOutPut.ReportTestCaseInformationToConsole(tcDefinition);
+                                                var tc = (ZatsCodeTestCase)Activator.CreateInstance(tcDefinition.TestType);
+                                                bool isSkipTestCase = false;
+                                                if (tc is IUserInteractive tcinteractive)
+                                                {
+                                                    tcinteractive.MessageBox = servicesContainer.GetMessageBoxProvider();
+                                                    isSkipTestCase = !__isTestCaceSpecified;
+                                                    tc.AddFailure("Interactive Test Case was not specified.");
+                                                }
+                                                bool tcInitializeSucceeded = false;
+                                                if (!isSkipTestCase)
+                                                {
+                                                    try
                                                     {
-                                                        StorageHeader.Comment = ActiveProfile.Name;
-                                                        connectSucceeded = zatsEnvironment.Connect(_cmdLineSettings);
-                                                        consoleOutPut.ReportConnectionStatusToConsole(managersContainer, tcDefinition);
+                                                        servicesContainer.SetupTestCaseWithReportService(ref tc);
+                                                        tc.Initialize();
+                                                        tcInitializeSucceeded = true;
                                                     }
-                                                    _stopWatch.Reset();
-                                                    _stopWatch.Start();
-                                                    if (setupSucceeded && connectSucceeded)
+                                                    catch (Exception ex)
                                                     {
-                                                        managersContainer.ResetFilterServicesLogs(null);
-                                                        managersContainer.SetSubscriptionOnKeyLog();
-                                                        try
+                                                        tc.AddFailure(ex.Message);
+                                                    }
+                                                }
+                                                if (!tcInitializeSucceeded)
+                                                {
+                                                    res = TestCaseResult.Fail;
+                                                    consoleOutPut.ReportToConsole(tc.GetLastFailure(), "", LogLevels.Fail);
+                                                    consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
+                                                    testcase.Item = new testsuiteTestcaseFailure()
+                                                    {
+                                                        type = "skipped",
+                                                        Value = tc.GetLastFailure()
+                                                    };
+                                                    testsuite.failures++;
+                                                }
+                                                else
+                                                {
+                                                    try
+                                                    {
+                                                        if (_cmdLineSettings.RunMode != RunModes.Readonly || !ZatsSettings.SaveInclusionState)
                                                         {
-                                                            if (_cmdLineSettings.TimeoutSeconds > 0)
+                                                            if (_cmdLineSettings.RunMode == RunModes.Clean ||
+                                                                _cmdLineSettings.RunMode == RunModes.Overwrite && isFirstTCRunIndex)
                                                             {
-                                                                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_cmdLineSettings.TimeoutSeconds));
-                                                                var testCaseRunTask = Task.Run(() =>
-                                                                {
-                                                                    try
-                                                                    {
-                                                                        using (cts.Token.Register(Thread.CurrentThread.Interrupt))
-                                                                        {
-                                                                            res = tc.Execute();
-                                                                        }
-                                                                    }
-                                                                    catch (ThreadInterruptedException)
-                                                                    {
-                                                                        //consoleOutPut.ConsoleWriteLine("Test Case terminated by timeout", LogLevels.Error, true);
-                                                                    }
-                                                                    finally
-                                                                    {
-                                                                        managersContainer.PCControllerDeviceManager.Dispose();
-                                                                        cts.Cancel();
-                                                                        cts.Dispose();
-                                                                    }
-                                                                }, cts.Token);
-                                                                testCaseRunTask.Wait();
+                                                                isFirstTCRunIndex = false;
+                                                                managersContainer.DeviceManager.EraseAllBoards(ActiveProfile);
+                                                                ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
                                                             }
                                                             else
                                                             {
-                                                                using (var otel = new TelemetryProvider())
+                                                                managersContainer.DeviceManager.ResetAllBoards(ActiveProfile);
+                                                            }
+                                                            consoleOutPut.ConsoleWriteLine();
+                                                        }
+                                                        managersContainer.SetSubscribtionForServicesLogs(consoleOutPut.ReportToConsole);
+                                                        managersContainer.ResetFilterServicesLogs(new[] { LogLevels.Diagnostic });
+                                                        managersContainer.OpenStorageWriters();
+
+                                                        setupSucceeded = zatsEnvironment.SetUp(ActiveProfile, tcDefinition,
+                                                            _cmdLineSettings, ZatsSettings, consoleOutPut, rfRegion, lrChannel, runCounter, tcCounter);
+
+                                                        servicesContainer.SetupTestCaseWithServices(ref tc);
+                                                        servicesContainer.ResetServicesSettings(ref tc);
+                                                        ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
+                                                        if (setupSucceeded)
+                                                        {
+                                                            StorageHeader.Comment = ActiveProfile.Name;
+                                                            connectSucceeded = zatsEnvironment.Connect(_cmdLineSettings);
+                                                            consoleOutPut.ReportConnectionStatusToConsole(managersContainer, tcDefinition);
+                                                        }
+                                                        _stopWatch.Reset();
+                                                        _stopWatch.Start();
+                                                        if (setupSucceeded && connectSucceeded)
+                                                        {
+                                                            managersContainer.ResetFilterServicesLogs(null);
+                                                            managersContainer.SetSubscriptionOnKeyLog();
+                                                            try
+                                                            {
+                                                                if (_cmdLineSettings.TimeoutSeconds > 0)
                                                                 {
-                                                                    otel.BuildProvider(tcDefinition.Name, new[] { "DeviceManager", "ZnifferManager" });
-                                                                    managersContainer.DeviceManager.TelemetryClient =
-                                                                        otel.CreateTelemetryClient("DeviceManager");
-                                                                    managersContainer.ZnifferManager.TelemetryClient =
-                                                                        otel.CreateTelemetryClient("ZnifferManager");
-                                                                    Task.Run(() =>
+                                                                    var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_cmdLineSettings.TimeoutSeconds));
+                                                                    var testCaseRunTask = Task.Run(() =>
                                                                     {
-                                                                        res = tc.Execute();
-                                                                    }).Wait();
+                                                                        try
+                                                                        {
+                                                                            using (cts.Token.Register(Thread.CurrentThread.Interrupt))
+                                                                            {
+                                                                                res = tc.Execute();
+                                                                            }
+                                                                        }
+                                                                        catch (ThreadInterruptedException)
+                                                                        {
+                                                                            //consoleOutPut.ConsoleWriteLine("Test Case terminated by timeout", LogLevels.Error, true);
+                                                                        }
+                                                                        finally
+                                                                        {
+                                                                            managersContainer.PCControllerDeviceManager.Dispose();
+                                                                            cts.Cancel();
+                                                                            cts.Dispose();
+                                                                        }
+                                                                    }, cts.Token);
+                                                                    testCaseRunTask.Wait();
+                                                                }
+                                                                else
+                                                                {
+                                                                    using (var otel = new TelemetryProvider())
+                                                                    {
+                                                                        otel.BuildProvider(tcDefinition.Name, new[] { "DeviceManager", "ZnifferManager" });
+                                                                        managersContainer.DeviceManager.TelemetryClient =
+                                                                            otel.CreateTelemetryClient("DeviceManager");
+                                                                        managersContainer.ZnifferManager.TelemetryClient =
+                                                                            otel.CreateTelemetryClient("ZnifferManager");
+                                                                        Task.Run(() =>
+                                                                        {
+                                                                            res = tc.Execute();
+                                                                        }).Wait();
+                                                                    }
                                                                 }
                                                             }
-                                                        }
-                                                        catch (AggregateException taskEx)
-                                                        {
-                                                            if (taskEx.InnerException != null && !(taskEx.InnerException is ThreadAbortException))
+                                                            catch (AggregateException taskEx)
                                                             {
-                                                                throw taskEx.InnerException;
+                                                                if (taskEx.InnerException != null && !(taskEx.InnerException is ThreadAbortException))
+                                                                {
+                                                                    throw taskEx.InnerException;
+                                                                }
+                                                                res = TestCaseResult.Skip;
                                                             }
+                                                        }
+                                                        else
+                                                        {
                                                             res = TestCaseResult.Skip;
+                                                            consoleOutPut.ReportToConsole("Not enough connected devices", "*", LogLevels.Fail);
+                                                            consoleOutPut.ConsoleWriteLine("Detected devices:");
+                                                            consoleOutPut.ReportDevicesToConsole(managersContainer.DeviceManager.HostsWithKnownVersion);
+                                                            tc.AddFailure("Not enough connected devices");
+                                                        }
+                                                        _stopWatch.Stop();
+                                                        consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
+                                                        testcase.time = _stopWatch.ElapsedMilliseconds / 1000;
+                                                        testsuite.time += testcase.time;
+                                                    }
+                                                    catch (Exception e)
+                                                    {
+                                                        consoleOutPut.ConsoleWriteLine(e.ToString(), LogLevels.Information);
+                                                        consoleOutPut.ConsoleWriteLine("Test threw an internal exception and was skipped", LogLevels.Error);
+                                                    }
+                                                    finally
+                                                    {
+                                                        managersContainer.PCControllerDeviceManager.Dispose();
+                                                        managersContainer.RemoveSubscribtionFromServicesLogs();
+                                                        managersContainer.RemoveSubscriptionOnKeyLog();
+                                                        managersContainer.DeviceManager.FinalizeDevices();
+                                                        managersContainer.EmulatedDeviceManager.FinalizeDevices();
+                                                        managersContainer.DebugDeviceManager.FinalizeDevices();
+                                                        managersContainer.ZipManager.FinalizeDevices();
+                                                        managersContainer.ZipManager.InterfaceName = null;
+                                                        managersContainer.ZnifferManager.FinalizeDevice();
+                                                        managersContainer.ReportManager.FinalizeDevice();
+                                                        managersContainer.MeshRouterManager.FinalizeDevices();
+
+                                                        managersContainer.CloseStorageWriters();
+                                                        Thread.Sleep(300);
+                                                        if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI)
+                                                        {
+                                                            Tools.CloseDebugLogFile();
                                                         }
                                                     }
-                                                    else
+                                                }
+
+                                                if (_cmdLineSettings.NumberOfRuns > 1 || res == TestCaseResult.Fail)
+                                                {
+                                                    extraTCs.Add(tcDefinition);
+                                                }
+
+                                                if (res == TestCaseResult.Pass)
+                                                {
+                                                }
+                                                else if (res == TestCaseResult.Fail)
+                                                {
+                                                    testcase.Item = new testsuiteTestcaseFailure()
                                                     {
-                                                        res = TestCaseResult.Skip;
-                                                        consoleOutPut.ReportToConsole("Not enough connected devices", "*", LogLevels.Fail);
-                                                        consoleOutPut.ConsoleWriteLine("Detected devices:");
-                                                        consoleOutPut.ReportDevicesToConsole(managersContainer.DeviceManager.HostsWithKnownVersion);
-                                                        tc.AddFailure("Not enough connected devices");
-                                                    }
-                                                    _stopWatch.Stop();
-                                                    consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
-                                                    testcase.time = _stopWatch.ElapsedMilliseconds / 1000;
-                                                    testsuite.time += testcase.time;
+                                                        type = "fail",
+                                                        message = tc.GetLastFailure()
+                                                    };
+                                                    testsuite.failures++;
+                                                    ret = 1;
                                                 }
-                                                catch (Exception e)
+                                                else if (res == TestCaseResult.Skip)
                                                 {
-                                                    consoleOutPut.ConsoleWriteLine(e.ToString(), LogLevels.Information);
-                                                    consoleOutPut.ConsoleWriteLine("Test threw a internal exception and was skipped", LogLevels.Error);
-                                                }
-                                                finally
-                                                {
-                                                    managersContainer.PCControllerDeviceManager.Dispose();
-                                                    managersContainer.RemoveSubscribtionFromServicesLogs();
-                                                    managersContainer.RemoveSubscriptionOnKeyLog();
-                                                    managersContainer.DeviceManager.FinalizeDevices();
-                                                    managersContainer.EmulatedDeviceManager.FinalizeDevices();
-                                                    managersContainer.DebugDeviceManager.FinalizeDevices();
-                                                    managersContainer.ZipManager.FinalizeDevices();
-                                                    managersContainer.ZipManager.InterfaceName = null;
-                                                    managersContainer.ZnifferManager.FinalizeDevice();
-                                                    managersContainer.ReportManager.FinalizeDevice();
-                                                    managersContainer.MeshRouterManager.FinalizeDevices();
-
-                                                    managersContainer.CloseStorageWriters();
-                                                    Thread.Sleep(300);
-                                                    if (_cmdLineSettings.RunServiceType == RunServiceType.PCControllerUI)
+                                                    testcase.Item = new testsuiteTestcaseSkipped()
                                                     {
-                                                        Tools.CloseDebugLogFile();
-                                                    }
+                                                        type = "skipped",
+                                                        Value = tc.GetLastFailure()
+                                                    };
+                                                    testsuite.skipped++;
+                                                    testsuite.skippedSpecified = true;
+                                                    ret = 1;
                                                 }
                                             }
-
-                                            if (_cmdLineSettings.NumberOfRuns > 1 || res == TestCaseResult.Fail)
-                                            {
-                                                extraTCs.Add(tcDefinition);
-                                            }
-
-                                            if (res == TestCaseResult.Pass)
-                                            {
-                                            }
-                                            else if (res == TestCaseResult.Fail)
-                                            {
-                                                testcase.Item = new testsuiteTestcaseFailure()
-                                                {
-                                                    type = "fail",
-                                                    message = tc.GetLastFailure()
-                                                };
-                                                testsuite.failures++;
-                                                ret = 1;
-                                            }
-                                            else if (res == TestCaseResult.Skip)
+                                            else
                                             {
                                                 testcase.Item = new testsuiteTestcaseSkipped()
                                                 {
                                                     type = "skipped",
-                                                    Value = tc.GetLastFailure()
+                                                    Value = "Previous Test Case failed."
                                                 };
                                                 testsuite.skipped++;
                                                 testsuite.skippedSpecified = true;
-                                                ret = 1;
                                             }
+                                            ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);
                                         }
-                                        else
-                                        {
-                                            testcase.Item = new testsuiteTestcaseSkipped()
-                                            {
-                                                type = "skipped",
-                                                Value = "Previous Test Case failed."
-                                            };
-                                            testsuite.skipped++;
-                                            testsuite.skippedSpecified = true;
-                                        }
-                                        ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);
                                     }
+
                                 }
 
                             }
-
                         }
                     }
                     ZatsUtils.SaveZatsTestSuites(testsuites, managersContainer.ReportManager.TestRunFolder);

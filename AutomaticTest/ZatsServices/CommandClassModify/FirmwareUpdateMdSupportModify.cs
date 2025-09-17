@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,15 +63,16 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1)
+                if (isHandlingAllowed && command != null && command.Length > 1)
                 {
                     switch (command[1])
                     {
@@ -100,7 +102,7 @@ namespace Zats.Services
                         default:
                             break;
                     }
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }

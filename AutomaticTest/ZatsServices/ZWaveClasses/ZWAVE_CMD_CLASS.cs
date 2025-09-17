@@ -604,7 +604,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -861,7 +861,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -1475,7 +1475,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -1747,7 +1747,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -2022,7 +2022,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -2211,7 +2211,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte security
+                public byte rfu
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }

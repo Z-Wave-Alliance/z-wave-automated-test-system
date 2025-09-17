@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -13,11 +14,19 @@ using ZWave.Enums;
 
 namespace Zats.Services
 {
+    [CommandClassName("Basic Command Class")]
+    [CommandClassId(COMMAND_CLASS_BASIC.ID)]
+    [MinVersion(1)]
+    [MaxVersion(2)]
     public class BasicSupport : CommandClassSupport
     {
         private BasicSupportData BasicSupportData { get; set; }
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return BasicSupportData; }
+            set { BasicSupportData = (BasicSupportData)value; }
+        }
 
-        //private readonly static string CommandClassName = "Basic CC";
         //private string EndPointName = "";
         //private readonly int LogLevel;  // shortcut for SupportData.LogLevel
         private SvResultNames ResultForSv = SvResultNames.Undefined;
@@ -29,8 +38,6 @@ namespace Zats.Services
         public BasicSupport(BasicSupportData basicSupportData, IBasicMapping mappedSupportData)
             : base(COMMAND_CLASS_BASIC.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 2;
             BasicSupportData = basicSupportData;
             BasicSupportData.MappedSupportData = mappedSupportData;
             //LogLevel = BasicSupportData.LogLevel;
@@ -39,34 +46,35 @@ namespace Zats.Services
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
                 ResultForSv = SvResultNames.Undefined;
-                if (isResponseAllowed && command != null && command.Length > 1 && BasicSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && BasicSupportData != null)
                 {
                     byte[] rpt = null;
                     if (command[1] == COMMAND_CLASS_BASIC.BASIC_SET.ID)
                     {
-                        ResultForSv = HandleBasicSet(command);
+                        ResultForSv = HandleBasicSet(command, sendSrcNode);
                     }
-                    else if (command[1] == COMMAND_CLASS_BASIC.BASIC_GET.ID)
+                    else if (command[1] == COMMAND_CLASS_BASIC.BASIC_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareBasicReport();
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
@@ -95,12 +103,12 @@ namespace Zats.Services
             return null;
         }
 
-        private SvResultNames HandleBasicSet(byte[] command)
+        private SvResultNames HandleBasicSet(byte[] command, NodeTag srcNode)
         {
             if (BasicSupportData.MappedSupportData != null)
             {
                 COMMAND_CLASS_BASIC.BASIC_SET setCmd = command;
-                return BasicSupportData.MappedSupportData.BasicSet(setCmd.value) ? SvResultNames.Successful : SvResultNames.Failed;
+                return BasicSupportData.MappedSupportData.BasicSet(setCmd.value, srcNode) ? SvResultNames.Successful : SvResultNames.Failed;
             }
             return SvResultNames.Failed;
         }
@@ -109,7 +117,7 @@ namespace Zats.Services
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
             {
-                if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != Id)
+                if (ResultForSv == SvResultNames.Undefined || supervisionGet.encapsulatedCommand[0] != CommandClassId)
                 {
                     supervisionReport.status = (byte) SvStatusNames.NoSupport;
                     return;
@@ -126,9 +134,15 @@ namespace Zats.Services
                 ResultForSv = SvResultNames.Undefined;
             }
         }
+
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+            // @todo: placeholder - still needs to be implemented
+        }
     }
 
-    public class BasicSupportData
+    public class BasicSupportData : CommandClassSupportData
     {
         public IBasicMapping MappedSupportData { get; set; } = null;
     }

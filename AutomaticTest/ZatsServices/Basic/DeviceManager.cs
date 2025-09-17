@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -434,7 +435,7 @@ namespace Zats.Services
 
                 if (!_firmwareUpdateMdSupport.ContainsKey(item.Value))
                 {
-                    var fwSupport = new FirmwareUpdateMdSupportBasic(() => { _fwuMDCompleted.Set(); })
+                    var fwSupport = new FirmwareUpdateMdSupportBasicModify(() => { _fwuMDCompleted.Set(); })
                     {
                         CommandCallbacks = CommandCallbacks,
                         TxOptions = TX_OPTIONS,
@@ -2539,7 +2540,7 @@ namespace Zats.Services
         public string Hop { get; set; }
         public bool HasHop => !string.IsNullOrEmpty(Hop);
 
-        public UnknownDevice(Alias deviceAlias, string alias, Libraries[] libraries, ChipSeries chipSeries, InterfaceTypes interfaceType, string frequency, DevKits devKit, string fileNameFilter, string hop)
+        public UnknownDevice(Alias deviceAlias, string alias, Libraries[] libraries, ChipSeries chipSeries, InterfaceTypes interfaceType, string rfRegion, DevKits devKit, string fileNameFilter, string hop)
         {
             DeviceAlias = deviceAlias;
             Alias = alias;
@@ -2548,7 +2549,7 @@ namespace Zats.Services
             FileNameFilter = fileNameFilter;
             ChipSeries = chipSeries;
             InterfaceType = interfaceType;
-            Frequency = frequency;
+            Frequency = rfRegion;
             HasDoorLockLibrary = false;
             if (Libraries != null && Libraries.Length > 0)
             {
@@ -2597,7 +2598,7 @@ namespace Zats.Services
                     {
                         Host.SType = InterfaceTypes.TCP;
                         SClient = sourceAppLayer.CreateClient();
-                        var sds = new SocketDataSource(Host.SName, UdpJLinkDiscoveryService.ADMIN_PORT);
+                        var sds = new SocketDataSource(Host.SName, Host.SPort);
                         SClient.DataSource = sds;
                     }
                     else

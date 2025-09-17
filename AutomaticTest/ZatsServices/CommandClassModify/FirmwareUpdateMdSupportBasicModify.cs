@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,6 +81,18 @@ namespace Zats.Services
 
             // TODO: Implement proper Supervision return codes (see BinarySwitchSupport.cs for an example)
             supervisionReport.status = 0xFF;                        // SUCCESS
+        }
+
+        // Satisfy abstract members
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return null; }
+            set {; }
+        }
+
+        public override void UpdateSupportData(CommandClassSupportData data)
+        {
+
         }
     }
 }

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Zats.Services
 {
     /// <summary>
@@ -30,8 +35,55 @@ namespace Zats.Services
         EU_LR,   /* European Union, Long Range */
     }
 
+
     public static class RfRegionsExtensions
     {
+        /// <summary>
+        /// Z-Wave Long Range RF Regions with their corresponding classic Z-Wave RF Region
+        /// </summary>
+        private static readonly Dictionary<RfLongRangeRegions, RfRegions> LongRangeRegions = new Dictionary<RfLongRangeRegions, RfRegions>()
+        {
+            { RfLongRangeRegions.EU_LR, RfRegions.EU },
+            { RfLongRangeRegions.US_LR, RfRegions.US },
+        };
+
+        public static RfRegions GetCorrespondingClassicRfRegion(this RfLongRangeRegions lrRfRegion)
+        {
+            return LongRangeRegions.ContainsKey(lrRfRegion) ? LongRangeRegions[lrRfRegion] : RfRegions.UNKNOWN;
+        }
+
+        public static RfRegions GetCorrespondingClassicRfRegion(string longRangeRfRegionStr)
+        {
+            if (Enum.TryParse(longRangeRfRegionStr, out RfLongRangeRegions lrRfRegion))
+            {
+                return GetCorrespondingClassicRfRegion(lrRfRegion);
+            }
+            return RfRegions.UNKNOWN;
+        }
+
+        public static bool IsLongRangeRfRegion(this RfRegions rfRegion)
+        {
+            if (Enum.TryParse(rfRegion.ToString(), out RfLongRangeRegions lrRfRegion))
+            {
+                return LongRangeRegions.Keys.Contains(lrRfRegion);
+            }
+            return false;
+        }
+
+        public static bool IsLongRangeRfRegion(ZWave.BasicApplication.Enums.RfRegions rfRegion)
+        {
+            return IsLongRangeRfRegion(rfRegion.ToRfRegion());
+        }
+
+        public static bool IsLongRangeRfRegion(string rfRegionStr)
+        {
+            if (Enum.TryParse(rfRegionStr, out RfRegions rfRegion))
+            {
+                return rfRegion.IsLongRangeRfRegion();
+            }
+            return false;
+        }
+
         public static RfRegions ToRfRegion(this ZWave.BasicApplication.Enums.RfRegions rfRegion)
         {
             RfRegions ret = RfRegions.UNKNOWN;

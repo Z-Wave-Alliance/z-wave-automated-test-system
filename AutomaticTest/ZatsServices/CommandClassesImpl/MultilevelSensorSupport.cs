@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using Renci.SshNet;
 using System;
 using System.Collections.Generic;
@@ -16,83 +17,96 @@ using ZWave.Enums;
 
 namespace Zats.Services
 {
+    [CommandClassName("Multilevel Sensor Command Class")]
+    [CommandClassId(COMMAND_CLASS_SENSOR_MULTILEVEL.ID)]
+    [MinVersion(1)]
+    [MaxVersion(11)]
     public class MultilevelSensorSupport : CommandClassSupport
     {
         public MultilevelSensorSupportData MultilevelSensorSupportData { get; set; }
-
-        //private readonly string CommandClassName = "Multilevel Sensor CC";
-        //private string EndPointName = "";
-        //private readonly int LogLevel;  // shortcut for SupportData.LogLevel
+        public override CommandClassSupportData CommandClassSupportData
+        {
+            get { return MultilevelSensorSupportData; }
+            set { MultilevelSensorSupportData = (MultilevelSensorSupportData)value; }
+        }
 
         public MultilevelSensorSupport()
-            : this(new MultilevelSensorSupportData() { })
+            : this(new MultilevelSensorSupportData(new List<MultilevelSensorType>()) { })
         { }
 
         public MultilevelSensorSupport(MultilevelSensorSupportData multilevelSensorSupportData)
             : base(COMMAND_CLASS_SENSOR_MULTILEVEL.ID)
         {
-            MinCCVersion = 1;
-            MaxCCVersion = 11;
             MultilevelSensorSupportData = multilevelSensorSupportData;
-            //LogLevel = MultilevelSensorSupportData.LogLevel;
         }
 
         protected override void OnHandledDelayed(DataReceivedUnit ou)
         {
             ou.SetNextActionItems();
-            if (DstNode.EndPointId == ReceivedAchData.DstNode.EndPointId)
+
+            if (MatchesDestinationEndPoint())
             {
-                var sendDstNode = ReceivedAchData.DstNode;
+                var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
                 var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
-                bool isResponseAllowed = IsResponseAllowed(Network, command, scheme, Secure);
+                bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
-                if (isResponseAllowed && command != null && command.Length > 1 && MultilevelSensorSupportData != null)
+                if (isHandlingAllowed && command != null && command.Length > 1 && MultilevelSensorSupportData != null)
                 {
                     byte[] rpt = null;
-                    if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_GET.ID)
+                    if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_GET.ID && !IsSupervised())
                     {
-                        rpt = PrepareSensorReport(command);
+                        rpt = PrepareSensorReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE.ID)
+                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE.ID && !IsSupervised())
                     {
-                        rpt = PrepareSupportedScaleReport(command);
+                        rpt = PrepareSupportedScaleReportCmd(command);
                     }
-                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SENSOR.ID)
+                    else if (command[1] == COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SENSOR.ID && !IsSupervised())
                     {
                         rpt = PrepareSupportedSensorReport();
                     }
 
-                    if (rpt != null)
+                    if (rpt != null && IsAnsweringAllowed())
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, rpt, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
                     }
 
-                    CommandCallback(command);
+                    CommandCallback(command, sendDstNode.EndPointId);
                 }
             }
         }
 
-        private byte[] PrepareSupportedScaleReport(byte[] command)
+        private byte[] PrepareSupportedScaleReport(MultilevelSensorType sensorType)
         {
             if (Version >= 5)
             {
-                COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE multilevelSensorScaleGetCmd = command;
-                Sensor requestedSensor = MultilevelSensorSupportData.Sensors.Find(sensor => sensor.SensorType == multilevelSensorScaleGetCmd.sensorType);
                 COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_SCALE_REPORT rpt = new COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_SCALE_REPORT() { };
-
-                rpt.sensorType = multilevelSensorScaleGetCmd.sensorType;
-                rpt.properties1.scaleBitMask = 0x00;
-                if (requestedSensor != null)
+                if (sensorType != null)
                 {
-                    rpt.properties1.scaleBitMask = requestedSensor.GetScalesBitMask();
+                    rpt.sensorType = (byte)sensorType.NestedId;
                 }
+                rpt.properties1.scaleBitMask = GetScaleBitmask(sensorType);
                 return rpt;
             }
             return null;
         }
+        private byte[] PrepareSupportedScaleReportCmd(byte[] command)
+        {
+            COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE multilevelSensorScaleGetCmd = command;
+            COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_SUPPORTED_SCALE_REPORT rpt;
+            MultilevelSensorType requestedSensor = MultilevelSensorSupportData.Sensors.Find(sensor => sensor.NestedId == multilevelSensorScaleGetCmd.sensorType);
+            rpt = PrepareSupportedScaleReport(requestedSensor);
+            if (requestedSensor == null && rpt != null)
+            {
+                rpt.sensorType = multilevelSensorScaleGetCmd.sensorType;
+                rpt.properties1.scaleBitMask = 0x00;
+            }
+            return rpt;
+        }
+
 
         private byte[] PrepareSupportedSensorReport()
         {
@@ -107,69 +121,62 @@ namespace Zats.Services
             return null;
         }
 
-        private byte[] PrepareSensorReport(byte[] command)
+        private byte[] PrepareSensorReportCmd(byte[] command)
         {
-            COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT rpt = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT() { };
-
-            if (Version < 5)
+            if (MultilevelSensorSupportData.Sensors.Count() > 0)
             {
-                Sensor requestedSensor = MultilevelSensorSupportData.Sensors[0];
-                rpt.sensorType = requestedSensor.SensorType;
-                rpt.properties1.precision = requestedSensor.Precision;
-                rpt.properties1.scale = requestedSensor.Scales[0];
-                rpt.sensorValue = requestedSensor.GetRawValue(rpt.properties1.scale);
-                rpt.properties1.size = Convert.ToByte(rpt.sensorValue.Count);
-            }
-            else
-            {
-                COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_GET multilevelSensorGetCmd = command;
-                Sensor requestedSensor = MultilevelSensorSupportData.Sensors.Find(sensor => sensor.SensorType == multilevelSensorGetCmd.sensorType);
-                if (requestedSensor == null)
+                if (Version < 5)
                 {
-                    requestedSensor = MultilevelSensorSupportData.Sensors[0];
-                }
-
-                rpt.sensorType = requestedSensor.SensorType;
-                rpt.properties1.precision = requestedSensor.Precision;
-                rpt.properties1.scale = requestedSensor.Scales[0];
-                if (requestedSensor.IsScaleSupported(multilevelSensorGetCmd.properties1.scale))
-                {
-                    rpt.properties1.scale = multilevelSensorGetCmd.properties1.scale;
-                }
-                rpt.sensorValue = requestedSensor.GetRawValue(rpt.properties1.scale);
-                rpt.properties1.size = Convert.ToByte(rpt.sensorValue.Count);
-
-                /*if (requestedSensor.IsScaleSupported(multilevelSensorGetCmd.properties1.scale))
-                {
-                    COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT rpt = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT()
+                    MultilevelSensorType defaultSensor = MultilevelSensorSupportData.Sensors.FirstOrDefault();
+                    if (defaultSensor != null &&
+                        defaultSensor.MinVersion <= Version) // check that the requested (and configured) sensor is supported by the configured Multilevel Sensor CC Version
                     {
-                        sensorType = requestedSensor.SensorType,
-                        properties1 = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT.Tproperties1()
+                        MultilevelSensorScale defaultScale = defaultSensor.Scales.FirstOrDefault();
+                        if (defaultScale != null &&
+                            defaultScale.MinVersion <= Version) // check that the default scale is supported by the configured Multilevel Sensor CC Version
                         {
-                            precision = requestedSensor.Precision,
-                            scale = multilevelSensorGetCmd.properties1.scale,
-                            size = Convert.ToByte(requestedSensor.Value.Count)
-                        },
-                        sensorValue = requestedSensor.GetValue(multilevelSensorGetCmd.properties1.scale)
-                    };
-                    return rpt;
+                            return PrepareSensorReport(defaultSensor, defaultScale);
+                        }
+                    }
                 }
                 else
                 {
-                    COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT rpt = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT()
+                    COMMAND_CLASS_SENSOR_MULTILEVEL_V5.SENSOR_MULTILEVEL_GET multilevelSensorGetCmd = command;
+                    MultilevelSensorType requestedSensor = MultilevelSensorSupportData.Sensors.Find(sensor => sensor.NestedId == multilevelSensorGetCmd.sensorType);
+
+                    // if requested sensor type hasn't been found: return the default (the first registered) sensor
+                    if (requestedSensor == null)
                     {
-                        sensorType = requestedSensor.SensorType,
-                        properties1 = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT.Tproperties1()
+                        requestedSensor = MultilevelSensorSupportData.Sensors.FirstOrDefault();
+                    }
+                    if (requestedSensor != null && requestedSensor.MinVersion <= Version) // check that the requested (and configured) sensor is supported by the configured Multilevel Sensor CC Version
+                    {
+                        MultilevelSensorScale requestedScale = requestedSensor.Scales.Find(s => s.NestedId == multilevelSensorGetCmd.properties1.scale);
+                        if (requestedScale == null)
                         {
-                            precision = requestedSensor.Precision,
-                            scale = requestedSensor.Scales[0],
-                            size = Convert.ToByte(requestedSensor.Value.Count)
-                        },
-                        sensorValue = requestedSensor.Value
-                    };
-                    return rpt;
-                }*/
+                            requestedScale = requestedSensor.Scales.FirstOrDefault();
+                        }
+
+                        if (requestedScale != null && requestedScale.MinVersion <= Version) // check that the requested scale is supported by the configured Multilevel Sensor CC Version
+                        {
+                            return PrepareSensorReport(requestedSensor, requestedScale);
+                        }
+                    }
+                }
             }
+            return null;
+        }
+
+        private byte[] PrepareSensorReport(MultilevelSensorType sensorType, MultilevelSensorScale scale)
+        {
+            COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT rpt = new COMMAND_CLASS_SENSOR_MULTILEVEL.SENSOR_MULTILEVEL_REPORT();
+           
+            rpt.sensorType = (byte)sensorType.NestedId;
+            rpt.properties1.precision = scale.Precision;
+            rpt.properties1.scale = (byte)scale.NestedId;
+            rpt.sensorValue = GetRawValue(sensorType, rpt.properties1.scale);
+            rpt.properties1.size = Convert.ToByte(rpt.sensorValue.Count);
+
             return rpt;
         }
 
@@ -179,278 +186,166 @@ namespace Zats.Services
             supervisionReport.status = (byte) SvStatusNames.NoSupport;
             return;
         }
-    }
 
-    public delegate double GetValueCallback(Sensor sensor, byte scale);
-
-    public class Sensor
-    {
-        public byte SensorType;
-        public byte Precision;
-        public byte[] Scales;
-        public byte ScaleBitmask;
-        private GetValueCallback getValue;
-        public double Value;
-
-        public Sensor(MultilevelSensorTypes sensorType, byte precision, byte[] scales, GetValueCallback getValueCallback, double value)
-        {
-            SensorType = (byte) sensorType;
-            Precision = precision;
-            Scales = scales;
-            getValue = getValueCallback;
-            Value = value;
-        }
-
-        public double GetValue(byte scale)
-        {
-            if (getValue != null && IsScaleSupported(scale))
-            {
-                return getValue.Invoke(this, scale);
-            }
-
-            return Value;
-        }
-
-        public List<byte> GetRawValue(byte scale)
-        {
-            if (getValue != null && IsScaleSupported(scale))
-            {
-                double value = getValue.Invoke(this, scale);
-                byte size = CommandClassSupportUtils.CalcByteFieldSize(value, Precision); // handles overflow!
-                return CommandClassSupportUtils.ValueToByteField(value, size, Precision).ToList();
-            }
-            return null;
-        }
-        public bool IsScaleSupported(byte scale)
-        {
-            return (Scales.Contains(scale));
-        }
-        public byte GetScalesBitMask()
+        private byte GetScaleBitmask(MultilevelSensorType sensorType)
         {
             byte bitmask = 0x00;
 
-            if (Scales.Contains(0x00))
+            sensorType?.Scales?.ForEach(scale =>
             {
-                bitmask = Convert.ToByte(bitmask + 0x01);
-            }
-            if (Scales.Contains(0x01))
-            {
-                bitmask = Convert.ToByte(bitmask + 0x02);
-            }
-            if (Scales.Contains(0x02))
-            {
-                bitmask = Convert.ToByte(bitmask + 0x04);
-            }
-            if (Scales.Contains(0x03))
-            {
-                bitmask = Convert.ToByte(bitmask + 0x08);
-            }
+                if (scale.MinVersion <= Version)
+                {
+                    bitmask |= (byte)(0x01 << scale.NestedId);
+                }
+            });
+
+            //if (sensorType != null)
+            //{
+            //    if (sensorType.Scales.Find(x => x.Id == 0x00) != null)
+            //    {
+            //        bitmask = Convert.ToByte(bitmask + 0x01);
+            //    }
+            //    if (sensorType.Scales.Find(x => x.Id == 0x01) != null)
+            //    {
+            //        bitmask = Convert.ToByte(bitmask + 0x02);
+            //    }
+            //    if (sensorType.Scales.Find(x => x.Id == 0x02) != null)
+            //    {
+            //        bitmask = Convert.ToByte(bitmask + 0x04);
+            //    }
+            //    if (sensorType.Scales.Find(x => x.Id == 0x03) != null)
+            //    {
+            //        bitmask = Convert.ToByte(bitmask + 0x08);
+            //    }
+            //}
             return bitmask;
         }
-        private bool IsTemperatureSensorType(byte sensorType)
+
+        public override void UpdateSupportData(CommandClassSupportData data)
         {
-            if (sensorType == 0x01 || sensorType == 0x0B || sensorType == 0x17 || sensorType == 0x18 || sensorType == 0x22
-             || sensorType == 0x3E || sensorType == 0x3F || sensorType == 0x40 || sensorType == 0x41 || sensorType == 0x4A
-             || sensorType == 0x4B || sensorType == 0x4C || sensorType == 0x4D || sensorType == 0x50)
-                return true;
-            return false;
+            if (data is MultilevelSensorSupportData updateData)
+            {
+                foreach (MultilevelSensorType sensor in MultilevelSensorSupportData.Sensors)
+                {
+                    if (updateData.Sensors.Find(x => x.NestedId == sensor.NestedId) is MultilevelSensorType updateSensor)
+                    {
+                        foreach (MultilevelSensorScale scale in sensor.Scales)
+                        {
+                            if (updateSensor.Scales.Find(s => s.NestedId == scale.NestedId) is MultilevelSensorScale updateScale)
+                            {
+                                if (updateScale.Precision != scale.Precision ||
+                                    updateScale.Value != scale.Value)
+                                {
+                                    scale.Value = updateScale.Value;
+                                    scale.Precision = updateScale.Precision;
+
+                                    if (ReportTypes.HasFlag(ReportTypes.OnStateChange))
+                                    {
+                                        SendUnsolicitedReport(PrepareSensorReport(sensor, scale), NodeTag.Empty);
+                                    }
+                                }
+                            }
+
+                            List<MultilevelSensorScale> scalesRemoved = sensor.Scales.FindAll(x => updateSensor.Scales.Find(y => y.NestedId == x.NestedId) == null);
+                            List<MultilevelSensorScale> scalesAdded = updateSensor.Scales.FindAll(x => sensor.Scales.Find(y => y.NestedId == x.NestedId) == null);
+
+                            if (scalesAdded.Count > 0 || scalesRemoved.Count > 0)
+                            {
+                                scalesRemoved.ForEach(x => sensor.Scales.Remove(x));
+                                sensor.Scales.AddRange(scalesAdded);
+
+                                if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                                {
+                                    SendUnsolicitedReport(PrepareSupportedScaleReport(sensor), NodeTag.Empty);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<MultilevelSensorType> sensorsRemoved = MultilevelSensorSupportData.Sensors.FindAll(x => updateData.Sensors.Find(y => y.NestedId == x.NestedId) == null);
+                List<MultilevelSensorType> sensorsAdded = updateData.Sensors.FindAll(x => MultilevelSensorSupportData.Sensors.Find(y => y.NestedId == x.NestedId) == null);
+
+                if (sensorsAdded.Count > 0 || sensorsRemoved.Count > 0)
+                {
+                    sensorsRemoved.ForEach(x => MultilevelSensorSupportData.Sensors.Remove(x));
+                    MultilevelSensorSupportData.Sensors.AddRange(sensorsAdded);
+
+                    if (ReportTypes.HasFlag(ReportTypes.OnCapabilityChange))
+                    {
+                        SendUnsolicitedReport(PrepareSupportedSensorReport(), NodeTag.Empty);
+                        // discussed with TKO:
+                        //  - also report the supported scales of a new sensor type
+                        //  - but do not report the value of each scale
+                        //  - seems the spec doesn't contain any hint how to implement an End Device which that kind of capability change
+                        sensorsAdded.ForEach(s => SendUnsolicitedReport(PrepareSupportedScaleReport(s), NodeTag.Empty));
+                    
+                    }
+                }
+
+                // inform (EDE) for any updates
+                SupportDelegates?.DeviceDataUpdate?.Invoke(this);
+
+            }
+        }
+
+        public static List<byte> GetRawValue(MultilevelSensorType sensorType, byte scaleId)
+        {
+            if (sensorType != null && sensorType.Scales.Find(s => s.NestedId == scaleId) is MultilevelSensorScale scale)
+            {
+                byte size = CommandClassSupportUtils.CalcByteFieldSize(scale.Value, scale.Precision); // handles overflow!
+                return CommandClassSupportUtils.ValueToByteField(scale.Value, size, scale.Precision).ToList();
+            }
+            return null;
         }
     }
 
-    public class MultilevelSensorSupportData
+    public class MultilevelSensorSupportData : CommandClassSupportData
     {
         // Internals accessible from TestCases
-        public int LogLevel { get; set; } = 0;
-        public List<Sensor> Sensors { get; set; } = new List<Sensor>();
+        [NestedControl(2, "Firmware Versions")]
+        public List<MultilevelSensorType> Sensors { get; set; } = null;
+        //public List<Sensor> Sensors { get; set; } = new List<Sensor>();
 
         // V5+ Supported Report
         // This byte array represents the Bit Mask fields of the Multilevel Sensor Supported Sensor Report Command.
         // It's length is dynamically, depending from the supported (added) Sensor Types.
         // Use the MultilevelSensorSupportData.AddSensor methods to create sensor objects and update the Supported Sensor Types Bit Mask fields.
         // The Value parameter is considered as measured in units of scale 0. Value can be provided as double or as byte list.
-        public List<byte> SupportedSensorTypesBitmask { get; } = new List<byte> { 0x00 }; // Bit Mask 1, nothing supported
+        public List<byte> SupportedSensorTypesBitmask { get { return getSensorTypesBitmask(); } } 
+        
 
-        public Sensor AddSensor(MultilevelSensorTypes sensorTypeName, byte precision, byte[] scales, GetValueCallback getValueCallback, double value)
+        public MultilevelSensorSupportData()
         {
-            byte sensorType = (byte)sensorTypeName;
-            if (Sensors.Find(sensor => sensor.SensorType == sensorType) == null)
-            {
-                Sensor obj = new Sensor(sensorTypeName, precision, scales, getValueCallback, value);
-                Sensors.Add(obj);
-                UpdateSensorTypesBitmask(sensorType);
-                return obj;
-            }
-            return null;
-        }
-        public Sensor AddSensor(MultilevelSensorTypes sensorTypeName, byte precision, byte[] scales, GetValueCallback getValueCallback, List<byte> value)
-        {
-            byte sensorType = (byte)sensorTypeName;
-            if (Sensors.Find(sensor => sensor.SensorType == sensorType) == null)
-            {
-                double val = CommandClassSupportUtils.ByteListToValue(value, (byte)value.Count, precision);
-                Sensor obj = new Sensor(sensorTypeName, precision, scales, getValueCallback, val);
-                Sensors.Add(obj);
-                UpdateSensorTypesBitmask(sensorType);
-                return obj;
-            }
-            return null;
-        }
-        public Sensor AddSensor(MultilevelSensorTypes sensorTypeName, byte precision, byte[] scales, double value)
-        {
-            byte sensorType = (byte)sensorTypeName;
-            if (Sensors.Find(sensor => sensor.SensorType == sensorType) == null)
-            {
-                Sensor obj = new Sensor(sensorTypeName, precision, scales, MultilevelSensorDefaultGetValueCallbacks.GetDefaultValue, value);
-                Sensors.Add(obj);
-                UpdateSensorTypesBitmask(sensorType);
-                return obj;
-            }
-            return null;
-        }
-        public Sensor AddSensor(MultilevelSensorTypes sensorTypeName, byte precision, byte[] scales, List<byte> value)
-        {
-            byte sensorType = (byte)sensorTypeName;
-            if (Sensors.Find(sensor => sensor.SensorType == sensorType) == null)
-            {
-                double val = CommandClassSupportUtils.ByteListToValue(value, (byte)value.Count, precision);
-                Sensor obj = new Sensor(sensorTypeName, precision, scales, MultilevelSensorDefaultGetValueCallbacks.GetDefaultValue, val);
-                Sensors.Add(obj);
-                UpdateSensorTypesBitmask(sensorType);
-                return obj;
-            }
-            return null;
+
         }
 
-        private void UpdateSensorTypesBitmask(byte sensorType)
+        public MultilevelSensorSupportData(List<MultilevelSensorType> supportedSensorTypes)
         {
-            byte byteIndex, bit;
-            if (sensorType > 0)
+            Sensors = supportedSensorTypes;
+        }
+
+        private List<byte> getSensorTypesBitmask()
+        {
+            int byteIndex, bit;
+
+            List<byte> supportedSensorTypesBitmask = new List<byte> { 0x00 };
+            
+            Sensors?.ForEach(sensor =>
             {
-                byteIndex = (byte) ((sensorType - 1) / 8);
-                bit = (byte) ((sensorType - 1) % 8);
-                while (byteIndex >= SupportedSensorTypesBitmask.Count)
+                byteIndex = ((sensor.NestedId - 1) / 8);
+                bit = ((sensor.NestedId - 1) % 8);
+                // extend bitmask to the lenght needed for this sensor type
+                while (byteIndex >= supportedSensorTypesBitmask.Count)
                 {
-                    SupportedSensorTypesBitmask.Add(0x00);
+                    supportedSensorTypesBitmask.Add(0x00);
                 }
-                SupportedSensorTypesBitmask[byteIndex] |= (byte) (1 << bit);
-            }
-        }
-    }
+                supportedSensorTypesBitmask[byteIndex] |= (byte) (0x01 << bit);
+            });
 
-    public enum MultilevelSensorTypes : byte
-    {
-        AirTemperature = 0x01,
-        GeneralPurpose = 0x02, // deprecated by V11
-        Illuminance = 0x03,
-        Power = 0x04,
-        Humidity = 0x05,
-        Velocity = 0x06,
-        Direction = 0x07,
-        AtmosphericPressure = 0x08,
-        BarometricPressure = 0x09,
-        SolarRadiation = 0x0A,
-        DewPoint = 0x0B,
-        RainRate = 0x0C,
-        TideLevel = 0x0D,
-        Weight = 0x0E,
-        Voltage = 0x0F,
-        Current = 0x10,
-        CarbonDioxide = 0x11,
-        AirFlow = 0x12,
-        TankCapacity = 0x13,
-        Distance = 0x14,
-        AnglePosition = 0x15, // deprecated by V8
-        Rotation = 0x16,
-        WaterTemparature = 0x17,
-        SoilTemparature = 0x18,
-        SeismicIntensity = 0x19,
-        SeismicMagnitude = 0x1A,
-        Ultraviolet = 0x1B,
-        ElectricalResisivity  = 0x1C,
-        ElectricalConductivity = 0x1D, 
-        Loudness = 0x1E,
-        Moisture = 0x1F, 
-        Frequency = 0x20, 
-        Time = 0x21, 
-        TargetTemperature = 0x22, 
-        ParticulateMatter = 0x23,
-        Formaldehyde = 0x24,
-        RadonConcentration = 0x25, 
-        MethaneDensity = 0x26, 
-        VolatileOrganicCompoundLevel = 0x27, 
-        CarbonMonoxide = 0x28,
-        SoilHumidity = 0x29,
-        SoilReactivity = 0x2A,
-        SoilSanity = 0x2B,
-        HeartRate = 0x2C,
-        BloodPressure = 0x2D, 
-        MuscleMass = 0x2E,
-        FatMass = 0x2F,
-        BoneMass = 0x30, 
-        TotalBodyWater = 0x31,
-        BasicMetabolicRate = 0x32,
-        BodyMassIndex = 0x33,
-        AccelerationX_Axis = 0x34,
-        AccelerationY_Axis = 0x35, 
-        AccelerationZ_Axis = 0x36,
-        SmokeDensity = 0x37, 
-        WaterFlow = 0x38, 
-        WaterPressure = 0x39, 
-        ParticulateMatter10 = 0x3B, 
-        RespiatoryRate = 0x3C,
-        RelativeModulationLevel = 0x3D, 
-        BoilerWaterTemperature = 0x3E, 
-        DomesticHotWaterTemperature = 0x3F, 
-        OutsideTemperature = 0x40, 
-        ExhaustTemperature = 0x41, 
-        WaterChlorineLevel = 0x42, 
-        WaterAcidity = 0x43, 
-        WaterOxidationReductionPotential = 0x44, 
-        HeartRateLF_HF_Ratio = 0x45, 
-        MotionDirection = 0x46, 
-        AppliedForceOnSensor = 0x47, 
-        ReturnAirTemperature = 0x48,
-        SupplyAirTemperature = 0x49, 
-        CondenserCoilTemperature = 0x4A, 
-        EvaporatorCoilTemperature = 0x4B,
-        LiquidLineTemperature = 0x4C,
-        DischargeLineTemperature = 0x4D,
-        Suction = 0x4E,
-        Discharge = 0x4F,
-        DefrostTemperature = 0x50,
-        Ozone = 0x51,
-        SulfurDioxide = 0x52,
-        NitrogenDioxide = 0x53,
-        Ammonia = 0x54,
-        Lead = 0x55,
-        ParticulateMatter1 = 0x56
-    }
-
-    public static class MultilevelSensorDefaultGetValueCallbacks
-    {
-        public static double TemperatureGetValue(Sensor sensor, byte scale)
-        {
-            if (sensor != null)
-            {
-                if (scale == 1)
-                {
-                    return sensor.Value * 9 / 5 + 32;
-                }
-                else
-                {
-                    return sensor.Value;
-                }
-            }
-            return 0;
+            return supportedSensorTypesBitmask;
         }
+    
 
-        public static double GetDefaultValue(Sensor sensor, byte scale)
-        {
-            if (sensor != null)
-            {
-                return sensor.Value;
-            }
-            return 0;
-        }
     }
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,29 +55,65 @@ namespace ZatsTestConsole
                     cmdLineSettings.HasHelp = true;
                     cmdLineSettings.Help = CmdLineArgs.GetHelp(CmdLineArgs.HELP);
                 }
-                //mandatory parameters
+
+                // Mandatory Parameters
+
                 cmdLineSettings.AssemblyFile = NormalizePath(commands[CmdLineArgs.INPUT], true);
-                var fr = commands[CmdLineArgs.FREQUENCY] ?? string.Empty;
-                if (fr == "ALL")
+                string rfRegionsStr = commands[CmdLineArgs.FREQUENCY] ?? string.Empty;
+                if (rfRegionsStr == "ALL")
                 {
-                    fr = "US,ANZ,HK,IN,JP,RU,IL,KR,CN,EU";
+                    rfRegionsStr = "ANZ,CN,EU,EU_LR,HK,IL,IN,JP,KR,RU,US,US_LR";
                 }
-                cmdLineSettings.Frequencies = fr?.Split(',', ';');
-                foreach (var item in cmdLineSettings.Frequencies)
+                cmdLineSettings.Frequencies = rfRegionsStr?.Split(',', ';');
+                foreach (string item in cmdLineSettings.Frequencies)
                 {
-                    if (!Enum.TryParse(item, true, out RfRegions rfRegions))
+                    if (!Enum.TryParse(item, true, out RfRegions rfRegion))
                     {
                         cmdLineSettings.HasParseError = true;
                         var erTxt = string.IsNullOrEmpty(item) ?
                             $"For REGION argument was not specified parameter" :
-                            $"For REGION argument was specified a wrong parameter: <{commands[CmdLineArgs.FREQUENCY]}>";
+                            $"For REGION argument a wrong parameter <{item}> was specified: <{commands[CmdLineArgs.FREQUENCY]}>";
                         errorMsgs.AppendLine(erTxt);
                         errorMsgs.AppendLine(CmdLineArgs.GetHelp(CmdLineArgs.FREQUENCY));
                         break;
                     }
                 }
 
-                //optional parameters
+                // Optional Parameters
+
+                string lrChannelsStr = commands[CmdLineArgs.LR_CHANNEL] ?? string.Empty;
+                string[] lrChannels = lrChannelsStr?.Split(',', ';');
+                cmdLineSettings.LongRangeChannels = new LongRangeChannels[0];
+                foreach (string ch in lrChannels)
+                {
+                    switch (ch)
+                    {
+                        case "a":
+                        case "A":
+                            if (!cmdLineSettings.LongRangeChannels.Contains(LongRangeChannels.ChannelA))
+                            {
+                                cmdLineSettings.LongRangeChannels = cmdLineSettings.LongRangeChannels.Append(LongRangeChannels.ChannelA).ToArray();
+                            }
+                            continue;
+                        case "b":
+                        case "B":
+                            if (!cmdLineSettings.LongRangeChannels.Contains(LongRangeChannels.ChannelB))
+                            {
+                                cmdLineSettings.LongRangeChannels = cmdLineSettings.LongRangeChannels.Append(LongRangeChannels.ChannelB).ToArray();
+                            }
+                            continue;
+                        default:
+                            if (!string.IsNullOrEmpty(ch))
+                            {
+                                cmdLineSettings.HasParseError = true;
+                                var erTxt = $"For LR_CHANNEL argument a wrong parameter <{ch}> was specified: <{commands[CmdLineArgs.LR_CHANNEL]}>";
+                                errorMsgs.AppendLine(erTxt);
+                                errorMsgs.AppendLine(CmdLineArgs.GetHelp(CmdLineArgs.LR_CHANNEL));
+                            }
+                            continue;
+                    }
+                }
+
                 var strMode = commands[CmdLineArgs.RUN_MODE] ?? RunModeName.READONLY;
                 cmdLineSettings.RunMode =
                     strMode.Contains(RunModeName.CLEAN) ? RunModes.Clean :
@@ -89,6 +126,7 @@ namespace ZatsTestConsole
 
                 cmdLineSettings.CreateDumpFile = commands.ContainsKey(CmdLineArgs.DUMP);
                 cmdLineSettings.IsOutputColorFormated = commands.ContainsKey(CmdLineArgs.OUTPUT_COLOR_FORMATED);
+                cmdLineSettings.UseStartStopTags = commands.ContainsKey(CmdLineArgs.OUTPUT_USE_START_STOP_TAGS);
                 cmdLineSettings.IsLessOutput = commands.ContainsKey(CmdLineArgs.LESS);
                 cmdLineSettings.IsNoZnfDevice = commands.ContainsKey(CmdLineArgs.NOZNF);
                 int.TryParse(commands[CmdLineArgs.NUMBER_OF_RUNS] ?? "1", out cmdLineSettings.NumberOfRuns);
@@ -96,7 +134,7 @@ namespace ZatsTestConsole
                 cmdLineSettings.BasePath = NormalizePath(commands[CmdLineArgs.BASE_PATH], true);
                 cmdLineSettings.InputFilter = NormalizePath(commands[CmdLineArgs.INPUT_FILTER], true);
                 cmdLineSettings.IPFilter = NormalizePath(commands[CmdLineArgs.IP_FILTER], true);
-                
+                cmdLineSettings.IsZnifferVirtual = commands.ContainsKey(CmdLineArgs.ZNIFFER_IS_VIRTUAL);
 
                 cmdLineSettings.ReportsPath = commands[CmdLineArgs.REPORTS_PATH]?.TrimEnd('/', '\\', '"', '\'');
                 cmdLineSettings.ReportsPath = NormalizePath(cmdLineSettings.ReportsPath, false);

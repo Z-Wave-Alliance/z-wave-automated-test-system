@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-﻿using System;
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -69,7 +70,36 @@ namespace Zats.Services
         public BasicResult.SendData SendData(Alias senderNumber, Node receiverNode, byte[] cmdData, TransmitOptions txOptions)
         {
             Device sender = DeviceManager.GetDevice(senderNumber);
+
             var data = cmdData;
+            data = ApplySupervisionMultiChannelAndCRC16SettingsToEncapData(senderNumber, data);
+
+            var substituteSettings = GetCommonSubstituteSettings(senderNumber);
+            substituteSettings = ApplyMulticastSettingsToSubstSettings(senderNumber, substituteSettings);
+
+            if (SendDataSettings.GetForceMultiCast(senderNumber))
+            {
+                var subTxOptions = (ZWave.Enums.TransmitOptions)txOptions;
+                if (substituteSettings.SubstituteFlags.HasFlag(ZWave.Enums.SubstituteFlags.DenyFollowup))
+                {
+                    subTxOptions = subTxOptions & (~ZWave.Enums.TransmitOptions.TransmitOptionAcknowledge);
+                }
+                var result = sender.SendDataMulti(new NodeTag[] { receiverNode }, data, subTxOptions, substituteSettings);
+                return new BasicActionResult.SendData(result);
+            }
+            else
+            {
+                var result = sender.SendData(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings);
+                return new BasicActionResult.SendData(result);
+            }
+        }
+
+        /// <summary>
+        /// Encapsulates data with Supervision Get encapsulation if enabled in ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>(Supervision-encapsulated) data</returns>
+        private byte[] ApplySupervisionSettingsToEncapData(Alias senderNumber, byte[] data)
+        {
             if (SendDataSettings.GetSupervisionGet(senderNumber) && data.Length > 1)
             {
                 COMMAND_CLASS_SUPERVISION.SUPERVISION_GET encapData = new COMMAND_CLASS_SUPERVISION.SUPERVISION_GET();
@@ -83,6 +113,17 @@ namespace Zats.Services
                 encapData.encapsulatedCommand = new List<byte>(data);
                 data = encapData;
             }
+            return data;
+        }
+
+        /// <summary>
+        /// Encapsulates data with Supervision and/or Multi Channel and/or CRC16 encapsulation each if enabled in ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>(encapsulated) data</returns>
+        private byte[] ApplySupervisionMultiChannelAndCRC16SettingsToEncapData(Alias senderNumber, byte[] data)
+        {
+            data = ApplySupervisionSettingsToEncapData(senderNumber, data);
+
             if ((SendDataSettings.GetMultiChannel(senderNumber) || SendDataSettings.GetSrcEndPoint(senderNumber) != 0) && data.Length > 1)
             {
                 COMMAND_CLASS_MULTI_CHANNEL_V3.MULTI_CHANNEL_CMD_ENCAP multiChannelCmd = new COMMAND_CLASS_MULTI_CHANNEL_V3.MULTI_CHANNEL_CMD_ENCAP();
@@ -102,6 +143,7 @@ namespace Zats.Services
                     SendDataSettings.GetDstEndPoint(senderNumber) : SendDataSettings.GetSrcEndPoint(senderNumber));
                 data = multiChannelCmd;
             }
+
             if (SendDataSettings.GetCRC16(senderNumber) && data.Length > 1)
             {
                 COMMAND_CLASS_CRC_16_ENCAP.CRC_16_ENCAP encapData = new COMMAND_CLASS_CRC_16_ENCAP.CRC_16_ENCAP();
@@ -120,47 +162,88 @@ namespace Zats.Services
                 encapData.checksum = new[] { (byte)(crc >> 8), (byte)crc };
                 data = encapData;
             }
-            ZWave.Enums.SubstituteFlags substituteFlag;
+            return data;
+        }
+
+        /// <summary>
+        /// Creates common SubstituteSettings in accordance with ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>SubstituteSettings</returns>
+        private SubstituteSettings GetCommonSubstituteSettings(Alias senderNumber)
+        {
+            ZWave.Enums.SubstituteFlags substituteFlags;
             if (SendDataSettings.GetSecure(senderNumber) == null)
             {
-                substituteFlag = ZWave.Enums.SubstituteFlags.None;
+                substituteFlags = ZWave.Enums.SubstituteFlags.None;
             }
             else
             {
-                substituteFlag = (bool)SendDataSettings.GetSecure(senderNumber) ?
+                substituteFlags = (bool)SendDataSettings.GetSecure(senderNumber) ?
                     ZWave.Enums.SubstituteFlags.UseSecurity : ZWave.Enums.SubstituteFlags.DenySecurity;
             }
+            var substituteSettings = new SubstituteSettings();
+            substituteSettings.S0MaxBytesPerFrameSize = SendDataSettings.GetMaxBytesPerFrameSize(senderNumber);
+            substituteSettings.SubstituteFlags = substituteFlags;
+            substituteSettings.IsSkipWaitingSendCallbackEnabled = SendDataSettings.GetSkipWaitingSendCallback(senderNumber);
+            substituteSettings.CallbackWaitTimeoutMs = SendDataSettings.GetCallbackWaitTimeoutMs(senderNumber);
+            return substituteSettings;
+        }        
 
-            if (SendDataSettings.GetForceMultiCast(senderNumber))
+        /// <summary>
+        /// Applies Multi Channel settings to SubstituteSettings in accordance with ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>SubstituteSettings</returns>
+        private SubstituteSettings ApplyMultiChannelSettingsToSubstSettings(Alias senderNumber, SubstituteSettings substituteSettings)
             {
-                if (SendDataSettings.GetSupressMulticastFollowUp(senderNumber))
+            if (substituteSettings == null)
                 {
-                    substituteFlag |= ZWave.Enums.SubstituteFlags.DenyFollowup;
+                substituteSettings = GetCommonSubstituteSettings(senderNumber);
                 }
-                SubstituteSettings substituteSettings = new SubstituteSettings();
-                substituteSettings.S0MaxBytesPerFrameSize = SendDataSettings.GetMaxBytesPerFrameSize(senderNumber);
-                substituteSettings.SubstituteFlags = substituteFlag;
-                substituteSettings.IsSkipWaitingSendCallbackEnabled = SendDataSettings.GetSkipWaitingSendCallback(senderNumber);
-                substituteSettings.CallbackWaitTimeoutMs = SendDataSettings.GetCallbackWaitTimeoutMs(senderNumber);
-                var subTxOptions = (ZWave.Enums.TransmitOptions)txOptions;
-                if (substituteSettings.SubstituteFlags.HasFlag(ZWave.Enums.SubstituteFlags.DenyFollowup))
+
+            if (SendDataSettings.GetMultiChannel(senderNumber))
                 {
-                    subTxOptions = subTxOptions & (~ZWave.Enums.TransmitOptions.TransmitOptionAcknowledge);
+                substituteSettings.SubstituteFlags |= ZWave.Enums.SubstituteFlags.UseMultiChannel;
                 }
-                var result = sender.SendDataMulti(new NodeTag[] { receiverNode }, data, subTxOptions, substituteSettings);
-                return new BasicActionResult.SendData(result);
+            substituteSettings.IsBitAdress = SendDataSettings.GetBitAdress(senderNumber);
+            substituteSettings.DstEndPoint = SendDataSettings.GetDstEndPoint(senderNumber);
+            substituteSettings.SrcEndPoint = SendDataSettings.GetSrcEndPoint(senderNumber);
+            return substituteSettings;
             }
-            else
+
+        /// <summary>
+        /// Applies CRC16 settings to SubstituteSettings in accordance with ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>SubstituteSettings</returns>
+        private SubstituteSettings ApplyCRC16SettingsToSubstSettings(Alias senderNumber, SubstituteSettings substituteSettings)
             {
-                SubstituteSettings substituteSettings = new SubstituteSettings();
-                substituteSettings.S0MaxBytesPerFrameSize = SendDataSettings.GetMaxBytesPerFrameSize(senderNumber);
-                substituteSettings.SubstituteFlags = substituteFlag;
-                substituteSettings.IsSkipWaitingSendCallbackEnabled = SendDataSettings.GetSkipWaitingSendCallback(senderNumber);
-                substituteSettings.CallbackWaitTimeoutMs = SendDataSettings.GetCallbackWaitTimeoutMs(senderNumber);
-                var subTxOptions = (ZWave.Enums.TransmitOptions)txOptions;
-                var result = sender.SendData(receiverNode, data, subTxOptions, substituteSettings);
-                return new BasicActionResult.SendData(result);
+            if (substituteSettings == null)
+            {
+                substituteSettings = GetCommonSubstituteSettings(senderNumber);
             }
+
+            if (SendDataSettings.GetCRC16(senderNumber))
+            {
+                substituteSettings.SubstituteFlags |= ZWave.Enums.SubstituteFlags.UseCrc16Encap;
+        }
+            return substituteSettings;
+        }
+
+        /// <summary>
+        /// Applies Multicast settings to SubstituteSettings in accordance with ComplianceService.SendDataSettings.
+        /// </summary>
+        /// <returns>SubstituteSettings</returns>
+        private SubstituteSettings ApplyMulticastSettingsToSubstSettings(Alias senderNumber, SubstituteSettings substituteSettings)
+        {
+            if (substituteSettings == null)
+            {
+                substituteSettings = GetCommonSubstituteSettings(senderNumber);
+            }
+
+            if (SendDataSettings.GetForceMultiCast(senderNumber) && SendDataSettings.GetSupressMulticastFollowUp(senderNumber))
+            {
+                substituteSettings.SubstituteFlags |= ZWave.Enums.SubstituteFlags.DenyFollowup;
+            }
+            return substituteSettings;
         }
 
         public BasicResult.SendData SendData(Alias senderNumber, Node receiverNode, byte[] cmdData)
@@ -176,8 +259,43 @@ namespace Zats.Services
         public BasicResult.SendData SendDataEx(Alias senderNumber, Node receiverNode, byte[] cmdData, TransmitOptions txOptions, TransmitSecurityOptions txSecOptions, SecuritySchemes scheme, TransmitOptions2 txOptions2)
         {
             Device sender = DeviceManager.GetDevice(senderNumber);
-            SendDataResult res = sender.SendDataEx(receiverNode, cmdData, (ZWave.Enums.TransmitOptions)txOptions, (ZWave.Enums.TransmitSecurityOptions)txSecOptions, (ZWave.Enums.SecuritySchemes)scheme, (ZWave.Enums.TransmitOptions2)txOptions2);
+
+            var data = cmdData;
+            data = ApplySupervisionMultiChannelAndCRC16SettingsToEncapData(senderNumber, data);
+
+            var substituteSettings = GetCommonSubstituteSettings(senderNumber);
+            substituteSettings = ApplyMulticastSettingsToSubstSettings(senderNumber, substituteSettings);
+
+            if (SendDataSettings.GetForceMultiCast(senderNumber))
+            {
+                byte groupId = 0;
+
+                TransmitResult res = sender.SendDataMultiEx(data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings, (ZWave.Enums.SecuritySchemes)scheme, groupId);
+                if (!SendDataSettings.GetSupressMulticastFollowUp(senderNumber))
+                {
+                    var txSOptions = TransmitSecurityOptions.S2_TXOPTION_VERIFY_DELIVERY | TransmitSecurityOptions.S2_TXOPTION_FIRST_SINGLECAST_FOLLOWUP | TransmitSecurityOptions.S2_TXOPTION_SINGLECAST_FOLLOWUP;
+
+                    var svget = new COMMAND_CLASS_SUPERVISION.SUPERVISION_GET();
+                    svget.encapsulatedCommand = data;
+                    svget.encapsulatedCommandLength = (byte)data.Length;
+                    svget.properties1.sessionId = ++supervisionSessionId;
+                    RequestDataEx(
+                        senderNumber,
+                        receiverNode,
+                        svget,
+                        txOptions,
+                        txSOptions,
+                        scheme,
+                        new COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT(),
+                        2000);
+                }
             return new BasicActionResult.SendData(res);
+        }
+            else
+            {
+                SendDataResult res = sender.SendDataEx(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings, (ZWave.Enums.TransmitSecurityOptions)txSecOptions, (ZWave.Enums.SecuritySchemes)scheme, (ZWave.Enums.TransmitOptions2)txOptions2);
+                return new BasicActionResult.SendData(res);
+            }
         }
 
         public BasicResult.SendData SendDataEx(Alias senderNumber, Node receiverNode, byte[] cmdData, SecuritySchemes scheme)
@@ -311,55 +429,14 @@ namespace Zats.Services
         public BasicResult.RequestData RequestData(Alias senderNumber, Node receiverNode, byte[] sendData, TransmitOptions txOptions, byte[] expectedData, int timeoutMs)
         {
             Device sender = DeviceManager.GetDevice(senderNumber);
-
             var data = sendData;
-            if (SendDataSettings.GetSupervisionGet(senderNumber) && data.Length > 1)
-            {
-                COMMAND_CLASS_SUPERVISION.SUPERVISION_GET encapData = new COMMAND_CLASS_SUPERVISION.SUPERVISION_GET();
-                if (SendDataSettings.GetAutoIncrement(senderNumber))
-                {
-                    SendDataSettings.SetSessionID(senderNumber, (byte)(SendDataSettings.GetSessionID(senderNumber) + 1));
-                }
-                encapData.properties1.statusUpdates = SendDataSettings.GetStatusUpdates(senderNumber) ? (byte)1 : (byte)0;
-                encapData.properties1.sessionId = SendDataSettings.GetSessionID(senderNumber);
-                encapData.encapsulatedCommandLength = (byte)data.Length;
-                encapData.encapsulatedCommand = new List<byte>(data);
-                data = encapData;
-            }
+            data = ApplySupervisionSettingsToEncapData(senderNumber, data);
 
-            ZWave.Enums.SubstituteFlags substituteFlag;
-            if (SendDataSettings.GetSecure(senderNumber) == null)
-            {
-                substituteFlag = ZWave.Enums.SubstituteFlags.None;
-            }
-            else
-            {
-                substituteFlag = (bool)SendDataSettings.GetSecure(senderNumber) ?
-                    ZWave.Enums.SubstituteFlags.UseSecurity : ZWave.Enums.SubstituteFlags.DenySecurity;
-            }
+            var substituteSettings = GetCommonSubstituteSettings(senderNumber);
+            substituteSettings = ApplyMultiChannelSettingsToSubstSettings(senderNumber, substituteSettings);
+            substituteSettings = ApplyCRC16SettingsToSubstSettings(senderNumber, substituteSettings);
 
-            if (SendDataSettings.GetCRC16(senderNumber))
-            {
-                substituteFlag |= ZWave.Enums.SubstituteFlags.UseCrc16Encap;
-            }
-
-            if (SendDataSettings.GetMultiChannel(senderNumber))
-            {
-                substituteFlag |= ZWave.Enums.SubstituteFlags.UseMultiChannel;
-            }
-
-            SubstituteSettings substituteSettings = new SubstituteSettings();
-            substituteSettings.S0MaxBytesPerFrameSize = SendDataSettings.GetMaxBytesPerFrameSize(senderNumber);
-            substituteSettings.SubstituteFlags = substituteFlag;
-            substituteSettings.IsSkipWaitingSendCallbackEnabled = SendDataSettings.GetSkipWaitingSendCallback(senderNumber);
-            substituteSettings.CallbackWaitTimeoutMs = SendDataSettings.GetCallbackWaitTimeoutMs(senderNumber);
-            substituteSettings.IsBitAdress = SendDataSettings.GetBitAdress(senderNumber);
-            substituteSettings.DstEndPoint = SendDataSettings.GetDstEndPoint(senderNumber);
-            substituteSettings.SrcEndPoint = SendDataSettings.GetSrcEndPoint(senderNumber);
-
-            var subTxOptions = (ZWave.Enums.TransmitOptions)txOptions;
-
-            RequestDataResult res = sender.RequestData(receiverNode, data, subTxOptions, substituteSettings, expectedData, timeoutMs);
+            RequestDataResult res = sender.RequestData(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings, expectedData, timeoutMs);
             return new BasicActionResult.RequestData(res);
         }
 
@@ -378,10 +455,18 @@ namespace Zats.Services
             return RequestDataEx(senderNumber, receiverNode, data, txOptions, txSecOptions, scheme, TransmitOptions2.NONE, expectedData, timeoutMs);
         }
 
-        public BasicResult.RequestData RequestDataEx(Alias senderNumber, Node receiverNode, byte[] data, TransmitOptions txOptions, TransmitSecurityOptions txSecOptions, SecuritySchemes scheme, TransmitOptions2 txOptions2, byte[] expectedData, int timeoutMs)
+        public BasicResult.RequestData RequestDataEx(Alias senderNumber, Node receiverNode, byte[] sendData, TransmitOptions txOptions, TransmitSecurityOptions txSecOptions, SecuritySchemes scheme, TransmitOptions2 txOptions2, byte[] expectedData, int timeoutMs)
         {
             Device sender = DeviceManager.GetDevice(senderNumber);
-            RequestDataResult res = sender.RequestDataEx(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, (ZWave.Enums.TransmitSecurityOptions)txSecOptions, (ZWave.Enums.SecuritySchemes)scheme, (ZWave.Enums.TransmitOptions2)txOptions2, expectedData, timeoutMs);
+
+            var data = sendData;
+            data = ApplySupervisionSettingsToEncapData(senderNumber, data);
+
+            var substituteSettings = GetCommonSubstituteSettings(senderNumber);
+            substituteSettings = ApplyMultiChannelSettingsToSubstSettings(senderNumber, substituteSettings);
+            substituteSettings = ApplyCRC16SettingsToSubstSettings(senderNumber, substituteSettings);
+
+            RequestDataResult res = sender.RequestDataEx(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings, (ZWave.Enums.TransmitSecurityOptions)txSecOptions, (ZWave.Enums.SecuritySchemes)scheme, (ZWave.Enums.TransmitOptions2)txOptions2, expectedData, timeoutMs);
             return new BasicActionResult.RequestData(res);
         }
 
@@ -828,7 +913,7 @@ namespace Zats.Services
 
                     dataToSend.Insert(3, (byte)firmwareDataIndex);
 
-                    short crc = Utils.Tools.CalculateCrc16(dataToSend);
+                    ushort crc = Utils.Tools.CalculateCrc16(dataToSend);
 
                     dataToSend.Add((byte)(crc >> 8));
                     dataToSend.Add((byte)crc);

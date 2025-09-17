@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -37,7 +38,7 @@ namespace Zats.Services
             {
                 case COMMAND_CLASS_VERSION.ID:
                     #region
-                    return new VersionSupport(null, null) { Version = 2 };
+                    return new VersionSupport() { Version = 2 };
                 #endregion
 
                 case COMMAND_CLASS_ASSOCIATION_GRP_INFO.ID:
@@ -83,32 +84,32 @@ namespace Zats.Services
 
                 case COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID:
                     #region
-                    return new DeviceResetLocallySupport(COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID) { Version = 1 };
+                    return new DeviceResetLocallySupportModify(COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_POWERLEVEL.ID:
                     #region
-                    return new PowerlevelSupport(COMMAND_CLASS_POWERLEVEL.ID) { Version = 1 };
+                    return new PowerlevelSupportModify(COMMAND_CLASS_POWERLEVEL.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_SWITCH_ALL.ID:
                     #region
-                    return new SwitchAllSupport(COMMAND_CLASS_SWITCH_ALL.ID) { Version = 1 };
+                    return new SwitchAllSupportModify(COMMAND_CLASS_SWITCH_ALL.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_PROTECTION.ID:
                     #region
-                    return new ProtectionSupport(COMMAND_CLASS_PROTECTION.ID) { Version = 2 };
+                    return new ProtectionSupportModify(COMMAND_CLASS_PROTECTION.ID) { Version = 2 };
                 #endregion
 
                 case COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID:
                     #region
-                    return new SceneActuatorConfSupport(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID) { Version = 1 };
+                    return new SceneActuatorConfSupportModify(COMMAND_CLASS_SCENE_ACTUATOR_CONF.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_SCENE_ACTIVATION.ID:
                     #region
-                    return new SceneActivationSupport(COMMAND_CLASS_SCENE_ACTIVATION.ID) { Version = 1 };
+                    return new SceneActivationSupportModify(COMMAND_CLASS_SCENE_ACTIVATION.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_ALARM.ID:
@@ -128,7 +129,7 @@ namespace Zats.Services
 
                 case COMMAND_CLASS_SENSOR_ALARM.ID:
                     #region
-                    return new SensorAlarmSupport(GetDummySensorAlarmSupportData()) { Version = 1 }; ;
+                    return new SensorAlarmSupportModify(GetDummySensorAlarmSupportData()) { Version = 1 }; ;
                 #endregion
 
                 case COMMAND_CLASS_WAKE_UP.ID:
@@ -138,7 +139,7 @@ namespace Zats.Services
 
                 case COMMAND_CLASS_APPLICATION_STATUS.ID:
                     #region
-                    return new ApplicationStatusSupport(COMMAND_CLASS_APPLICATION_STATUS.ID) { Version = 1 };
+                    return new ApplicationStatusSupportModify(COMMAND_CLASS_APPLICATION_STATUS.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_BATTERY.ID:
@@ -148,7 +149,7 @@ namespace Zats.Services
 
                 case COMMAND_CLASS_CRC_16_ENCAP.ID:
                     #region
-                    return new Crc16EncapSupport(COMMAND_CLASS_CRC_16_ENCAP.ID) { Version = 1 };
+                    return new Crc16EncapSupportModify(COMMAND_CLASS_CRC_16_ENCAP.ID) { Version = 1 };
                 #endregion
 
                 case COMMAND_CLASS_SENSOR_MULTILEVEL.ID:
@@ -170,21 +171,26 @@ namespace Zats.Services
         {
             var multilevelSensorSupportData = new MultilevelSensorSupportData();
 
-            multilevelSensorSupportData.AddSensor(MultilevelSensorTypes.AirTemperature, 0x02, new byte[] { 0x00 }, new List<byte>() { 0x09, 0x96 });
+            multilevelSensorSupportData.Sensors = new List<MultilevelSensorType>()
+            { 
+                new MultilevelSensorType("Air Temperature", 0x02, new List<MultilevelSensorScale>()
+                { 
+                    new MultilevelSensorScale("Degree Celsius", 0x00) { Value = 24.54 }
+                })
+            };
 
             return multilevelSensorSupportData;
-
         }
 
         public NotificationSupportData GetDummyNotificationSupportData()
         {
             var notificationSupportData = new NotificationSupportData()
             {
-                V1Alarm = false                
+                V1Alarm = false
             };
 
-            notificationSupportData.AddNotificationType(NotificationTypeNames.WaterAlarm, 0xFF, new List<byte>() { 0xFE } );
-            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeSecurity, 0xFF, new List<byte>() { 0x03 });
+            notificationSupportData.AddNotificationType(NotificationTypeNames.WaterAlarm, NotificationStatusNames.UnsolicitedReportsEnabled, new List<byte>() { 0xFE } );
+            notificationSupportData.AddNotificationType(NotificationTypeNames.HomeSecurity, NotificationStatusNames.UnsolicitedReportsEnabled, new List<byte>() { 0x03 });
 
             return notificationSupportData;
         }
@@ -282,10 +288,9 @@ namespace Zats.Services
                 ProductTypeId = new byte[2] { 0x00, 0xBB },
                 ProductId = new byte[2] { 0x00, 0x01 },
                 // Device Specific
-                DeviceIdDataFormat0 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x00
-                DeviceIdDataFormat1 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x01
-                DeviceIdDataFormat2 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x02
-                DeviceIdType = new byte[] { 0x44, 0x45, 0x56, 0x49, 0x43, 0x44, 0x34 },
+                DeviceIdDataFormat1 = DeviceIdDataFormatNames.UTF8,
+                DeviceIdDataFormat2 = DeviceIdDataFormatNames.UTF8,
+                DefaultDeviceIdType = DeviceIdTypeNames.SerialNumber,
                 SerialNumber = new byte[] { 0x32, 0x32, 0x32 },
                 PseudoRandom = new byte[] { 0x31, 0x32, 0x33, 0x34 }
             };
@@ -300,10 +305,9 @@ namespace Zats.Services
                 ProductTypeId = new byte[2] { 0x0B, 0x01 },
                 ProductId = new byte[2] { 0x10, 0x02 },
                 // Device Specific
-                DeviceIdDataFormat0 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x00
-                DeviceIdDataFormat1 = 0x01, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x01
-                DeviceIdDataFormat2 = 0x00, // 0x00 = UTF-8, 0x01 = Plain binary for DeviceIdType 0x02
-                DeviceIdType = new byte[] { 0x44, 0x45, 0x56, 0x49, 0x43, 0x44, 0x34 },
+                DeviceIdDataFormat1 = DeviceIdDataFormatNames.UTF8,
+                DeviceIdDataFormat2 = DeviceIdDataFormatNames.UTF8,
+                DefaultDeviceIdType = DeviceIdTypeNames.SerialNumber,
                 SerialNumber = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xB0 },
                 PseudoRandom = new byte[] { 0x31, 0x32, 0x33, 0x34 }
             };
@@ -316,35 +320,17 @@ namespace Zats.Services
                 MeterType = MeterTypeNames.Electric,
                 MeterResetSupported = true,
                 DefaultScale = 0x00,
-                ScalesSupportedBitmask = new List<byte>() {
-                    0x7F, // kWh, W, V
-                    0x01  // kVar      // should be 0x01????? 0x05
-                },
+                SupportedRateTypes = RateTypeNames.Import
             };
 
-            // kWh
-            meterSupportData.MeterValues[0].Size = 2;
-            meterSupportData.MeterValues[0].Precision = 2;
-            meterSupportData.MeterValues[0].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[0].ValueConsuming = 1.23;
+            meterSupportData.MeterValues = new List<MeterValue>
+            {
+                new MeterValue() { ScaleNumber = ScaleNames.ScalekWh, SizeConsuming = 2, PrecisionConsuming = 2, ValueConsuming = 1.23 },
+                new MeterValue() { ScaleNumber = ScaleNames.ScaleW, SizeConsuming = 2, PrecisionConsuming = 1, ValueConsuming = 123.4 },
+                new MeterValue() { ScaleNumber = ScaleNames.ScaleV, SizeConsuming = 2, PrecisionConsuming = 1, ValueConsuming = 231.2 },
+                new MeterValue() { ScaleNumber = ScaleNames.ScalekVar, SizeConsuming = 2, PrecisionConsuming = 2, ValueConsuming = 43.21 }
+            };
 
-            // W
-            meterSupportData.MeterValues[2].Size = 2;
-            meterSupportData.MeterValues[2].Precision = 1;
-            meterSupportData.MeterValues[2].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[2].ValueConsuming = 123.4;
-
-            // V
-            meterSupportData.MeterValues[4].Size = 2;
-            meterSupportData.MeterValues[4].Precision = 1;
-            meterSupportData.MeterValues[4].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[4].ValueConsuming = 231.2;
-
-            // kVar
-            meterSupportData.MeterValues[8].Size = 2;
-            meterSupportData.MeterValues[8].Precision = 2;
-            meterSupportData.MeterValues[8].DefaultRateType = 0x01;
-            meterSupportData.MeterValues[8].ValueConsuming = 43.21;
             return meterSupportData;
         }
 

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,11 +9,18 @@ using Utils;
 using Utils.UI.Enums;
 using Zats.Services;
 using ZWave.ZipApplication.Devices;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using ZWave.ZnifferApplication.Enums;
 
 namespace ZatsTestConsole
 {
     public class ConsoleCustomOutput
     {
+        public static readonly string ZATS_START_TAG = "::StartTag::";
+        public static readonly string ZATS_END_TAG = "::EndTag::";
+
         private readonly object _consoleLocker = new object();
         private ConsoleOutputDecorator _consoleOutputDecorator;
 
@@ -25,7 +31,9 @@ namespace ZatsTestConsole
 
         internal bool IsLessOutput { get; set; }
 
-        public ConsoleCustomOutput(bool isLessOutput, bool isOutputColorFormated)
+        internal bool UseStartStopTags { get; set; }
+
+        public ConsoleCustomOutput(bool isLessOutput, bool isOutputColorFormated, bool useStartStopTags)
         {
             IsLessOutput = isLessOutput;
             _consoleOutputDecorator = new ConsoleOutputDecorator
@@ -33,6 +41,8 @@ namespace ZatsTestConsole
                 IsLess = IsLessOutput,
                 IsOutputColorFormated = isOutputColorFormated
             };
+            UseStartStopTags = useStartStopTags;
+
         }
 
         internal void SetDumpFile(string folder, string testCaseName)
@@ -160,7 +170,8 @@ namespace ZatsTestConsole
             return new string(symbol, textWidth);
         }
 
-        internal void ReportDevicesToConsole(TestCaseDefinition tcDefinition, IManagersContainer managers, string frequency)
+        internal void ReportDevicesToConsole(TestCaseDefinition tcDefinition, IManagersContainer managers, string rfRegion, 
+            byte? lrChannelConfigCode = null, string lrChannelConfigDescription = null)
         {
             lock (_consoleLocker)
             {
@@ -170,7 +181,12 @@ namespace ZatsTestConsole
                 {
                     snifferName = managers.ZnifferManager.Zniffer is ZWave.ZnifferApplication.Devices.Zniffer ? "Zniffer" : "Sniffer PTI";
                 }
+
                 ConsoleWriteLine();
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine(ZATS_START_TAG);
+                }
                 ConsoleWrite("    ", ConsoleColor.White);
                 ConsoleWrite(snifferName, ConsoleColor.Yellow);
                 if (isSnifferPresent)
@@ -184,25 +200,34 @@ namespace ZatsTestConsole
                         if (revision.HasValue)
                             ConsoleWrite($".{revision}");
                         ConsoleWrite($" ");
-                        ConsoleWrite($" ");
-                        string frequencyName;
+                        //ConsoleWrite($" ");
+                        string rfRegionName;
                         if (managers.ZnifferManager.Zniffer is ZWave.ZnifferApplication.Devices.Zniffer znifferApp)
                         {
-                            frequencyName = znifferApp.RfRegionName ?? // Value retrieved during device init or try get by code for old devices.
+                            rfRegionName = znifferApp.RfRegionName ?? // Value retrieved during device init or try get by code for old devices.
                                 managers.ZnifferManager.FrameDefinition.RadioFrequency?.FirstOrDefault(x => x.Code == znifferApp.Frequency)?.Text;
                         }
                         else
                         {
-                            frequencyName = frequency; // Use value from CLI arguments in case PTI Zniffer (doesn't support SerialAPI to return RfRegions).
+                            rfRegionName = rfRegion; // Use value from CLI arguments in case PTI Zniffer (doesn't support SerialAPI to return RfRegions).
                         }
 
-                        ConsoleWrite($"{frequencyName}", ConsoleColor.Yellow);
+                        ConsoleWrite($"{rfRegionName}", ConsoleColor.Yellow);
+                        if (lrChannelConfigCode != null && RfRegionsExtensions.IsLongRangeRfRegion(rfRegionName))
+                        {
+                            ConsoleWrite($":", ConsoleColor.Yellow);
+                            ConsoleWrite($" CH_CFG{lrChannelConfigCode.ToString()}", ConsoleColor.Yellow);
+                            if (!string.IsNullOrEmpty(lrChannelConfigDescription))
+                            {
+                                ConsoleWrite($" [{lrChannelConfigDescription}]", ConsoleColor.Gray);
+                            }
+                        }
                         ConsoleWrite($" ");
                         ConsoleWrite($"{znifferAppClient.DataSource.SourceName}", ConsoleColor.DarkYellow);
                         ConsoleWrite($" ^{znifferAppClient.SessionId:00} ");
                         if (managers.ZnifferManager.Zniffer.Frequencies == null)
                         {
-                            ConsoleWrite("check zniffer port!", ConsoleColor.Red);
+                            ConsoleWrite("Check Zniffer port!", ConsoleColor.Red);
                         }
                     }
                 }
@@ -354,6 +379,11 @@ namespace ZatsTestConsole
                     ConsoleWriteLine();
                 }
                 ConsoleWriteLine();
+
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine(ZATS_END_TAG);
+                }
             }
         }
 
@@ -390,6 +420,13 @@ namespace ZatsTestConsole
             {
                 var wasLess = IsLessOutput;
                 IsLessOutput = true;
+
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine();
+                    ConsoleWriteLine(ZATS_START_TAG);
+                }
+
                 ConsoleWriteTotal(Tools.FormatStr("Profile:", activeProfile.Name));
                 ConsoleWriteTotal(Tools.FormatStr("{0}", activeProfile.Name), ConsoleColor.Yellow);
                 ConsoleWriteLineTotal();
@@ -450,6 +487,12 @@ namespace ZatsTestConsole
                     ConsoleWriteLineTotal();
                 }
                 ConsoleWriteLineTotal();
+
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine(ZATS_END_TAG);
+                }
+
                 IsLessOutput = wasLess;
             }
         }
@@ -458,6 +501,11 @@ namespace ZatsTestConsole
         {
             lock (_consoleLocker)
             {
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine();
+                    ConsoleWriteLine(ZATS_START_TAG);
+                }
                 ConsoleWriteFullLine('-', ConsoleColor.White);
                 ConsoleWrite($"{tcDefinition.Name}", ConsoleColor.White);
                 ConsoleWrite(" ");
@@ -466,6 +514,10 @@ namespace ZatsTestConsole
                 ConsoleWriteFullLine('-', ConsoleColor.White);
 
                 ConsoleWriteLine();
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine(ZATS_END_TAG);
+                }
             }
         }
 
@@ -564,6 +616,12 @@ namespace ZatsTestConsole
         {
             lock (_consoleLocker)
             {
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine();
+                    ConsoleWriteLine(ZATS_START_TAG);
+                }
+
                 var etm = timeInfo.Elapsed;
                 var hetm = string.Empty;
                 if (((int)etm.TotalHours) > 0)
@@ -623,6 +681,11 @@ namespace ZatsTestConsole
                 // 2 lines between TCs
                 ConsoleWriteLine();
                 ConsoleWriteLine();
+
+                if (UseStartStopTags)
+                {
+                    ConsoleWriteLine(ZATS_END_TAG);
+                }
             }
         }
 
@@ -663,6 +726,11 @@ namespace ZatsTestConsole
                     textWidth = (Console.BufferWidth - 14) > 20 ? (Console.BufferWidth - 14) : textWidth;
                 }
                 catch { }
+            }
+
+            if (UseStartStopTags)
+            {
+                ConsoleWriteLine(ZATS_START_TAG);
             }
 
             bool needSuffix = !string.IsNullOrEmpty(suffix);
@@ -772,6 +840,10 @@ namespace ZatsTestConsole
                 }
             }
             ConsoleWriteLine();
+            if (UseStartStopTags)
+            {
+                ConsoleWriteLine(ZATS_END_TAG);
+            }
         }
 
         private static string GetLogLevelMessage(string text, LogLevels logLevel)
@@ -844,6 +916,11 @@ namespace ZatsTestConsole
 
         internal void ReportDevicesToConsole(List<DeviceHostClient> hostsWithKnownVersion)
         {
+            if (UseStartStopTags)
+            {
+                ConsoleWriteLine(ZATS_START_TAG);
+            }
+
             foreach (var sdev in hostsWithKnownVersion)
             {
                 ConsoleWrite(Tools.FormatStr("    {0}", sdev.Library), ConsoleColor.Yellow);
@@ -858,6 +935,11 @@ namespace ZatsTestConsole
             }
             ConsoleWriteLine();
             ConsoleWriteLine();
+
+            if (UseStartStopTags)
+            {
+                ConsoleWriteLine(ZATS_END_TAG);
+            }
         }
     }
 }

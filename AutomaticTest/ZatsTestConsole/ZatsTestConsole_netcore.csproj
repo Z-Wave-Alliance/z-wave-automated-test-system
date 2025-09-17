@@ -22,7 +22,7 @@
     <ProjectReference Include="..\ZatsInteractiveServices\ZatsInteractiveServices_netcore.csproj" />
     <PackageReference Include="Telnet" Version="0.11.3" />
     <Content Include="..\..\..\z-wave-tools-core\XmlFiles\*.xml" CopyToOutputDirectory="PreserveNewest">
-      <Link>Libraries\ZWaveDll\XmlFiles\%(Filename)%(Extension)</Link>
+      <Link>z-wave-tools-core\XmlFiles\%(Filename)%(Extension)</Link>
     </Content>
     <Content Include="..\..\XmlFiles\*.xml" CopyToOutputDirectory="PreserveNewest">
       <Link>XmlFiles\%(Filename)%(Extension)</Link>

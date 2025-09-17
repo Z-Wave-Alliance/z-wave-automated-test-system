@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Linq;
 using ZWave.BasicApplication.Devices;
@@ -76,7 +77,7 @@ namespace Zats.Services
                 {
                     ret = ChannelConfigs.Ch3;
                 }
-                else if (Frequency.Contains("_LR"))
+                else if (RfRegionsExtensions.IsLongRangeRfRegion(Frequency))
                 {
                     ret = ChannelConfigs.ChLR;
                 }

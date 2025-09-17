@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 #define CC_SUPPORT_LOGGING
 using System;
 using System.Collections.Generic;
-using System.Linq;  // SequenceEqual
-using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using Utils;
 using Utils.UI.Enums;
@@ -16,16 +16,62 @@ using ZWave.Devices;
 using ZWave.Enums;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Text;
+using System.Security.Cryptography;
+
 
 namespace Zats.Services
 {
     public class CommandClassSupportUtils
     {
+        public static List<byte> GetDestinationEndPoints(NodeTag destinationNode)
+        {
+            if (destinationNode.IsBitAddress)
+            {
+                return GetDestinationEndPointsFromMCBitAddress(destinationNode.EndPointId);
+            }
+
+            return new List<byte> { destinationNode.EndPointId };
+        }
+
+        private static List<byte> GetDestinationEndPointsFromMCBitAddress(byte destinationEPBitAddress)
+        {
+            if (destinationEPBitAddress == 0x00)
+            {
+                return new List<byte> { 0x00 };
+            }
+
+            var dstEPs = new List<byte>();
+
+            for (int bit = 0; bit < 7; bit++) // 7 bit only
+            {
+                if ((destinationEPBitAddress & (1 << bit)) != 0)
+                {
+                    dstEPs.Add((byte)(bit + 1));
+                }
+            }
+
+            return dstEPs;
+        }
+
+        public static SvResultNames CombineSupervisionResults(SvResultNames previousResult, SvResultNames newResult)
+        {
+            if (previousResult == SvResultNames.Failed)
+            {
+                // Supervision FAIL supersedes
+                return SvResultNames.Failed;
+            }
+
+            return newResult;
+        }
+
         // Unsolicited Frames: common timer for all supported Command Classes
         // Usage: Workflow is created and initialized with 'TickerInterval' in AssociationSupport.
         //        LogLevel should be set in the Test Case initialization before configuring supported Command Classes.
         public static int TickerIntervalMs = 1000;
         public static int LogLevel = 0;
+
+        private static Random randomGenerator = new Random();
 
         private static readonly ConcurrentBag<UnsolicitedReport> PendingReports = new ConcurrentBag<UnsolicitedReport> { };
         private class UnsolicitedReport
@@ -117,20 +163,23 @@ namespace Zats.Services
 
         public static double ByteListToValue(IList<byte> bytesList, byte size, byte precision)
         {
-            var bytes = new List<byte>(bytesList).ToArray();
             double value = 0.0;
-            if (bytes.Length == size && (size == 1 || size == 2 || size == 4) && precision <= 7)
+            if (bytesList != null)
             {
-                long l = (sbyte)bytes[0];
-                if (size >= 2)
+                var bytes = new List<byte>(bytesList).ToArray();
+                if (bytes.Length == size && (size == 1 || size == 2 || size == 4) && precision <= 7)
                 {
-                    l = (l << 8) + bytes[1];
+                    long l = (sbyte)bytes[0];
+                    if (size >= 2)
+                    {
+                        l = (l << 8) + bytes[1];
+                    }
+                    if (size == 4)
+                    {
+                        l = (l << 16) + (bytes[2] << 8) + bytes[3];
+                    }
+                    value = Convert.ToDouble(l) / Math.Pow(10, precision);
                 }
-                if (size == 4)
-                {
-                    l = (l << 16) + (bytes[2] << 8) + bytes[3];
-                }
-                value = Convert.ToDouble(l) / Math.Pow(10, precision);
             }
             //ReportAddLog(1, "ByteFieldToValue: bytes={0}, size={1}, prec={2}, value={3}", BitConverter.ToString(bytes), size, precision, value);
             return value;
@@ -138,11 +187,14 @@ namespace Zats.Services
         public static ulong ByteFieldToUInt64(byte[] bytes, byte size)
         {
             ulong value = 0;
-            if (bytes.Length == size && size >= 1 && size <= 4)
+            if (bytes != null)
             {
-                for (int i = 0; i < size; i++)
+                if (bytes.Length == size && size >= 1 && size <= 4)
                 {
-                    value = (value << 8) + bytes[i];
+                    for (int i = 0; i < size; i++)
+                    {
+                        value = (value << 8) + bytes[i];
+                    }
                 }
             }
             //ReportAddLog(1, "ByteFieldToUInt64: bytes={0}, size={1}, value={2}", BitConverter.ToString(bytes), size, value);
@@ -151,13 +203,16 @@ namespace Zats.Services
         public static long ByteFieldToInt64(byte[] bytes, byte size)
         {
             long value = 0;
-            if (bytes.Length == size && size >= 1 && size <= 4)
+            if (bytes != null)
             {
-                if ((bytes[0] & 0x80) != 0x00)
-                    value = -1;
-                for (int i = 0; i < size; i++)
+                if (bytes.Length == size && size >= 1 && size <= 4)
                 {
-                    value = (value << 8) + bytes[i];
+                    if ((bytes[0] & 0x80) != 0x00)
+                        value = -1;
+                    for (int i = 0; i < size; i++)
+                    {
+                        value = (value << 8) + bytes[i];
+                    }
                 }
             }
             //ReportAddLog(1, "ByteFieldToInt64: bytes={0}, size={1}, value={2}", BitConverter.ToString(bytes), size, value);
@@ -198,10 +253,15 @@ namespace Zats.Services
         /// <returns>true: valid; false: invalid.</returns>
         public static bool ValidateByteListValue(IList<byte> bytesList, byte size, byte precision)
         {
-            double v = CommandClassSupportUtils.ByteListToValue(bytesList, size, precision);
-            IList<byte> vl = CommandClassSupportUtils.ValueToByteField(v, size, precision);
-            if (bytesList.SequenceEqual(vl))
-                return true;
+            if (bytesList != null)
+            {
+                double v = CommandClassSupportUtils.ByteListToValue(bytesList, size, precision);
+                IList<byte> vl = CommandClassSupportUtils.ValueToByteField(v, size, precision);
+                if (bytesList.SequenceEqual(vl))
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -262,8 +322,10 @@ namespace Zats.Services
         {
             string byteList = "";
 
-            if (bytes == null || bytes.Count == 0) return "none";
-
+            if (bytes == null || bytes.Count == 0)
+            {
+                return "none";
+            }
             for (int i = 0; i < bytes.Count; i++)
             {
                 byteList += ((i > 0) ? ", 0x" : "0x") + bytes[i].ToString("X2");
@@ -291,31 +353,76 @@ namespace Zats.Services
         }
 
         /// <summary>
-        /// Creates a Z-Wave bitmask from a list of 'supported' values.
+        /// Creates a Z-Wave bitmask from a list of 'supported' values. This list may be empty.
         /// </summary>
         /// <param name="list">List of a scalar type (byte, enum, int, ...)</param>
         /// <param name="bit0Value">Declares the list value, which represents Bit 0 of 1st bitmask byte. 0 = Bit 0 represents value 0x00; 1 = Bit 0 represents value 0x01</param>
+        /// <param name="forceFirstByte">Force non-empty result list, if source list is empty.</param>
         /// <returns>Bitmask as byte list, ready for usage in frames with dynamic mask length.</returns>
-        public static List<byte> CreateBitmaskFromList(IList list, int bit0Value)
+        public static List<byte> CreateBitmaskFromList(IList list, int bit0Value, bool forceFirstByte = false)
         {
-            int byteIndex, bit;
-            List<byte> bitmask = new List<byte> { };
+            List<byte> bitmask = new List<byte>();
 
-            foreach (var elementVar in list)
+            if (list != null)
             {
-                int element = Convert.ToInt32(elementVar);
-                if (element >= bit0Value)
+                foreach (var elementVar in list)
                 {
-                    byteIndex = (element - bit0Value) / 8;
-                    bit = (element - bit0Value) % 8;
-                    while (byteIndex >= bitmask.Count)
+                    int element = Convert.ToInt32(elementVar);
+                    if (element >= bit0Value)
                     {
-                        bitmask.Add(0x00);
+                        int byteIndex, bit;
+                        byteIndex = (element - bit0Value) / 8;
+                        bit = (element - bit0Value) % 8;
+                        while (byteIndex >= bitmask.Count)
+                        {
+                            bitmask.Add(0x00);
+                        }
+                        bitmask[byteIndex] |= (byte)(1 << bit);
                     }
-                    bitmask[byteIndex] |= (byte)(1 << bit);
+                }
+                if (forceFirstByte && bitmask.Count == 0)
+                {
+                    bitmask.Add(0x00);
                 }
             }
             return bitmask;
+        }
+
+        /// <summary>
+        /// Compares two lists without considerung the order of their elements. The listed objects should implement IEquatable.
+        /// https://stackoverflow.com/a/53791956
+        /// </summary>
+        /// <param name="listN">lists to compare.</param>
+        /// <returns>
+        /// Returns true if all list elements of list1 found in list2 AND vice versa. The order of the elements is not considered.
+        /// </returns>
+        // Test Code
+        //List<byte> b1 = new List<byte> { 0x01, 0x02, 0x03 };
+        //List<byte> b2 = new List<byte> { 0x03, 0x02, 0x01, 0x04 };
+        //IEnumerable<byte> x1 = b1.Except(b2);
+        //IEnumerable<byte> x2 = b2.Except(b1);
+        //if (x1.Any() || x2.Any())
+        //  b1.Add(0x04);
+        public static bool ListElementsEqual<T>(IEnumerable<T> list1, IEnumerable<T> list2)
+            //where T : IEquatable<T>   // where clause is disabled to make enums working
+        {
+            if (list1 == null || list2 == null)
+            {
+                return false;
+            }
+            if (list1.Count() != list2.Count())
+            {
+                return false;
+            }
+            if (list1.Except(list2).Any())
+            {
+                return false;
+            }
+            if (list2.Except(list1).Any())
+            { 
+                return false;
+            }
+            return true;
         }
 
 #if ReportTimerStateOldstyle
@@ -391,7 +498,48 @@ namespace Zats.Services
         {
             float val = value;
 
-            return (val / 99.0f * 100.0f).ToString("F0") + "%";
+            if (value == 0xFF)
+            {
+                return "recent non-zero value";
+            }
+            else if (value > 0x63)
+            {
+                return "not defined";
+            }
+            else
+            {
+                return (val / 99.0f * 100.0f).ToString("F0") + "%";
+            }
+        }
+
+        /// <summary>
+        /// Get the name of a Notification Type by its given byte value
+        /// </summary>
+        /// <param name="notificationTypeValue">Notification Type value as byte</param>
+        /// <returns>Human readable string of the given Notification Type</returns>
+        public static string GetNotificationTypeName(NotificationTypeNames notificationType) {
+            string notificationTypeName = "Unknown";
+
+            if (typeof(NotificationTypeNames).IsEnumDefined(notificationType)) {
+                notificationTypeName = (notificationType).ToString();
+            }
+
+            return notificationTypeName + " (0x" + ((byte)notificationType).ToString("X2") + ")"; ;
+        }
+
+        /// <summary>
+        /// Get the name of a Notification Type by its given byte value
+        /// </summary>
+        /// <param name="notificationTypeValue">Notification Type value as byte</param>
+        /// <returns>Human readable string of the given Notification Type</returns>
+        public static string GetNotificationTypeName(byte notificationTypeValue) {
+            string notificationTypeName = "Unknown";
+
+            if (typeof(NotificationTypeNames).IsEnumDefined(notificationTypeValue)) {
+                notificationTypeName = ((NotificationTypeNames)notificationTypeValue).ToString();
+            }
+
+            return notificationTypeName + " (0x" + notificationTypeValue.ToString("X2") + ")"; ;
         }
 
         /// <summary>
@@ -475,6 +623,88 @@ namespace Zats.Services
             };
 
             return eventName + " (0x" + eventType.ToString("X2") + ")";
+        }
+
+        public static byte[] GetRandomBytes(int count)
+        {
+            var ret = new byte[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                ret[i] = GetRandomByte();
+            }
+            return ret;
+        }
+
+        public static byte GetRandomByte()
+        {
+            return (byte)randomGenerator.Next(0, 256);
+        }
+
+        /// <summary>
+        /// Get a random PIN code in range e.g. 0000 ... 9999999999 in ASCII representation.
+        /// </summary>
+        /// <returns>ASCII bytes</returns>
+        public static byte[] GetRandomPinCode(byte minLength = 4, byte maxLength = 10)
+        {
+            return GetUniqueUserCode(null, minLength, maxLength);
+        }
+
+        /// <summary>
+        /// Get a unique User Code in ASCII representation considering existing User Codes and the supported keys.
+        /// </summary>
+        /// <returns>ASCII bytes</returns>
+        public static byte[] GetUniqueUserCode(UserCodeSupportData suppData, byte minLength = 4, byte maxLength = 10, uint maxRetries = 1000)
+        {
+            byte[] supportedKeys = suppData?.SupportedKeysList ?? new byte[] { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 };
+
+            var codeLenght = randomGenerator.Next(minLength, maxLength + 1);
+
+            byte[] newCode = new byte[codeLenght];
+
+            do
+            {
+                for (int i = 0; i < codeLenght; i++)
+                {
+                    newCode[i] = supportedKeys[randomGenerator.Next(0, supportedKeys.Length)];
+                }
+
+                if (suppData == null || suppData.Users == null || suppData.Users.Count == 0
+                    || (suppData.Users.Any(user => user.UserCode.SequenceEqual(newCode)) == false && suppData.AdminCode.SequenceEqual(newCode) == false) )
+
+                {
+                    return newCode;
+                }
+
+            } while (maxRetries-- > 0);
+
+            return new byte[minLength];
+
+        }
+
+        public static bool IsCredentialTypeBiometric(CredentialType credType)
+        {
+            switch (credType)
+            {
+                case CredentialType.EyeBiometric:
+                case CredentialType.FaceBiometric:
+                case CredentialType.FingerBiometric:
+                case CredentialType.HandBiometric:
+                case CredentialType.UnspecBiometric:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns the CRC16 calculated value
+        /// </summary>
+        /// <param name="data">Byte value</param>
+        /// <returns>Returns the CRC16 calculated value</returns>
+        public static ushort CalculateCRC16(byte[] data)
+        {
+            return Tools.CalculateCrc16(data?.ToArray() ?? new byte[0]);
         }
 
         /// <summary>

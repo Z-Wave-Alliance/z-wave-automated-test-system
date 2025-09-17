@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-&("C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\xsd.exe") ConfigurationItem.xsd /c /l:CS /nologo /n:Zats.Services.Configuration 
+&("C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\xsd.exe") ConfigurationItem.xsd /c /l:CS /nologo /n:Zats.Services.Configuration 
 $file = gci "ConfigurationItem.cs"
 foreach ($str in $file) 
 {
 $cont = get-content -path $str
-$cont | foreach {$_ -replace "using System.Xml.Serialization;", "using System;`r`n    using System.Xml.Serialization;`r`n    using System.Collections.ObjectModel;"} | set-content $str
+$cont | foreach {$_ -replace "using System.Xml.Serialization;", "using System;`r`n    using System.Xml.Serialization;`r`n    using System.Collections.ObjectModel;`r`n    using ZWave.Configuration;"} | set-content $str
 
 $cont = get-content -path $str
 $cont | where {$_ -notmatch "System.ComponentModel.DesignerCategoryAttribute"} | set-content $str

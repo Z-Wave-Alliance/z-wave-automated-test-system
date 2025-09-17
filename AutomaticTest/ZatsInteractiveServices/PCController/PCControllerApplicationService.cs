@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 ﻿using System;
 using System.Collections.Generic;
@@ -799,13 +800,13 @@ namespace Zats.Services
         }
 
         public List<BasicToken.ResponseData> SetupRootDevice(Alias deviceNumber, DeviceOptions deviceOptions, byte genericDeviceClass, byte specificDeviceClass,
-            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, List<CommandClassSupport> commandClassSupportList, Configuration.ConfigurationItem configuration = null)
+            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, IEnumerable<CommandClassSupport> commandClassSupportList, Configuration.ConfigurationItem configuration = null)
         {
             throw new NotImplementedException();
         }
 
         public List<BasicToken.ResponseData> SetupEndPoint(Alias deviceNumber, byte endPointId, byte genericDeviceClass, byte specificDeviceClass,
-            bool supervision, SecurityVersions securityVersions, List<CommandClassSupport> commandClassSupportList)
+            bool supervision, SecurityVersions securityVersions, IEnumerable<CommandClassSupport> commandClassSupportList, AssociationSupportData rootAssociationSupportData = null)
         {
             throw new NotImplementedException();
         }
@@ -826,6 +827,11 @@ namespace Zats.Services
         }
 
         public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNodeId, RoleTypes roleType, byte? initS2SequenceNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void EnableCommandClassSupportForCallbacks(Alias deviceNumber, byte endPointId, CommandClassSupport commandClassSupport)
         {
             throw new NotImplementedException();
         }

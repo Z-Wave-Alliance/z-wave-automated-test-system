@@ -262,14 +262,15 @@ namespace Zats.Services
         }
 
         public List<BasicToken.ResponseData> SetupRootDevice(Alias deviceNumber, DeviceOptions deviceOptions, byte genericDeviceClass, byte specificDeviceClass,
-            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, List<CommandClassSupport> commandClassSupportList, Configuration.ConfigurationItem configuration = null)
+            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, IEnumerable<CommandClassSupport> commandClassSupportList, 
+            Configuration.ConfigurationItem configuration = null)
         {
             Device device = DeviceManager.GetDevice(deviceNumber);
             List<BasicToken.ResponseData> returnTokens = new List<BasicToken.ResponseData>();
 
-            List<byte> beforeInclusionCCs = commandClassSupportList.Where(x => x.SecureExclusive == false && x.Id != COMMAND_CLASS_BASIC.ID).Select(x => x.Id).ToList();
-            List<byte> unsecureCCs = commandClassSupportList.Where(x => x.Secure == false && x.Id != COMMAND_CLASS_BASIC.ID).Select(x => x.Id).ToList();
-            List<byte> secureCCs = commandClassSupportList.Where(x => x.Secure == true && x.Id != COMMAND_CLASS_BASIC.ID).Select(x => x.Id).ToList();
+            List<byte> beforeInclusionCCs = commandClassSupportList.Where(x => x.SecureExclusive == false && x.CommandClassId != COMMAND_CLASS_BASIC.ID).Select(x => x.CommandClassId).ToList();
+            List<byte> unsecureCCs = commandClassSupportList.Where(x => x.Secure == false && x.CommandClassId != COMMAND_CLASS_BASIC.ID).Select(x => x.CommandClassId).ToList();
+            List<byte> secureCCs = commandClassSupportList.Where(x => x.Secure == true && x.CommandClassId != COMMAND_CLASS_BASIC.ID).Select(x => x.CommandClassId).ToList();
 
             byte supervisionVersion = 0;
             if (supervision)
@@ -312,14 +313,8 @@ namespace Zats.Services
                         },
                         new COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET() { requestedCommandClass = COMMAND_CLASS_CRC_16_ENCAP.ID }, 3);
 
-            if (genericDeviceClass == (byte)GenericTypes.STATIC_CONTROLLER || genericDeviceClass == (byte)GenericTypes.GENERIC_CONTROLLER)
-            {
-                beforeInclusionCCs = beforeInclusionCCs.Union(new[] { COMMAND_CLASS_INCLUSION_CONTROLLER.ID }).ToList();
-                unsecureCCs = unsecureCCs.Union(new[] { COMMAND_CLASS_INCLUSION_CONTROLLER.ID }).ToList(); // fixing after-inclusion-NIF
-            }
-            AddOrModifySecurityConfigured(deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray());
-            // includes CreateInclusionControllerSupportTask
-            // Device will return Version 0 for Inclusion Controller CC but adding another response would cause two different responses.
+            AddOrModifySecurityConfigured( // includes CreateInclusionControllerSupportTask
+                deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray()); 
 
             byte s0Version = 0;
             if (securityVersions.HasFlag(SecurityVersions.S0))
@@ -367,25 +362,38 @@ namespace Zats.Services
                         },
                         new COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET() { requestedCommandClass = COMMAND_CLASS_TRANSPORT_SERVICE.ID }, 3);
 
-            var cmdClasses = beforeInclusionCCs.Distinct()
-                            .OrderBy(x => x != COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID)
-                            .ThenBy(x => x != COMMAND_CLASS_INCLUSION_CONTROLLER.ID && x != COMMAND_CLASS_CRC_16_ENCAP.ID && x != COMMAND_CLASS_MULTI_CMD.ID
-                                && x != COMMAND_CLASS_MULTI_CHANNEL_V4.ID && x != COMMAND_CLASS_SECURITY.ID && x != COMMAND_CLASS_SECURITY_2.ID
-                                && x != COMMAND_CLASS_SUPERVISION.ID && x != COMMAND_CLASS_TRANSPORT_SERVICE_V2.ID
-                                && x != COMMAND_CLASS_ASSOCIATION_V2.ID && x != COMMAND_CLASS_ASSOCIATION_GRP_INFO.ID && x != COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID
-                                && x != COMMAND_CLASS_VERSION.ID && x != COMMAND_CLASS_WAKE_UP_V2.ID)
-                            .ToArray();
+            beforeInclusionCCs = GetDistinctOrderedCCIds(beforeInclusionCCs);
+            unsecureCCs = GetDistinctOrderedCCIds(unsecureCCs);
+            secureCCs = GetDistinctOrderedCCIds(secureCCs);
 
             //byte[] afterInclusionCCs = beforeInclusionCCs.Where(x => !secureCCs.Contains(x)).ToArray(); // general alternative for unsecureCCs, would work as well
             ActionResult res = device.ApplicationNodeInformation((ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, unsecureCCs.ToArray());
-            device.Network.SetApplicationNodeInformation((ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, cmdClasses);
-            res = device.ApplicationNodeInformationCmdClasses(cmdClasses, unsecureCCs.ToArray(), secureCCs.ToArray());
+            device.Network.SetApplicationNodeInformation((ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, beforeInclusionCCs.ToArray());
+            res = device.ApplicationNodeInformationCmdClasses(beforeInclusionCCs.ToArray(), unsecureCCs.ToArray(), secureCCs.ToArray());
+
+            AssociationSupportData associationSupportData = (commandClassSupportList.ToList().Find(x => x.CommandClassId == COMMAND_CLASS_ASSOCIATION.ID) as AssociationSupport)?.AssociationSupportData;
 
             foreach (CommandClassSupport ccSupport in commandClassSupportList)
             {
                 DeviceManager.EnableCommandClassSupport(deviceNumber, 0, ccSupport);
+                ccSupport.ReportDevice = DeviceManager.GetDevice(deviceNumber);
+                ccSupport.RootAssociationData = associationSupportData;
+                ccSupport.StartEmulation();
             }
             return returnTokens;
+        }
+
+        private List<byte> GetDistinctOrderedCCIds(List<byte> ccList)
+        {
+            return ccList.Distinct()
+                .OrderBy(x => x != COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID)
+                .ThenBy(x => x != COMMAND_CLASS_SECURITY_2.ID)
+                .ThenBy(x => x != COMMAND_CLASS_SECURITY.ID)
+                .ThenBy(x => x != COMMAND_CLASS_INCLUSION_CONTROLLER.ID && x != COMMAND_CLASS_CRC_16_ENCAP.ID && x != COMMAND_CLASS_MULTI_CMD.ID
+                    && x != COMMAND_CLASS_MULTI_CHANNEL_V4.ID && x != COMMAND_CLASS_SUPERVISION.ID && x != COMMAND_CLASS_TRANSPORT_SERVICE_V2.ID)
+                .ThenBy(x => x != COMMAND_CLASS_ASSOCIATION_V2.ID && x != COMMAND_CLASS_ASSOCIATION_GRP_INFO.ID && x != COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID
+                    && x != COMMAND_CLASS_VERSION.ID && x != COMMAND_CLASS_WAKE_UP_V2.ID)
+                .ToList();
         }
 
         public void CancelAllRunningSupportCommands(Alias deviceNumber)
@@ -393,12 +401,11 @@ namespace Zats.Services
             DeviceManager.CancelAllRunningSupportCommands(deviceNumber);
         }
 
-        public List<BasicToken.ResponseData> SetupEndPoint(Alias deviceNumber, byte endPointId, byte genericDeviceClass, byte specificDeviceClass, bool supervision, SecurityVersions securityVersions, List<CommandClassSupport> commandClassSupportList)
+        public List<BasicToken.ResponseData> SetupEndPoint(Alias deviceNumber, byte endPointId, byte genericDeviceClass, byte specificDeviceClass, bool supervision, SecurityVersions securityVersions, IEnumerable<CommandClassSupport> commandClassSupportList, AssociationSupportData rootAssociationSupportData = null)
         {
-            Device device = DeviceManager.GetDevice(deviceNumber);
             List<BasicToken.ResponseData> returnTokens = new List<BasicToken.ResponseData>();
 
-            List<byte> secureCCs = commandClassSupportList.Where(x => x.Secure == true && x.Id != COMMAND_CLASS_BASIC.ID).Select(x => x.Id).ToList();
+            List<byte> secureCCs = commandClassSupportList.Where(x => x.Secure == true && x.CommandClassId != COMMAND_CLASS_BASIC.ID).Select(x => x.CommandClassId).ToList();
 
             if (supervision)
             {
@@ -444,21 +451,35 @@ namespace Zats.Services
             foreach (CommandClassSupport ccSupport in commandClassSupportList)
             {
                 DeviceManager.EnableCommandClassSupport(deviceNumber, endPointId, ccSupport);
+                ccSupport.ReportDevice = DeviceManager.GetDevice(deviceNumber);
+                if (ccSupport.RootAssociationData == null)
+                {
+                    ccSupport.RootAssociationData = rootAssociationSupportData;
+                }
+                ccSupport.StartEmulation();
             }
 
             return returnTokens;
         }
 
-        private Dictionary<byte, Action<COMMAND_CLASS_SUPERVISION.SUPERVISION_GET, COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT>> GetSupervisionCallbacks(List<CommandClassSupport> commandClassSupportList)
+        private Dictionary<byte, Action<COMMAND_CLASS_SUPERVISION.SUPERVISION_GET, COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT>> GetSupervisionCallbacks(IEnumerable<CommandClassSupport> commandClassSupportList)
         {
             var supervisionCallbacks = new Dictionary<byte, Action<COMMAND_CLASS_SUPERVISION.SUPERVISION_GET, COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT>>();
 
             foreach (CommandClassSupport commandClass in commandClassSupportList)
             {
-                supervisionCallbacks.Add(commandClass.Id, commandClass.SupervisionCallback);
+                supervisionCallbacks.Add((byte)commandClass.CommandClassId, commandClass.SupervisionCallback);
             }
 
             return supervisionCallbacks;
+        }
+
+        /// <summary>
+        /// Enable CommandClassSupport for callbacks
+        /// </summary>
+        public void EnableCommandClassSupportForCallbacks(Alias deviceNumber, byte endPointId, CommandClassSupport commandClassSupport)
+        {
+            DeviceManager.EnableCommandClassSupport(deviceNumber, endPointId, commandClassSupport);
         }
 
         public void AddCommandCallbacks(byte commandClass, Dictionary<byte, CommandCallback> callbacks)
@@ -769,76 +790,147 @@ namespace Zats.Services
             AddOrModifySecurityConfigured(deviceNumber, securityVersions, null, false, supportedCC);
         }
 
-        public TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, bool overwriteConfig = false)
+        public TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, 
+            bool transportService, bool overwriteConfig = false)
         {
-            var associationSupportData = new AssociationSupportData()
+            Device controllerDevice = DeviceManager.GetDevice(deviceNumber);
+            if (overwriteConfig)
+            {
+                DeviceManager.ConfigurationClear(deviceNumber);
+            }
+
+            // Prepare NIF
+            var deviceOptions = DeviceOptions.Listening; // for CSC Role Type [RT:01.11.0004.1]
+            // Generic Controller DT (ZWPv2) [DT:32.11.0001.1]
+            byte genericType = (byte)GenericTypes.GENERIC_CONTROLLER;
+            byte specificType = SpecificTypes.NOT_USED;
+
+            // Prepare CC Support Data
+            var assocSuppData = new AssociationSupportData()
             {
                 AssociationGroups = new List<AssociationGroupEx>
                     {
-                        new AssociationGroupEx(1, 5, "Lifeline", 0x0001, new byte[] { 0x84 /*Modify if needed specified for Sleeping Device*/ }),
+                        new AssociationGroupEx(1, 5, "Lifeline", 0x0001,
+                        new byte[] { COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID, COMMAND_CLASS_DEVICE_RESET_LOCALLY.DEVICE_RESET_LOCALLY_NOTIFICATION.ID }),
                     },
             };
-            var controllerDevice = DeviceManager.GetDevice(deviceNumber);
-            if (overwriteConfig)
-                DeviceManager.ConfigurationClear(deviceNumber);
+            var zwpInfoSuppData = new ZWavePlusInfoSupportData()
+            {
+                RoleType = ZPIRoleTypes.ControllerCentralStatic,
+                NodeType = ZPINodeTypes.ZWavePlusNode,
+                InstallerIconType = new byte[] { 0x01, 0x00 },
+                UserIconType = new byte[] { 0x01, 0x00 }
+            };
+
+            // Prepare Supported CCs
+            var zwpInfoSupp = new ZWavePlusInfoSupport(zwpInfoSuppData)     { Version = 2, Secure = false };
+            var agiSupp = new AssociationGroupInfoSupport(assocSuppData)    { Version = 3, Secure = true };
+            var assocSupp = new AssociationSupport(assocSuppData)           { Version = 2, Secure = true };
+            var mcaSupp = new MultiChannelAssociationSupport(assocSuppData) { Version = 3, Secure = true };
+            var basicSupp = new BasicSupport()                              { Version = 2, Secure = true };
+            var deviceResetLocallySupp = new DeviceResetLocallySupport()    { Version = 1, Secure = true };
+            var manSpecSupp = new ManufacturerSpecificSupport()             { Version = 2, Secure = true };
+            var fakeInclCtrlSupp = new GenericCcSupport(COMMAND_CLASS_INCLUSION_CONTROLLER.ID) { Version = 1, Secure = false };
+            byte versionSuppVersion = 3;
+            bool isVersionSuppSecure = true;
+
+            // Setup Controller Device
             if (overwriteConfig || DeviceManager.ConfigurationIsEmpty(deviceNumber))
             {
                 var supportedCCs = new List<CommandClassSupport>();
                 supportedCCs.AddRange(new CommandClassSupport[]
                 {
-                    new BasicSupport() { Version = 2, Secure = true},
-                    new ManufacturerSpecificSupport() { Version = 2, Secure = true },
-                    new VersionSupport(supportedCCs) { Version = 3, Secure = true },
-                    new AssociationSupport(associationSupportData)  { Version = 2, Secure = true },
-                    new AssociationGroupInfoSupport(associationSupportData) { Version = 3, Secure = true },
-                    new ZWavePlusInfoSupport(new ZWavePlusInfoSupportData()
-                    {
-                        RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                        NodeType = ZPINodeTypes.ZWavePlusNode,
-                        InstallerIconType = new byte[] { 0x01, 0x00 },
-                        UserIconType = new byte[] { 0x01, 0x00 }
-                    }) { Version = 2, Secure = false },
+                    zwpInfoSupp,
+                    agiSupp,
+                    assocSupp,
+                    //basicSupp, // Do not add Basic CC. [DT:32.11.0004.1]
+                    deviceResetLocallySupp,
+                    manSpecSupp,
+                    fakeInclCtrlSupp,
+                    new VersionSupport(supportedCCs)                        { Version = versionSuppVersion, Secure = isVersionSuppSecure },
                 });
-                SetupRootDevice(deviceNumber, DeviceOptions.Listening, (byte)GenericTypes.STATIC_CONTROLLER, SpecificTypes.PC_CONTROLLER,
-                    multiChannel, supervision, crc16, securityVersions, transportService, supportedCCs);
-                controllerDevice.Network.SetRoleType((ZWave.Enums.RoleTypes)RoleTypes.CONTROLLER_CENTRAL_STATIC);
+                if (multiChannel)
+                {
+                    supportedCCs.Add(mcaSupp);
+                }
+
+                SetupRootDevice(deviceNumber,
+                    deviceOptions,
+                    genericType,
+                    specificType,
+                    multiChannel,
+                    supervision,
+                    crc16,
+                    securityVersions,
+                    transportService,
+                    supportedCCs);
+
+                controllerDevice.Network.SetRoleType(ZWave.Enums.RoleTypes.CONTROLLER_CENTRAL_STATIC);
                 controllerDevice.Network.SetNodeType(ZWave.Enums.NodeTypes.ZWAVEPLUS_NODE);
             }
             else
             {
                 var configuration = DeviceManager.GetConfiguration(deviceNumber);
+
                 var supportedCCs = new List<CommandClassSupport>();
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_BASIC.ID))
-                    supportedCCs.Add(new BasicSupport() { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
-                    supportedCCs.Add(new ManufacturerSpecificSupport() { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
-                    supportedCCs.Add(new VersionSupport(supportedCCs) { Version = 3, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION.ID))
-                    supportedCCs.Add(new AssociationSupport(associationSupportData) { Version = 2, Secure = true });
-                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID))
-                    supportedCCs.Add(new AssociationGroupInfoSupport(associationSupportData) { Version = 3, Secure = true });
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_ZWAVEPLUS_INFO.ID))
-                    supportedCCs.Add(new ZWavePlusInfoSupport(new ZWavePlusInfoSupportData()
-                    {
-                        RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                        NodeType = ZPINodeTypes.ZWavePlusNode,
-                        InstallerIconType = new byte[] { 0x01, 0x00 },
-                        UserIconType = new byte[] { 0x01, 0x00 }
-                    })
-                    { Version = 2, Secure = false });
+                { 
+                    supportedCCs.Add(zwpInfoSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID))
+                { 
+                    supportedCCs.Add(agiSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_V2.ID))
+                { 
+                    supportedCCs.Add(assocSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID)
+                    && multiChannel)
+                {
+                    supportedCCs.Add(mcaSupp);
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_BASIC.ID))
+                {
+                    supportedCCs.Add(basicSupp);
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID))
+                { 
+                    supportedCCs.Add(deviceResetLocallySupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
+                { 
+                    supportedCCs.Add(manSpecSupp); 
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_INCLUSION_CONTROLLER.ID))
+                {
+                    supportedCCs.Add(fakeInclCtrlSupp);
+                }
+                if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
+                {
+                    supportedCCs.Add(new VersionSupport(supportedCCs)           { Version = versionSuppVersion, Secure = isVersionSuppSecure }); 
+                }
 
                 if (securityVersions != SecurityVersions.None)
                 {
-                    SetupRootDevice(deviceNumber, DeviceOptions.Listening, (byte)GenericTypes.STATIC_CONTROLLER, SpecificTypes.PC_CONTROLLER,
-                        multiChannel, supervision, configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID), securityVersions, transportService, supportedCCs, configuration);
+                    SetupRootDevice(deviceNumber, 
+                        deviceOptions,
+                        genericType,
+                        specificType,
+                        multiChannel, 
+                        supervision, 
+                        configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID), 
+                        securityVersions, 
+                        transportService, 
+                        supportedCCs, 
+                        configuration);
                 }
                 else
                 {
                     SetupRootDevice(deviceNumber,
-                        DeviceOptions.Listening,
-                        (byte)GenericTypes.STATIC_CONTROLLER,
-                        SpecificTypes.PC_CONTROLLER,
+                        deviceOptions,
+                        genericType,
+                        specificType,
                         configuration.Network.HasCommandClass(COMMAND_CLASS_MULTI_CHANNEL_V2.ID),
                         configuration.Network.HasCommandClass(COMMAND_CLASS_SUPERVISION.ID),
                         configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID),
@@ -867,7 +959,7 @@ namespace Zats.Services
 
         public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes roleType, byte? initS2SequenceNumber)
         {
-            SendDataResult res = null;
+            SendDataResult resNop = null;
             Device sender = DeviceManager.GetDevice(deviceNumber);
             bool sleepingDevice = roleType == RoleTypes.CONTROLLER_PORTABLE ||
                                     roleType == RoleTypes.CONTROLLER_PORTABLE_REPORTING ||
@@ -877,7 +969,8 @@ namespace Zats.Services
             if (sleepingDevice)
             {
                 // Sending the NOP before SetupControllerDeviceConfigured() keeps sleeping devices awake most of the times
-                sender.SendData(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS);
+                resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS,
+                    ZWave.Enums.SecuritySchemes.NONE);
             }
 
             var ret = SetupControllerDeviceConfigured(deviceNumber, true, true, true, SecurityVersions.S0 | SecurityVersions.S2, true);
@@ -885,34 +978,35 @@ namespace Zats.Services
 
             if (sleepingDevice)
             {
-                // Final check if the DUT still awake before asking for a Wake Up Notification
-                res = sender.SendData(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS);
+                if (resNop.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteOk)
+                {
+                    // Final check if the DUT still awake before asking for a Wake Up Notification
+                    resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS, 
+                        ZWave.Enums.SecuritySchemes.NONE);
+                }
+
+                if (resNop.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteNoAcknowledge)
+                {
+                    // if NOP was not acked 
+                    Log(Environment.NewLine, LogLevels.Information);
+                    DeviceManager.MessageBox.ShowDutInteraction("The DUT is not responding. Wake up the DUT!");
+
+                    ExpectDataResult result = sender.ExpectData(new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION(), 600000); // 10 minutes
+                    BasicResult.ExpectData wakeupNotification = new BasicActionResult.ExpectData(result);
+
+                    Log(Environment.NewLine, LogLevels.Information);
+
+                    if (result.IsStateCompleted)
+                    {
+                        Log("DUT is awake, continuing Test Case...", LogLevels.Information);
+                    }
+                    else
+                    {
+                        Log("No Wake Up Notification has been received!", LogLevels.Error);
+                    }
+                }
             }
 
-            if (sleepingDevice && res.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteNoAcknowledge)
-            {
-                // if NOP was not acked 
-                Log(Environment.NewLine, LogLevels.Information);
-                Log("The DUT is not responding. Wake up the DUT!", LogLevels.Title);
-
-                ExpectDataResult result = sender.ExpectData(new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION(), 60000);
-                BasicResult.ExpectData wakeupNotification = new BasicActionResult.ExpectData(result);
-
-                Log(Environment.NewLine, LogLevels.Information);
-
-                if (result.IsStateCompleted)
-                {
-                    Log("DUT is awake, continuing Test Case...", LogLevels.Information);
-                }
-                else
-                {
-                    Log("No Wake Up Notification has been received!", LogLevels.Error);
-                }
-            }
-
-            // workaround to increase Nonce sequence number so that following TCs wont start with an already used number a DUT may ignore
-            // disabled in favor of using increased sequence numbers for each TC run
-            // sender.RequestNodeInfo(dutNode);
             return ret;
         }
 
@@ -1137,7 +1231,7 @@ namespace Zats.Services
                     {
                         ret = IncludeSettings.JoinDSK;
                     }
-                    Log("Join DSK PIN: " + (ret != null ? $"{ret.Take(2).ToArray().ToNumber():D5}" : "cancelled"), LogLevels.Information);
+                    Log("Join DSK: " + (ret != null ? $"{Utils.Tools.GetDskStringFromBytes(ret)}" : "cancelled"), LogLevels.Diagnostic);
                     return ret;
                 };
 
@@ -2013,7 +2107,7 @@ namespace Zats.Services
             allSupportCommandClassesForDevice.AddRange(CommandClassesSupportHandler.GetDefaultCommandClassSupportsForCCIds(FullCmd.ToList()));
 
             // Distinct!
-            allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.Id).Select(y => y.First()).ToList();
+            allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.CommandClassId).Select(y => y.First()).ToList();
             foreach (var ccSupport in allSupportCommandClassesForDevice)
             {
                 if (ccSupport is IndicatorSupport)
@@ -2075,10 +2169,19 @@ namespace Zats.Services
             // register Version CC responses for CMDs not handled by Support tasks.
             foreach (var cmd in FullCmd)
             {
-                var ccVersionToReport = (cmd == COMMAND_CLASS_SECURITY_2.ID || cmd == COMMAND_CLASS_SECURITY.ID) ? (byte)0x01 : (byte)0x03;
-                if (allSupportCommandClassesForDevice.Any(y => y.Id == cmd))
+                byte ccVersionToReport = 1;
+                if (cmd == COMMAND_CLASS_TRANSPORT_SERVICE_V2.ID)
                 {
-                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.Id == cmd);
+                    ccVersionToReport = 2;
+                }
+                else if (cmd == COMMAND_CLASS_VERSION_V3.ID)
+                {
+                    ccVersionToReport = 3;
+                }
+                
+                if (allSupportCommandClassesForDevice.Any(y => y.CommandClassId == cmd))
+                {
+                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.CommandClassId == cmd);
                     ccVersionToReport = supportCC.Version;
                 }
                 ret.Add(device.ResponseDataEx(new Node(0, deviceNumber.EndPointId),
@@ -2147,7 +2250,7 @@ namespace Zats.Services
             allSupportCommandClassesForDevice.AddRange(CommandClassesSupportHandler.GetDefaultCommandClassSupportsForCCIds(preconfiguredDevice.FullCc));
 
             // Distinct!
-            //allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.Id).Select(y => y.First()).ToList();
+            //allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.CommandClassId).Select(y => y.First()).ToList();
             foreach (var ccSupport in allSupportCommandClassesForDevice)
             {
                 var modifySupportCommandClass = preconfiguredDevice.SupportedModifyCommandClasses.FirstOrDefault(x => x.GetType().IsSubclassOf(ccSupport.GetType()));
@@ -2182,10 +2285,19 @@ namespace Zats.Services
             // register Version CC responses for CMDs not handled by Support tasks.
             foreach (var cmd in fullCmd)
             {
-                var ccVersionToReport = (cmd == COMMAND_CLASS_SECURITY_2.ID || cmd == COMMAND_CLASS_SECURITY.ID) ? (byte)0x01 : (byte)0x03;
-                if (allSupportCommandClassesForDevice.Any(y => y.Id == cmd))
+                byte ccVersionToReport = 1;
+                if (cmd == COMMAND_CLASS_TRANSPORT_SERVICE_V2.ID)
                 {
-                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.Id == cmd);
+                    ccVersionToReport = 2;
+                }
+                else if (cmd == COMMAND_CLASS_VERSION_V3.ID)
+                {
+                    ccVersionToReport = 3;
+                }
+
+                if (allSupportCommandClassesForDevice.Any(y => y.CommandClassId == cmd))
+                {
+                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.CommandClassId == cmd);
                     ccVersionToReport = supportCC.Version;
                 }
                 ret.Add(device.ResponseDataEx(new Node(0, deviceNumber.EndPointId),
@@ -2247,7 +2359,7 @@ namespace Zats.Services
             allSupportCommandClassesForDevice.AddRange(ccSuportHandlerModify.GetDefaultCommandClassSupportsForCCIdsQuirk(fullCmd.ToList()));
 
             // Distinct!
-            allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.Id).Select(y => y.First()).ToList();
+            allSupportCommandClassesForDevice = allSupportCommandClassesForDevice.GroupBy(x => x.CommandClassId).Select(y => y.First()).ToList();
             foreach (var ccSupport in allSupportCommandClassesForDevice)
             {
 
@@ -2259,7 +2371,7 @@ namespace Zats.Services
                             break;
                     }
                 }
-                else if (ccSupport is FirmwareUpdateMdSupportBasic)
+                else if (ccSupport is FirmwareUpdateMdSupportPCC)
                 {
                     FirmwareUpdateMdSupportBasicModify firmwareUpdateMdSupportModify =
                         new FirmwareUpdateMdSupportBasicModify(ccSuportHandlerModify.GetDummySetNewImageCompletedCallback()) { Version = 2 };
@@ -2293,11 +2405,19 @@ namespace Zats.Services
             // register Version CC responses for CMDs not handled by Support tasks.
             foreach (var cmd in fullCmd)
             {
-
-                var ccVersionToReport = (cmd == COMMAND_CLASS_SECURITY_2.ID || cmd == COMMAND_CLASS_SECURITY.ID) ? (byte)0x01 : (byte)0x03;
-                if (allSupportCommandClassesForDevice.Any(y => y.Id == cmd))
+                byte ccVersionToReport = 1;
+                if (cmd == COMMAND_CLASS_TRANSPORT_SERVICE_V2.ID)
                 {
-                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.Id == cmd);
+                    ccVersionToReport = 2;
+                }
+                else if (cmd == COMMAND_CLASS_VERSION_V3.ID)
+                {
+                    ccVersionToReport = 3;
+                }
+
+                if (allSupportCommandClassesForDevice.Any(y => y.CommandClassId == cmd))
+                {
+                    var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.CommandClassId == cmd);
                     ccVersionToReport = supportCC.Version;
                 }
                 ret.Add(device.ResponseDataEx(new Node(0, deviceNumber.EndPointId),

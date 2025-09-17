@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,15 @@ namespace ZatsTestConsole
         public static CmdLineArgument INPUT = new CmdLineArgument("-i", "--input",
             "Path to the INPUT assembly file with test cases.", true, "filename | folderpath");
         /// <summary>
-        /// Frequency for attached zniffer and for auto programming mode
+        /// RF region for attached zniffer and for auto programming mode
         /// </summary>
         public static CmdLineArgument FREQUENCY = new CmdLineArgument("-f", "--region",
-            "REGION for an attached zniffer and for auto programming mode(FLASH MODE). Options: US, ANZ, HK, IN, JP, RU, IL, KR, CN, EU, ALL", true, "[options]");
+            "REGION for an attached zniffer and for auto programming mode(FLASH MODE). Options: ANZ, CN, EU, EU_LR, HK, IL, IN, JP, KR, RU, US, US_LR, ALL", true, "[options]");
+        /// <summary>
+        /// Preferred LR channel for attached zniffer
+        /// </summary>
+        public static CmdLineArgument LR_CHANNEL = new CmdLineArgument("-lrch", "--long-range-channel",
+            "Preferred LR CHANNEL for an attached zniffer. Options: A, B", false, "[options]");
         /// <summary>
         /// Auto Programming Mode. Possible values: 'r', 'o', 'a'
         /// </summary>
@@ -106,6 +112,9 @@ namespace ZatsTestConsole
         // internal value
         public static CmdLineArgument OUTPUT_COLOR_FORMATED = new CmdLineArgument("-coloutf", "--output-color-format",
             "OUTPUT COLOR FORMATED to enable special color tags");
+        // internal value
+        public static CmdLineArgument OUTPUT_USE_START_STOP_TAGS = new CmdLineArgument("-tagout", "--output-use-start-stop-tags",
+            $"OUTPUT START STOP TAGS to enable '{ConsoleCustomOutput.ZATS_START_TAG}' and '{ConsoleCustomOutput.ZATS_END_TAG}' tags");
         /// <summary>
         /// Commander.ext application path
         /// </summary>
@@ -121,6 +130,9 @@ namespace ZatsTestConsole
         /// </summary>
         public static CmdLineArgument IP_FILTER = new CmdLineArgument("-ipf", "--ip-filter",
             "Filter for IP addresses", false, "[masks] | filename with masks");
+        
+        public static CmdLineArgument ZNIFFER_IS_VIRTUAL = new CmdLineArgument("-ziv", "--zniffer-is-virtual",
+            "Zniffer is a virtual device - do not use e.g. JLink");
         /// <summary>
         /// Use CLI to interact with End Device, available since 7.22.0 version.
         /// </summary>
@@ -141,6 +153,7 @@ namespace ZatsTestConsole
                 {
                     INPUT,
                     FREQUENCY,
+                    LR_CHANNEL,
                     RUN_MODE,
                     NUMBER_OF_RUNS,
                     NUMBER_OF_EXTRA_RUNS,
@@ -158,9 +171,11 @@ namespace ZatsTestConsole
                     JLINK_DEVICES_FILTER,
                     MESHROUTERS_DEVICES_FILTER,
                     OUTPUT_COLOR_FORMATED,
+                    OUTPUT_USE_START_STOP_TAGS,
                     COMMANDER_APP_PATH,
                     TEST_BEDS_FILTER,
                     IP_FILTER,
+                    ZNIFFER_IS_VIRTUAL,
                     USE_CLI,
                     HELP,
                 };
@@ -245,6 +260,7 @@ namespace ZatsTestConsole
         public RunModes RunMode;
         public IgnoreModes IgnoreMode;
         public string[] Frequencies;
+        public LongRangeChannels[] LongRangeChannels;
         public string[] DutNames;
         public string AssemblyFile;
         public int NumberOfRuns;
@@ -259,6 +275,7 @@ namespace ZatsTestConsole
         public string ChipSeries;
         public string ProfileName;
         public bool IsLessOutput;
+        public bool UseStartStopTags;
         public bool IsNoZnfDevice;
         public bool IsOutputColorFormated;
         public string JLinkDevicesFilter;
@@ -272,6 +289,8 @@ namespace ZatsTestConsole
 
         public bool HasParseError;
         public string ParseErrorMessage;
+
+        public bool IsZnifferVirtual;
     }
 
     public struct CmdLineArgument : IEquatable<CmdLineArgument>, IComparable<CmdLineArgument>

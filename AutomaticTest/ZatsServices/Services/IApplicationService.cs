@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,23 +25,24 @@ namespace Zats.Services
         BasicToken.Void AddResponse(Alias deviceNumber, byte[] cmd, byte[] expectedCmd);
         BasicToken.Void AddResponse(Alias deviceNumber, byte[] cmd, TransmitOptions txOptions, byte[] expectedCmd);
         List<BasicToken.ResponseData> SetupRootDevice(Alias deviceNumber, DeviceOptions deviceOptions, byte genericDeviceClass, byte specificDeviceClass,
-            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, List<CommandClassSupport> commandClassSupportList, Configuration.ConfigurationItem configuration = null);
+            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, IEnumerable<CommandClassSupport> commandClassSupportList, Configuration.ConfigurationItem configuration = null);
         List<BasicToken.ResponseData> SetupEndPoint(Alias deviceNumber, byte endPointId, byte genericDeviceClass, byte specificDeviceClass,
-            bool supervision, SecurityVersions securityVersions, List<CommandClassSupport> commandClassSupportList);
+            bool supervision, SecurityVersions securityVersions, IEnumerable<CommandClassSupport> commandClassSupportList, AssociationSupportData rootAssociationSupportData = null);
         TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, bool overwriteConfig = false);
         TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber);
         TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNodeId, RoleTypes roleType);
         TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNodeId, RoleTypes roleType, byte? initS2SequenceNumber);
+        void EnableCommandClassSupportForCallbacks(Alias deviceNumber, byte endPointId, CommandClassSupport commandClassSupport);
         void AddCommandCallbacks(byte commandClass, Dictionary<byte, CommandCallback> callbacks);
         void RemoveCommandCallbacks(byte commandClass);
         BasicToken.Void AddResponseEx(Alias deviceNumber, byte[] cmd, byte[] expectedCmd);
         void AddResponseEx(Alias deviceNumber, byte[] cmd, TransmitOptions txOptions, byte[] expectedCmd);
         void AddResponseEx(Alias deviceNumber, byte[] cmd, byte[] expectedCmd, int NumBytesToCompare);
         void AddSecurity(Alias deviceNumber, SecurityVersions securityVersions, params byte[] supportedCC);
-        //void AddSecurity(Alias deviceNumber);
+        void AddSecurity(Alias deviceNumber);
         void AddSecurity(Alias deviceNumber, SecurityVersions securityVersions);
         void AddSecurity(Alias deviceNumber, SecurityVersions securityVersions, LibTypes CommandClasses);
-        //void AddSecurity(Alias deviceNumber, params byte[] supportedCC);
+        void AddSecurity(Alias deviceNumber, params byte[] supportedCC);
         void AddSecurity(Alias deviceNumber, bool checkIfSupportSecurityClass, params byte[] supportedCC);
         void AddOrModifySecurity(Alias deviceNumber, SecurityVersions securityVersions, bool checkIfSupportSecurityClass, params byte[] supportedCC);
         ApplicationToken.Supervision AddSupervision(Alias deviceNumber);
