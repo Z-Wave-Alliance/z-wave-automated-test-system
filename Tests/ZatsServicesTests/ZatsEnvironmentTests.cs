@@ -150,7 +150,7 @@ namespace ZatsServicesTests
                     .Callback((IActionItem a) =>
                     {
                         var act = actualVersions[((ActionBase)a).Token.LogEntryPointSource];
-                        if (!DeviceManager.IsSampleApplication(act.Item1))
+                        if (!act.Item1.IsSampleApplication())
                         {
                             ((SerialApiGetInitDataOperation)a).SpecificResult.ChipType = act.Item2 == Seven ? ChipTypes.ZW070x : ChipTypes.ZW050x;
                             ((ActionBase)a).Token.SetCompleted();
@@ -167,7 +167,7 @@ namespace ZatsServicesTests
                     .Callback((IActionItem a) =>
                     {
                         var act = actualVersions[((ActionBase)a).Token.LogEntryPointSource];
-                        if (!DeviceManager.IsSampleApplication(act.Item1))
+                        if (!act.Item1.IsSampleApplication())
                         {
                             ((VersionOperation)a).SpecificResult.Library = act.Item1;
                             ((VersionOperation)a).SpecificResult.Version = act.Item2;
@@ -187,7 +187,7 @@ namespace ZatsServicesTests
                         var act = actualVersions[((ActionBase)a).Token.LogEntryPointSource];
                         if (((RequestOperation)a).Data.SequenceEqual("00 15".GetBytes()))
                         {
-                            if (!DeviceManager.IsSampleApplication(act.Item1))
+                            if (!act.Item1.IsSampleApplication())
                             {
                                 ((RequestOperation)a).SpecificResult.Payload = GetVersion(act.Item2)
                                 .Concat(new[] { (byte)act.Item1 })
