@@ -38,4 +38,4 @@ ZatsTestConsole --help
 
 SPDX-License-Identifier: BSD-3-Clause
 
-SPDX-FileCopyrightText: 2025 Silicon Laboratories Inc. https://www.silabs.com
+SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com

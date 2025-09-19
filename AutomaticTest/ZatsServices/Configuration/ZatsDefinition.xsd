@@ -3,7 +3,7 @@
 <!--
 SPDX-License-Identifier: BSD-3-Clause
 SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-SPDX-FileCopyrightText: 2025 Z-Wave Alliance https://z-wavealliance.org
+SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 -->
 
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">

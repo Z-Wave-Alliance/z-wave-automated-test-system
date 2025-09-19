@@ -1,6 +1,6 @@
 # YAML -*- mode: yaml; tab-width: 2; indent-tabs-mode: nil; coding: utf-8 -*-
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: 2024 Z-Wave Alliance
+# SPDX-FileCopyrightText: Z-Wave Alliance
 # Demo copied from https://docs.github.com/en/actions/quickstart
 ---
 name: Build Z-Wave Automatic Test System (ZATS)
