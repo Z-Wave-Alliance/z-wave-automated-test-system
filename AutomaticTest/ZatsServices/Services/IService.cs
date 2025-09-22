@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-
 using System.Collections.Generic;
-using ZWave.BasicApplication.Devices;
-using ZWave.Enums;
 
 namespace Zats.Services
 {
@@ -320,6 +317,5 @@ namespace Zats.Services
 
         BasicResult.Void SetSupervisionDelay(Alias deviceNumber, SupervisionReportStatuses status, int delay);
         string GetDskAsString(Alias deviceNumber);
-        Device GetDevice(Alias deviceNumber);
     }
 }

@@ -8,7 +8,6 @@ using Utils;
 using Utils.UI.Enums;
 using Zats.Services.PreconfiguredDevices;
 using Zats.Services.QuirkDatabase;
-using ZWave.BasicApplication.Devices;
 
 namespace Zats.Services
 {
@@ -1047,11 +1046,5 @@ namespace Zats.Services
         {
             throw new NotImplementedException();
         }
-
-        public Device GetDevice(Alias deviceNumber)
-        {
-            throw new NotImplementedException();
-        }
-
     }
 }

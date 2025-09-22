@@ -2543,11 +2543,6 @@ namespace Zats.Services
             throw new NotImplementedException();
         }
 
-        public Device GetDevice(Alias deviceNumber)
-        {
-            return DeviceManager.GetDevice(deviceNumber);
-        }
-
         /// <inheritdoc/>
         public byte[] GetAppVersionFromFile(string fromFilePath)
         {
