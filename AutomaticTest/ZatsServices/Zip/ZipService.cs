@@ -1215,26 +1215,30 @@ namespace Zats.Services
         public void DeleteProvisioningList(Alias zipControllerNumber)
         {
             var device = _zipManager.GetDevice(zipControllerNumber);
-            COMMAND_CLASS_PROVISIONING_LIST.PROVISION_DELETE ProvisioningListDelete = new COMMAND_CLASS_PROVISIONING_LIST.PROVISION_DELETE();
+            var ProvisioningListDelete = new COMMAND_CLASS_NODE_PROVISIONING.NODE_PROVISIONING_DELETE();
             //Clear provisioning list
-            device.SendData(null, new COMMAND_CLASS_PROVISIONING_LIST.PROVISION_DELETE() { });
+            device.SendData(null, new COMMAND_CLASS_NODE_PROVISIONING.NODE_PROVISIONING_DELETE() { });
         }
         public void SetProvisioningList(Alias zipControllerNumber, List<byte[]> Dsk, bool isLongRange)
         {
             var device = _zipManager.GetDevice(zipControllerNumber);
-            COMMAND_CLASS_PROVISIONING_LIST.PROVISION_SET ProvisioningListSet = new COMMAND_CLASS_PROVISIONING_LIST.PROVISION_SET();
+            var ProvisioningListSet = new COMMAND_CLASS_NODE_PROVISIONING.NODE_PROVISIONING_SET();
 
             foreach (byte[] devicekey in Dsk)
             {
-                ProvisioningListSet.Dsk = new List<byte>(devicekey);
-                ProvisioningListSet.DskLength = (byte)devicekey.Length;
+                ProvisioningListSet.dsk = new List<byte>(devicekey);
+                ProvisioningListSet.properties1.dskLength = (byte)devicekey.Length;
                 if (isLongRange)
                 {
-                    ProvisioningListSet.metadataExtension.Add(new COMMAND_CLASS_PROVISIONING_LIST.PROVISION_SET.MetaDataExtension()
+                    ProvisioningListSet.vg1.Add(new COMMAND_CLASS_NODE_PROVISIONING.NODE_PROVISIONING_SET.TVG1()
                     {
-                        metaDataType = { Type = (byte)PLMetaData.BootstrappingMode, Critical = 0x01 },
-                        Length = 0x01,
-                        Value = new List<byte>() { 0x02 }
+                        properties1 = new COMMAND_CLASS_NODE_PROVISIONING.NODE_PROVISIONING_SET.TVG1.Tproperties1()
+                        { 
+                            metaDataType = (byte)PLMetaData.BootstrappingMode, 
+                            critical = 0x01
+                        },
+                        length = 0x01,
+                        value = new List<byte>() { 0x02 }
                     });
                 }
                 device.SendData(null, ProvisioningListSet);
