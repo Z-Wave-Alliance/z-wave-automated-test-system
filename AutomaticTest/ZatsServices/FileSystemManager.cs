@@ -24,10 +24,13 @@ namespace Zats.Services
         public Profile CurrentProfile { get; set; }
         public string BasePath { get; set; }
         private Action<bool, string> _logAction;
-        public FileSystemManager(Action<bool, string> logAction)
+
+        public FileSystemManager(Action<bool, string> logAction, string resourcesPath)
         {
             _logAction = logAction;
-            _defaultResourcesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER);
+            _defaultResourcesPath = string.IsNullOrEmpty(resourcesPath) ?
+                 Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER) :
+                 Path.Combine(resourcesPath, RESOURSES_FOLDER);
             if (_definition == null)
             {
                 var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "XmlFiles");

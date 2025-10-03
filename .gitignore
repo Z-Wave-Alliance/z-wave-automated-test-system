@@ -52,3 +52,4 @@ CertTestCases/SetupPackage
 
 # Exceptions for files which are shipped with ZATS
 !AutomaticTest/ZatsTestConsole/Programmer/*.exe
+AutomaticTest/ZatsTestConsole/Properties/launchSettings.json
