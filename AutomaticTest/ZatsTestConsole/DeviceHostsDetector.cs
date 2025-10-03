@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-using PrimS.Telnet;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,12 +13,14 @@ using Zats.Services;
 using Zats.Services.Constants;
 using Zats.Services.MeshNetworkRacks;
 using ZWave.BasicApplication;
+using ZWave.BasicApplication.Devices;
 using ZWave.Enums;
+using ZWave.Exceptions;
 using ZWave.Layers;
 using ZWave.ZnifferApplication;
+#if NETCOREAPP
 using System.Text.RegularExpressions;
-using ZWave.BasicApplication.Devices;
-using ZWave.Exceptions;
+#endif
 
 namespace ZatsTestConsole
 {
@@ -32,7 +32,11 @@ namespace ZatsTestConsole
         private ZnifferApplicationLayer _znifferApp;
         private BasicApplicationLayer _tcpApp;
         private List<DeviceHostClient> _deviceHostClients = new List<DeviceHostClient>();
-        private Dictionary<ushort, string> _progDict = new Dictionary<ushort, string>();
+        /// <summary>
+        /// Dictionary of Alpha boards by DSK to keep track of programmed boards.
+        /// Used as a workaround to match pairs SName/PName by DSK because no other API available.
+        /// </summary>
+        private Dictionary<ushort, string> _alphaBoardDetectorByDSK = new Dictionary<ushort, string>();
         private IProgrammingProvider _alphaProgrammer;
         private IProgrammingProvider _gammaProgrammer;
         private IFileSystemManager _fileSystemManager;
@@ -65,8 +69,8 @@ namespace ZatsTestConsole
         {
             _deviceHostClients.Clear();
 
-            DetectSerialApi(false);
-            DetectSerialApi(true);
+            DetectDevicesWithSerialApi(false);
+            DetectDevicesWithSerialApi(true);
 
             var gammaBoards = _portNamesGetter.GetBoardLinks(_gammaProgrammer);
             _deviceHostClients.ForEach(x => x.Host.JName = gammaBoards?.FirstOrDefault(y => y.Item1 == x.Host.SName)?.Item2);
@@ -117,9 +121,9 @@ namespace ZatsTestConsole
             }
             ProgramGammaSamples();
             ProgramAlphaSamples(false);
-            DetectSerialApi(false);
+            DetectDevicesWithSerialApi(false);
             ProgramAlphaSamples(true);
-            DetectSerialApi(true);
+            DetectDevicesWithSerialApi(true);
 
             if (routerInfo != null)
             {
@@ -247,17 +251,22 @@ namespace ZatsTestConsole
                 ipFilter = _cmdLineSettings.IPFilter.Split(',', ';');
                 // This loop only works if the ip and serialno given as arguments match in the same order 
                 var jlink_devices = new List<JlinkDeviceInfo>();
-                if (jlinkIdsToAdd == null) {
+                if (jlinkIdsToAdd == null)
+                {
                     throw new InvalidOperationException("-ipf/--ip-filter list was provided but no matching -jlf/--jlink-filter list was found");
                 }
-                if(jlinkIdsToAdd.ToArray().Length != ipFilter.Length) {
+                if (jlinkIdsToAdd.ToArray().Length != ipFilter.Length)
+                {
                     throw new InvalidOperationException("-ipf/--ip-filter provided list does not match the size of -jlf/--jlink-filter provided list");
                 }
-                for (int i = 0; i < ipFilter.Length; i++) {
+                for (int i = 0; i < ipFilter.Length; i++)
+                {
                     jlink_devices.Add(new JlinkDeviceInfo(jlinkIdsToAdd.ToList()[i], null, IPAddress.Parse(ipFilter[i]), string.Empty, true));
                 }
                 discoveredItems = jlink_devices.ToArray();
-            } else {
+            }
+            else
+            {
                 discoveredItems = _udpJLinkDiscoveryService.DiscoverTcpDevices();
             }
 
@@ -609,17 +618,18 @@ namespace ZatsTestConsole
 
         private void ProgramAlphaSamples(bool isUzb)
         {
-            _progDict.Clear();
+            _alphaBoardDetectorByDSK.Clear();
             var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
             int dskCounter = 0;
             Parallel.ForEach(_deviceHostClients.Where(x => x.HasPName && !x.HasSName && !x.HasJName), dhc =>
             {
+                //Write unique DSK to each board and keep track in dictionary, will be used to match pairs with read DSK later.
                 ushort dsk;
-                lock (_progDict)
+                lock (_alphaBoardDetectorByDSK)
                 {
                     dskCounter++;
                     dsk = (ushort)dskCounter;
-                    _progDict.Add(dsk, dhc.Host.PName);
+                    _alphaBoardDetectorByDSK.Add(dsk, dhc.Host.PName);
                 }
                 var prk = new byte[32];
                 var puk = Tools.GetBytes(dsk).Concat(new byte[30]).ToArray();
@@ -644,7 +654,13 @@ namespace ZatsTestConsole
             });
         }
 
-        private void DetectSerialApi(bool isUzb)
+        /// <summary>
+        /// Find connected devices with Serial API and add them to the list if not already added.
+        /// Mostly used for Autodetection of connected devices with AlphaBoards.
+        /// Gamma Boards can retrieve information using this method or gammaProgrammer.GetChipSeries.
+        /// </summary>
+        /// <param name="isUzb">Connection type: Serial/USB</param>
+        private void DetectDevicesWithSerialApi(bool isUzb)
         {
             var ports = _portNamesGetter.GetPortNames()
                 .Where(x =>
@@ -663,132 +679,69 @@ namespace ZatsTestConsole
 
             foreach (var port in ports)
             {
-                FindInDictionary(port, isUzb);
+                FillDeviceHostMissingInfo(port, isUzb);
             }
         }
 
+        /// <summary>
+        /// Flash gamma samples with default predefined controller and set pairs with Manipulator via LED signaling if existed.
+        /// </summary>
+        /// <remarks>
+        /// Used for Autodetection of Gamma boards and pairing with Alpha boards.
+        /// </remarks>
         private void ProgramGammaSamples()
         {
-            if (_gammaProgrammer != null)
+            if (_gammaProgrammer == null)
             {
-                var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
-                var gammaList = _deviceHostClients.Where(x => x.Host != null && x.Host.SType == InterfaceTypes.COM && x.HasJName && !x.HasPName).ToArray();
-                Parallel.ForEach(gammaList, dhc =>
+                "Gamma programmer Simplicity Commander is provided"._DLOG();
+                return;
+            }
+            var gammaList = _deviceHostClients.Where(x => x.Host != null && x.Host.SType == InterfaceTypes.COM && x.HasJName).ToArray();
+            Parallel.ForEach(gammaList, dhc =>
+            {
+                var cs = _gammaProgrammer.GetChipSeries(dhc);
+                if (Enum.TryParse(cs, out ChipSeries chipSeries))
                 {
-                    if (string.IsNullOrWhiteSpace(dhc.Host.ChipSeries))
-                    {
-                        _gammaProgrammer.GetChipSeries(dhc);
-                    }
-                    if (Enum.TryParse(dhc.Host.ChipSeries, out ChipSeries chipSeries))
-                    {
-                        int retCode = -1;
-                        if (chipSeries == ChipSeries.ZG23_BRD4204C)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac823us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG23_BRD4204D)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac823us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM230S_BRD4205B)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac8230sbus.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM230_BRD2603A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "zwave_ncp_serial_api_controller-brd2603a-us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM230S_BRD4205A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac8230saus.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG23_BRD4210A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac823us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM130S_BRD4200A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sact713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM130S_BRD4202A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sact713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZGM130S_BRD4207A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sact713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.RZ13_BRD4209A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sact713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.RZ13_BRD4201B)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac713_32us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.RZ13_BRD4203A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG13S_BRD4201D)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG13L_BRD4201C)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac713us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG14_BRD4201A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac714us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG14_BRD4206A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac714us.hex"), true, null, null);
-                        }
-                        else if (chipSeries == ChipSeries.ZG14_BRD4208A)
-                        {
-                            retCode = _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, Path.Combine(location, "sac714us.hex"), true, null, null);
-                        }
-                        else
-                        {
-                            retCode = 0; // do nothings
-                        }
-                        if (retCode != 0)
-                        {
-                            dhc.SClient.Dispose();
-                            lock (_deviceHostClients)
-                            {
-                                _deviceHostClients.Remove(dhc);
-                            }
-                        }
-                    }
-                });
+                    string sampleFilePath = _fileSystemManager.GetPredefinedControllerPathFromResources(chipSeries);
 
-                var alphaList = _deviceHostClients.Where(x => x.HasPName && !x.HasJName && (string.IsNullOrWhiteSpace(x.Host.ChipSeries) || x.Host.ChipSeries == ChipSeries.Default.ToString())).ToArray();
-                foreach (var dhcA in alphaList)
-                {
-                    var deviceA = dhcA.PClient;
-                    foreach (var dhcG in gammaList)
+                    var retCode = string.IsNullOrEmpty(sampleFilePath) ?
+                        0 : // do nothing if no sample defined
+                        _gammaProgrammer.ProgramSample(dhc, ZWaveRegions.REGION_US, sampleFilePath, true, null, null);
+
+                    if (retCode != 0)
                     {
-                        if (_deviceHostClients.Contains(dhcG)) // check if it was not removed as already detected
+                        dhc.SClient.Dispose();
+                        lock (_deviceHostClients)
                         {
-                            var deviceG = dhcG.SClient;
-                            if (!deviceG.TransportClient.IsOpen)
-                            {
-                                deviceG.Connect();
-                            }
-                            if (DetectLeds(deviceA, deviceG, dhcG.Host.ChipSeries))
-                            {
-                                dhcA.BackupSNameTemp = dhcG.BackupSNameTemp;
-                                dhcA.Host.SName = dhcG.Host.SName;
-                                dhcA.Host.JName = dhcG.Host.JName;
-                                dhcA.Host.ChipSeries = dhcG.Host.ChipSeries;
-                                dhcA.Host.SType = dhcG.Host.SType;
-                                dhcA.SClient = deviceG;
-                                _deviceHostClients.Remove(dhcG);
-                                break;
-                            }
+                            _deviceHostClients.Remove(dhc);
+                        }
+                    }
+                }
+            });
+
+            var alphaList = _deviceHostClients.Where(x => x.HasPName && !x.HasJName && (string.IsNullOrWhiteSpace(x.Host.ChipSeries) || x.Host.ChipSeries == ChipSeries.Default.ToString())).ToArray();
+            foreach (var dhcA in alphaList)
+            {
+                var deviceA = dhcA.PClient;
+                foreach (var dhcG in gammaList)
+                {
+                    if (_deviceHostClients.Contains(dhcG)) // check if it was not removed as already detected
+                    {
+                        var deviceG = dhcG.SClient;
+                        if (!deviceG.TransportClient.IsOpen)
+                        {
+                            deviceG.Connect();
+                        }
+                        if (DetectLeds(deviceA, deviceG, dhcG.Host.ChipSeries))
+                        {
+                            dhcA.BackupSNameTemp = dhcG.BackupSNameTemp;
+                            dhcA.Host.SName = dhcG.Host.SName;
+                            dhcA.Host.JName = dhcG.Host.JName;
+                            dhcA.Host.ChipSeries = dhcG.Host.ChipSeries;
+                            dhcA.Host.SType = dhcG.Host.SType;
+                            dhcA.SClient = deviceG;
+                            _deviceHostClients.Remove(dhcG);
+                            break;
                         }
                     }
                 }
@@ -950,9 +903,16 @@ namespace ZatsTestConsole
             }
         }
 
-        private void FindInDictionary(string port, bool isUzb)
+        /// <summary>
+        /// Fill missing device host info by connecting to the device and reading Serial API info.
+        /// </summary>
+        /// <param name="portName">Device port name</param>
+        /// <param name="isUzb">Connection type Serial/USB.</param>
+        private void FillDeviceHostMissingInfo(string portName, bool isUzb)
         {
-            var dhc = new DeviceHostClient(new DeviceHost { SName = port }, _basicApp, null);
+            if (_deviceHostClients.Any(x => x.HasJName && x.Host.SName == portName && !string.IsNullOrEmpty(x.Host.ChipSeries)))
+                return; //skip if detected with JLink 
+            var dhc = new DeviceHostClient(new DeviceHost { SName = portName }, _basicApp, null);
             dhc.SClient.Connect();
             var device = _basicApp.CreateController(dhc.SClient);
             var hasSerialApi = device.SerialApiGetInitData(true);
@@ -962,6 +922,7 @@ namespace ZatsTestConsole
             }
             if (hasSerialApi)
             {
+                //For alpha device: FindInDictionary - detect pairs by DSK to fill deviceHostClient with device pair
                 ushort dsk = 0;
                 if (device.ChipType == ZWave.Enums.ChipTypes.ZW050x)
                 {
@@ -979,11 +940,11 @@ namespace ZatsTestConsole
                         dsk = (ushort)((homeIdRes.HomeId[0] << 8) + homeIdRes.HomeId[1]);
                     }
                 }
-
-                if (_progDict.ContainsKey(dsk))
+                //Complete pair with existing alpha board or add new.
+                if (_alphaBoardDetectorByDSK.ContainsKey(dsk))
                 {
-                    var pdhc = _deviceHostClients.FirstOrDefault(x => x.Host.PName == _progDict[dsk]);
-                    _progDict.Remove(dsk);
+                    var pdhc = _deviceHostClients.FirstOrDefault(x => x.Host.PName == _alphaBoardDetectorByDSK[dsk]);
+                    _alphaBoardDetectorByDSK.Remove(dsk);
                     if (pdhc != null)
                     {
                         pdhc.Host.SName = dhc.Host.SName;
@@ -1028,8 +989,7 @@ namespace ZatsTestConsole
         public Tuple<string, string>[] GetBoardLinks(IProgrammingProvider gammaProvider)
         {
 #if NETCOREAPP
-            //return GetGammaSourceAndSerial(gammaProvider);
-            return new List<Tuple<string, string>>().ToArray();
+            return GetGammaSourceAndSerial(gammaProvider);
 #else
             return ComputerSystemHardwareHelper.GetGammaSourceAndSerial().ToArray();
 #endif
@@ -1044,16 +1004,12 @@ namespace ZatsTestConsole
             var serialNums = rx.Matches(versionOutput)?.Select(x => Regex.Replace(x.ToString(), @"[^\d]", ""));
             foreach (var serial in serialNums)
             {
-                var shell = Environment.GetEnvironmentVariable("SHELL");
-                var grepSerialProcess = new ProcessProxy(Directory.GetCurrentDirectory(), shell, "-c \"ls -l /dev/serial/by-id | grep {0}\"");
-                grepSerialProcess.Start(serial);
-                grepSerialProcess.Close();
-                if (!string.IsNullOrEmpty(grepSerialProcess.ProcessOutput))
+                var dh = new DeviceHost() { JName = serial };
+                var dhc = new DeviceHostClient(dh);
+                var res = gammaProgrammer.GetChipSeries(dhc);
+                if (!string.IsNullOrEmpty(res))
                 {
-                    rx = new Regex(@"tty[A-Z0-9]+\Z");
-                    var matches = rx.Matches(grepSerialProcess.ProcessOutput);
-                    if (matches.Count == 1)
-                        ret.Add(new Tuple<string, string>($"/dev/{matches.First().ToString()}", serial));
+                    ret.Add(new Tuple<string, string>(dhc.Host.SName, serial));
                 }
             }
             return ret.ToArray();

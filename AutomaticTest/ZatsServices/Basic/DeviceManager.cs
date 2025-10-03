@@ -2561,7 +2561,7 @@ namespace Zats.Services
                     {
                         Host.SType = InterfaceTypes.TCP;
                         SClient = sourceAppLayer.CreateClient();
-                        var sds = new SocketDataSource(Host.SName, Host.SPort);
+                        var sds = new SocketDataSource(Host.SName, Host.IsVirtual ? Host.SPort : UdpJLinkDiscoveryService.ADMIN_PORT);
                         SClient.DataSource = sds;
                     }
                     else

@@ -7,7 +7,6 @@ namespace Zats.Services
     public interface IFileSystemManager
     {
         string BasePath { get; set; }
-        Profile CurrentProfile { get; set; }
         string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, string ending, DevKits devKit, params string[] regexFilters);
         string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, DevKits devKit, params string[] regexFilters);
         string GetLatestFilePath(string filter, DevKits devKit, params string[] regexFilters);
@@ -23,5 +22,11 @@ namespace Zats.Services
         ///  - *bootloader* since v.7.23 or empty (if specificFileNamePattern is empty;
         ///  - default keys from 'Resources' or found</returns>
         BootloaderPath GetBootloaderPath(DeviceHostClient deviceHostClient, string[] specificFileNamePattern, params string[] regexFilters);
+        /// <summary>
+        /// Get predefined controller path from resources by chip series.
+        /// </summary>
+        /// <param name="chipSeries">Chip series for the controller.</param>
+        /// <returns>File path for the predefined controller.</returns>
+        string GetPredefinedControllerPathFromResources(ChipSeries chipSeries);
     }
 }

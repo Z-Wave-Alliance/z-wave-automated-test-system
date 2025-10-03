@@ -261,10 +261,12 @@ namespace ZatsTestConsole
             var profileZName = GetEnvironmentZnifferPort(activeProfile);
             if (!string.IsNullOrEmpty(profileZName) && !string.IsNullOrEmpty(rfRegion))
             {
-                if (System.Net.IPAddress.TryParse(profileZName, out System.Net.IPAddress ptiSource) && settings.IsZnifferVirtual == false)
+                var isPTI = System.Net.IPAddress.TryParse(profileZName, out System.Net.IPAddress ptiSource);
+                var isReadyForInit = true;
+                if (isPTI && settings.IsZnifferVirtual == false)
                 {
                     var host = new DeviceHost() { SName = profileZName, SPort = 4905 /*non-virtual Zniffer PTI via JLink*/, JName = profileZName, SType = InterfaceTypes.TCP };
-                    var chipType = _managers.DeviceManager.GetChipType(new DeviceHostClient(host, null, null));
+                    var chipType = _managers.DeviceManager.GetChipType(new DeviceHostClient(host));
                     if (!string.IsNullOrWhiteSpace(chipType) && Enum.TryParse(chipType, out ChipSeries chipSeries))
                     {
                         var hosts = new List<DeviceHost>() { host };
@@ -274,8 +276,22 @@ namespace ZatsTestConsole
                         var reqs = new List<UnknownDevice>() { reqZnif };
                         _managers.DeviceManager.InitDevices(hosts, reqs, settings.IsAppendMode, configurationMode, settings.ConfigPath);
                     }
+                    if (lrChannel != LongRangeChannels.Undefined)
+                    {
+                        if (lrChannel == LongRangeChannels.ChannelA)
+                        {
+                            consoleOutPut.ReportToConsole($"Setting Zniffer channel configurations for LR is not supported at {profileZName}! " +
+                                "Channel configuration is unmodified.", "", LogLevels.Warning);
+                        }
+                        else
+                        {
+                            consoleOutPut.ReportToConsole($"Setting Zniffer channel configuration for LR channel {lrChannel.ToString().Replace("Channel", "")} is not supported at {profileZName}!",
+                                "", LogLevels.Error);
+                            isReadyForInit = false;
+                        }
+                    }
                 }
-                var isInited = _managers.ZnifferManager.InitDevice(profileZName, settings.IsZnifferVirtual, rfRegion, lrChannel);
+                var isInited = isReadyForInit && _managers.ZnifferManager.InitDevice(profileZName, settings.IsZnifferVirtual, rfRegion, lrChannel);
                 if (!isInited && testCaseDefinition.IsZnifferRequired)
                     return false;
             }

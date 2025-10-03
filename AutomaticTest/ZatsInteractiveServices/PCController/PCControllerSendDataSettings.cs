@@ -189,7 +189,7 @@ namespace Zats.Services
                         NavigateTo(PCControllerIdMap.SendDataSettingsDialog.OkBtn).Click())
                         )
                 {
-                    dlg.DialogView.NavigateTo(PCControllerIdMap.SendDataSettingsDialog.RequestsTimeoutMsTb).SetElementValue(value.ToString());
+                    dlg.DialogView.NavigateTo(PCControllerIdMap.SendDataSettingsDialog.DelayResponseMsTb).SetElementValue(value.ToString());
                 }
             }
         }
@@ -280,6 +280,28 @@ namespace Zats.Services
         }
 
         public int GetCallbackWaitTimeoutMs(Alias senderNumber)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void SetRequestTimeoutMs(Alias controllerNumber, int value)
+        {
+            var uiController = PCControllerDeviceManager.GetUIInstance(controllerNumber);
+            if (uiController != null)
+            {
+                uiController.Automation.WaitForElementNotVisible(PCControllerIdMap.MainWindow.BusyView, null);
+                using (var dlg = uiController.Automation.OpenDialog(PCControllerIdMap.SendDataSettingsDialog.ID, PCControllerIdMap.SendDataSettingsDialog.Title,
+                        () => uiController.Automation.NavigateTo(PCControllerIdMap.MainWindow.SendDataSettingsBtn).Click(),
+                        () => uiController.Automation.NavigateTo(PCControllerIdMap.SendDataSettingsDialog.ID, PCControllerIdMap.SendDataSettingsDialog.Title).
+                        NavigateTo(PCControllerIdMap.SendDataSettingsDialog.OkBtn).Click())
+                        )
+                {
+                    dlg.DialogView.NavigateTo(PCControllerIdMap.SendDataSettingsDialog.RequestsTimeoutMsTb).SetElementValue(value.ToString());
+                }
+            }
+        }
+
+        public int GetRequestTimeoutMs(Alias controllerNumber)
         {
             throw new System.NotImplementedException();
         }

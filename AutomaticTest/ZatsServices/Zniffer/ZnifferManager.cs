@@ -54,26 +54,6 @@ namespace Zats.Services
                 var res = ZnifferAppClient.Connect(new SocketDataSource(port, 4905));
                 ret = res == CommunicationStatuses.Done;
                 Zniffer.Frequencies = Array.Empty<byte>();
-
-                if (lrChannel != LongRangeChannels.Undefined)
-                {
-                    if (lrChannel == LongRangeChannels.ChannelA)
-                    {
-                        Console.WriteLine();
-                        Console.Write(string.Format("Warning: Setting Zniffer channel configurations for LR is not supported at {0}! " +
-                            "Channel configuration is unmodified.", port));
-                        Console.WriteLine();
-                    }
-                    else
-                    {
-                        Console.WriteLine();
-                        Console.Write(string.Format("Error: Setting Zniffer channel configuration for LR channel {0} is not supported at {1}!", 
-                            lrChannel.ToString().Replace("Channel", ""), port));
-                        Console.WriteLine();
-
-                        ret = false;
-                    }
-                }
             }
             else
             {

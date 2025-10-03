@@ -94,7 +94,7 @@ namespace Zats.Services
         {
             string ret = null;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var args = $"adapter probe --boards {devicePort}";
+            var args = $"adapter probe {devicePort}";
 
             string output = string.Empty;
             for (int i = 0; i < 3; i++)
@@ -123,6 +123,13 @@ namespace Zats.Services
                         ret = $"{seriesMatchWithoutBoard.Groups[1].Value}_{seriesMatchWithoutBoard.Groups[2].Value}";
                         deviceHostClient.Host.ChipSeries = ret;
                     }
+                    // VCOM Port update
+                    var vcomPattern = @"^VCOM Port\s+:\s+(COM\d+).*$";
+                    var vcomMatch = Regex.Match(output, vcomPattern, RegexOptions.Multiline);
+                    if (vcomMatch.Success && vcomMatch.Groups.Count > 1 && deviceHostClient.Host.SType != InterfaceTypes.TCP)
+                    {
+                        deviceHostClient.Host.SName = vcomMatch.Groups[1].Value;
+                    }
                 }
             }
             catch (Exception ex)
@@ -134,7 +141,10 @@ namespace Zats.Services
 
         public string GetChipSeries(DeviceHostClient deviceHostClient)
         {
-            return GetAdapterInfo(deviceHostClient);
+            var res = string.IsNullOrEmpty(deviceHostClient.Host.ChipSeries) ?
+                GetAdapterInfo(deviceHostClient) : 
+                deviceHostClient.Host.ChipSeries;
+            return res;
         }
 
         public ZWaveRegions GetZWaveRegion(DeviceHostClient deviceHostClient)

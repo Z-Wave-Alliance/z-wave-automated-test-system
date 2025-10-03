@@ -22,6 +22,7 @@ namespace Zats.Services
         void SetTransportServiceMaxSize(Alias controllerNumber, int value);
         void SetMaxBytesPerFrameSize(Alias controllerNumber, int value);
         void SetResponseDelayMs(Alias controllerNumber, int timeoutMs);
+        void SetRequestTimeoutMs(Alias controllerNumber, int value);
 
         bool GetCRC16(Alias controllerNumber);
         bool GetSupressMulticastFollowUp(Alias controllerNumber);
@@ -39,6 +40,7 @@ namespace Zats.Services
         int GetTransportServiceMaxSize(Alias controllerNumber);
         int GetMaxBytesPerFrameSize(Alias controllerNumber);
         int GetResponseDelayMs(Alias controllerNumber);
+        int GetRequestTimeoutMs(Alias controllerNumber);
 
         void Clear(Alias controllerNumber);
         int GetCallbackWaitTimeoutMs(Alias senderNumber);

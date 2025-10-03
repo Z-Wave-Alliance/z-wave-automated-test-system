@@ -18,16 +18,18 @@ namespace Zats.Services
         private const string RESOURSES_FOLDER = "Resources";
         private const string FilePatternDefinitionName = "FilePatternDefinition.xml";
 
+        private Action<bool, string> _logAction;
         private string _defaultResourcesPath;
         private FilePatternDefinition _definition = null;
 
-        public Profile CurrentProfile { get; set; }
         public string BasePath { get; set; }
-        private Action<bool, string> _logAction;
-        public FileSystemManager(Action<bool, string> logAction)
+
+        public FileSystemManager(Action<bool, string> logAction, string resourcesPath)
         {
             _logAction = logAction;
-            _defaultResourcesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER);
+            _defaultResourcesPath = string.IsNullOrEmpty(resourcesPath) ?
+                 Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER) :
+                 Path.Combine(resourcesPath, RESOURSES_FOLDER);
             if (_definition == null)
             {
                 var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "XmlFiles");
@@ -421,6 +423,57 @@ namespace Zats.Services
                 }
             }
 
+            return ret;
+        }
+
+        public string GetPredefinedControllerPathFromResources(ChipSeries chipSeries)
+        {
+            var expectedFileName = string.Empty;
+            switch (chipSeries)
+            {
+                case ChipSeries.ZG23_BRD4204C:
+                case ChipSeries.ZG23_BRD4204D:
+                case ChipSeries.ZG23_BRD4210A:
+                    expectedFileName = "sac823us.hex";
+                    break;
+                case ChipSeries.ZGM230S_BRD4205B:
+                    expectedFileName = "sac8230sbus.hex";
+                    break;
+                case ChipSeries.ZGM230_BRD2603A:
+                    expectedFileName = "zwave_ncp_serial_api_controller-brd2603a-us.hex";
+                    break;
+                case ChipSeries.ZGM230S_BRD4205A:
+                    expectedFileName = "sac8230saus.hex";
+                    break;
+                case ChipSeries.ZGM130S_BRD4200A:
+                case ChipSeries.ZGM130S_BRD4202A:
+                case ChipSeries.ZGM130S_BRD4207A:
+                case ChipSeries.RZ13_BRD4209A:
+                    expectedFileName = "sact713us.hex";
+                    break;
+                case ChipSeries.RZ13_BRD4201B:
+                    expectedFileName = "sac713_32us.hex";
+                    break;
+                case ChipSeries.RZ13_BRD4203A:
+                case ChipSeries.ZG13S_BRD4201D:
+                case ChipSeries.ZG13L_BRD4201C:
+                    expectedFileName = "sac713us.hex";
+                    break;
+                case ChipSeries.ZG14_BRD4201A:
+                case ChipSeries.ZG14_BRD4206A:
+                case ChipSeries.ZG14_BRD4208A:
+                    expectedFileName = "sac714us.hex";
+                    break;
+                default:
+                    expectedFileName = chipSeries.ToString().ToLower() + "_controller.hex"; //wrong name for missing file to log
+                    break;
+            }
+            var ret = Path.Combine(_defaultResourcesPath, expectedFileName);
+            if (!File.Exists(ret))
+            {
+                _logAction(false, $"Not Found predefined controller file {expectedFileName} in {_defaultResourcesPath}");
+                ret = string.Empty;
+            }
             return ret;
         }
 

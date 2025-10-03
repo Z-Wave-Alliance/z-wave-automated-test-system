@@ -129,6 +129,15 @@ namespace Zats.Services
         public void SetResponseDelayMs(Alias controllerNumber, int value)
         {
             GetItem(controllerNumber).ResponseDelayMs = value;
+            var device = _deviceManager.GetDevice(controllerNumber);
+            device.Network.DelayResponseMs = value;
+        }
+
+        public void SetRequestTimeoutMs(Alias controllerNumber, int value)
+        {
+            //GetItem(controllerNumber).RequestTimeoutMs = value; //TODO: core fix is needed: SettingsSubstituteManager
+            var device = _deviceManager.GetDevice(controllerNumber);
+            device.Network.RequestTimeoutMs = value;
         }
 
         public bool GetCRC16(Alias controllerNumber)
@@ -219,6 +228,14 @@ namespace Zats.Services
         public int GetCallbackWaitTimeoutMs(Alias deviceNumber)
         {
             return GetItem(deviceNumber).CallbackWaitTimeoutMs;
+        }
+
+        public int GetRequestTimeoutMs(Alias controllerNumber)
+        {
+            //return GetItem(controllerNumber).RequestTimeoutMs; //TODO: core fix is needed: SettingsSubstituteManager
+            var device = _deviceManager.GetDevice(controllerNumber);
+            var res = device.Network.RequestTimeoutMs;
+            return res;
         }
     }
 }

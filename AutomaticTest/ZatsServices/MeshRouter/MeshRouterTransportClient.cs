@@ -12,8 +12,7 @@ namespace Zats.Services.MeshNetworkRacks
 {
     public class MeshRouterTransportClient : ITransportClient
     {
-        private HttpClient _httpClient = new HttpClient();
-        private Action<EventArgs<DataChunk>> _transmittCallback;
+        private readonly Action<EventArgs<DataChunk>> _transmittCallback;
 
         public ushort SessionId { get; set; }
         public ApiTypes ApiType { get; set; }
@@ -64,19 +63,31 @@ namespace Zats.Services.MeshNetworkRacks
         {
         }
 
+        /// <summary>
+        /// Write data to the mesh network via HTTP GET request. 
+        /// </summary>
+        /// <param name="data">Data to write.</param>
+        /// <returns>Length of written data in the success case, otherwise -1.</returns>
         public int WriteData(byte[] data)
         {
             var queryString = $"http://{_dataSource.SourceName}:{_dataSource.Port}/{Encoding.ASCII.GetString(data)}";
-            _transmittCallback?.Invoke(new EventArgs<DataChunk>(new DataChunk(data, SessionId, true, ApiType)));
-            var res = _httpClient.GetAsync(queryString).Result;
-            if (res.IsSuccessStatusCode)
+
+            using (var httpClient = new HttpClient())
             {
-                // Response.
-                var responseBytes = res.Content.ReadAsByteArrayAsync().Result;
-                var receivedDataChunk = new DataChunk(responseBytes, SessionId, false, ApiType);
-                ReceiveDataCallback?.Invoke(receivedDataChunk, false);
-                _transmittCallback?.Invoke(new EventArgs<DataChunk>(receivedDataChunk));
-                return data.Length;
+                httpClient.Timeout = TimeSpan.FromSeconds(2);
+                _transmittCallback?.Invoke(new EventArgs<DataChunk>(new DataChunk(data, SessionId, true, ApiType)));
+                var resp = httpClient.GetAsync(queryString).GetAwaiter().GetResult();
+                var res = resp.EnsureSuccessStatusCode();
+                if (res.IsSuccessStatusCode)
+                {
+                    // Response.
+                    var response = res.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+                    var responseBytes = resp.EnsureSuccessStatusCode().Content.ReadAsByteArrayAsync().Result;
+                    var receivedDataChunk = new DataChunk(responseBytes, SessionId, false, ApiType);
+                    ReceiveDataCallback?.Invoke(receivedDataChunk, false);
+                    _transmittCallback?.Invoke(new EventArgs<DataChunk>(receivedDataChunk));
+                    return data.Length;
+                }
             }
             return -1;
         }

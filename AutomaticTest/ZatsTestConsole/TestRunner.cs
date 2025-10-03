@@ -56,7 +56,7 @@ namespace ZatsTestConsole
             Tools.StartDebugOutputWorker();
             StorageHeader = new StorageHeader();
             _cmdLineSettings = ZatsUtils.ParseArguments(Environment.GetCommandLineArgs());
-            var consoleOutPut = new ConsoleCustomOutput(_cmdLineSettings.IsLessOutput, _cmdLineSettings.IsOutputColorFormated , _cmdLineSettings.UseStartStopTags);
+            var consoleOutPut = new ConsoleCustomOutput(_cmdLineSettings.IsLessOutput, _cmdLineSettings.IsOutputColorFormated, _cmdLineSettings.UseStartStopTags);
 
             if (_cmdLineSettings.HasHelp)
             {
@@ -219,9 +219,9 @@ namespace ZatsTestConsole
                 _gammaProgrammer = new ProgrammingGammaProvider(ActiveProfile.CommanderAppPath, consoleOutPut.ReportDiagnosticToConsole);
             }
 
-            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole)
+            var tcsPath = Path.GetDirectoryName(_cmdLineSettings.AssemblyFile);
+            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole, tcsPath)
             {
-                CurrentProfile = ActiveProfile,
                 BasePath = _cmdLineSettings.BasePath,
             };
 
@@ -542,7 +542,7 @@ namespace ZatsTestConsole
                         // Fallback
                         if (lrChannels.Length == 0)
                         {
-                            lrChannels = new LongRangeChannels[] { LongRangeChannels.ChannelA };
+                            lrChannels = new LongRangeChannels[] { LongRangeChannels.Undefined };
                         }
 
                         foreach (LongRangeChannels lrChannel in lrChannels)
