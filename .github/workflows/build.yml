@@ -51,7 +51,6 @@ jobs:
       - name: Checkout z-wave-automated-test-system
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           path: 'z-wave-automated-test-system'
           submodules: "recursive"
 
