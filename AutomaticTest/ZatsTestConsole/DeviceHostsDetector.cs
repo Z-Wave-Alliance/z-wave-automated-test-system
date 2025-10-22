@@ -940,7 +940,7 @@ namespace ZatsTestConsole
                         dsk = (ushort)((homeIdRes.HomeId[0] << 8) + homeIdRes.HomeId[1]);
                     }
                 }
-                //Complete pair with existing alpha board or add new.
+                // Complete pair with existing alpha board or add new.
                 if (_alphaBoardDetectorByDSK.ContainsKey(dsk))
                 {
                     var pdhc = _deviceHostClients.FirstOrDefault(x => x.Host.PName == _alphaBoardDetectorByDSK[dsk]);
