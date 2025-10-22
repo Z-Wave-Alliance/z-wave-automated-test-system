@@ -2561,7 +2561,10 @@ namespace Zats.Services
                     {
                         Host.SType = InterfaceTypes.TCP;
                         SClient = sourceAppLayer.CreateClient();
-                        var sds = new SocketDataSource(Host.SName, Host.IsVirtual ? Host.SPort : UdpJLinkDiscoveryService.ADMIN_PORT);
+                        //If Device Host port is not specified (eg, Virtual Device = 'Host.IsVirtual')
+                        //use hardcoded value (specific case: SL JLink Admin port)
+                        var port = Host.SPort != 0 ? Host.SPort : UdpJLinkDiscoveryService.ADMIN_PORT;
+                        var sds = new SocketDataSource(Host.SName, port);
                         SClient.DataSource = sds;
                     }
                     else
