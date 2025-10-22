@@ -922,7 +922,7 @@ namespace ZatsTestConsole
             }
             if (hasSerialApi)
             {
-                //For alpha device: FindInDictionary - detect pairs by DSK to fill deviceHostClient with device pair
+                // For alpha device: FindInDictionary - detect pairs by DSK to fill deviceHostClient with device pair
                 ushort dsk = 0;
                 if (device.ChipType == ZWave.Enums.ChipTypes.ZW050x)
                 {
