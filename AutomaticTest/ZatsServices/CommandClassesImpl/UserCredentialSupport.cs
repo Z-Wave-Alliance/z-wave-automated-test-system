@@ -592,13 +592,24 @@ namespace Zats.Services
             {
                 var credential = UserCredential.CreateCredential(userUniqueId, credentialType, credentialSlot, credentialData, ModifierType.ZWave, srcNode.Id);
 
-                var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == credentialType);
-                if (credentialTypeSettings != null)
+                if (credential.ValidateCredentialData())
                 {
-                    credential.InherritCredentialReadback(credentialTypeSettings.ReadBack);
+                    var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == credentialType);
+                    if (credentialTypeSettings != null)
+                    {
+                        credential.InherritCredentialReadback(credentialTypeSettings.ReadBack);
+                    }
+
+                    resultForSv = HandleAddOrModifyCredential(opType, credential, srcNode, out rpt);
+                }
+                else
+                {
+                    COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_REPORT credentialReport = credential.CreateUserCredentialReport(CredentialReportType.ManufacturerSecurityRules);
+                    rpt = credentialReport;
+
+                    resultForSv = SvResultNames.Failed;
                 }
 
-                resultForSv = HandleAddOrModifyCredential(opType, credential, srcNode, out rpt);
             }
             else if (opType == CredentialSetOperationType.Delete)
             {
@@ -2804,28 +2815,65 @@ namespace Zats.Services
 
         public static UserCredential CreatePinCodeCredential(ushort uuid, ushort slotId, string pin)
         {
-            foreach (char c in pin)
+            var credential = new UserCredential(uuid, CredentialType.PinCode, slotId)
             {
-                if (c < '0' || c > '9')
-                {
-                    throw new ArgumentException("PIN Code MUST contain numbers only");
-                }
+                Data = Tools.GetAsciiBytes(pin)
+            };
+
+            if (credential.ValidatePinCredentialData())
+            { 
+                throw new ArgumentException("PIN Code MUST contain numbers only");
             }
 
-            return new UserCredential(uuid, CredentialType.PinCode, slotId)
-            {
-                Data = Encoding.ASCII.GetBytes(pin)
-            };
+            return credential;
         }
+
+        
 
         public static UserCredential CreatePasswordCredential(ushort uuid, ushort slotId, string password)
         {
-            return new UserCredential(uuid, CredentialType.Password, slotId)
+            var credential = new UserCredential(uuid, CredentialType.Password, slotId)
             {
-                Data = Encoding.BigEndianUnicode.GetBytes(password)
+                Data = Tools.GetUtf16BigEndianBytes(password)
             };
+
+            if (credential.ValidatePasswordCredentialData())
+            {
+                throw new ArgumentException("Passwords MUST be UTF-16 (Big Endian) encoded, which means an even data length.");
+            }
+
+            return credential;
         }
 
+        public bool ValidateCredentialData()
+        {
+            switch (Type)
+            {
+                case CredentialType.PinCode:
+                     return ValidatePinCredentialData();
+                case CredentialType.Password:
+                    return ValidatePasswordCredentialData();
+            }
+            return true;
+        }
+
+        private bool ValidatePinCredentialData()
+        {
+            foreach (byte c in Data)
+            {
+                if (c < '0' || c > '9')
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ValidatePasswordCredentialData()
+        {
+            // since passwords must be UTF-16 (Big Endian) encoded, the length of the data must be even
+            return Data.Length % 2 == 0;
+        }
 
         public void IgnoreCredentialReadback()
         {
@@ -2901,10 +2949,10 @@ namespace Zats.Services
             switch(Type)
             {
                 case CredentialType.PinCode:
-                    return Encoding.ASCII.GetString(Data);
+                    return Tools.GetStringFromAsciiBytes(Data);
 
                 case CredentialType.Password:
-                    return Encoding.BigEndianUnicode.GetString(Data);
+                    return Tools.GetStringFromUtf16BigEndianBytes(Data);
 
                 default:
                     return CommandClassSupportUtils.ByteArrayToString(Data.ToList());
