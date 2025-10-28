@@ -334,22 +334,37 @@ namespace Zats.Services
             {
                 if (userUniqueId == 0)
                 {
-                    // CC:0083.01.05.11.007, CC:0083.01.05.11.009 - delete all users, credentials and schedules
-                    UserCredentialSupportData.UserCredentials.Clear();
-                    UserCredentialSupportData.UserSlots.Clear();
-                    ScheduleEntryLockSupportData?.ScheduleSlots.Clear();
-
-                    // CC:0083.01.05.11.010 - sending User Report to sender and lifeline
-                    userReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT()
+                    if (UserCredentialSupportData.UserSlots.Count > 0)
                     {
-                        userUniqueIdentifier = new byte[] { 0x00, 0x00 },
-                        userReportType = (byte)UserReportType.UsersDeleted,
-                        userModifierType = (byte)ModifierType.DNE,
-                        credentialRule = (byte)UserCredentialRule.Single,
-                    };
+                        // CC:0083.01.05.11.007, CC:0083.01.05.11.009 - delete all users, credentials and schedules
+                        UserCredentialSupportData.UserCredentials.Clear();
+                        UserCredentialSupportData.UserSlots.Clear();
 
-                    rpt = userReport;
-                    lifeLineReport = userReport;
+                        // CC:0083.01.05.11.010 - sending User Report to sender and lifeline
+                        userReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT()
+                        {
+                            userUniqueIdentifier = new byte[] { 0x00, 0x00 },
+                            userReportType = (byte)UserReportType.UsersDeleted,
+                            userModifierType = (byte)ModifierType.DNE,
+                            credentialRule = (byte)UserCredentialRule.Single,
+                        };
+
+                        rpt = userReport;
+                        lifeLineReport = userReport;
+                    }
+                    else
+                    {
+                        userReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT()
+                        {
+                            userUniqueIdentifier = new byte[] { 0x00, 0x00 },
+                            userReportType = (byte)UserReportType.UserUnchanged,
+                            userModifierType = (byte)ModifierType.DNE,
+                            credentialRule = (byte)UserCredentialRule.Single,
+                        };
+
+                        rpt = userReport;
+                    }
+
                 }
                 else if (existingUserSlot != null)
                 {
@@ -644,8 +659,9 @@ namespace Zats.Services
                     });
 
                     // CC:0083.01.0A.11.013 
-                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot);
-                    lifelineReport = rpt;
+                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot,
+                    credentials.Count > 0 ? CredentialReportType.CredentialDeleted : CredentialReportType.CredentialUnchanged);
+                    lifelineReport = credentials.Count > 0 ? rpt : null;
 
                 }
                 else if (userUniqueId != 0 && credentialType == 0 && credentialSlot == 0)
@@ -658,17 +674,21 @@ namespace Zats.Services
                     });
 
                     // CC:0083.01.0A.11.013 
-                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot);
-                    lifelineReport = rpt;
+                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot,
+                    credentials.Count > 0 ? CredentialReportType.CredentialDeleted : CredentialReportType.CredentialUnchanged);
+                    lifelineReport = credentials.Count > 0 ? rpt : null;
                 }
                 else if (userUniqueId == 0 && credentialType == 0 && credentialSlot == 0)
                 {
+                    int numberOfCredentials = UserCredentialSupportData.UserCredentials.Count;
+
                     // Delete ALL (CC:0083.01.0A.11.008)
                     UserCredentialSupportData.UserCredentials.Clear();
 
                     // CC:0083.01.0A.11.010 
-                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot);
-                    lifelineReport = rpt;
+                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot,
+                    numberOfCredentials > 0 ? CredentialReportType.CredentialDeleted : CredentialReportType.CredentialUnchanged);
+                    lifelineReport = numberOfCredentials > 0 ? rpt : null;
 
                 }
                 else if (userUniqueId == 0 && credentialType != 0 && credentialSlot == 0)
@@ -681,8 +701,9 @@ namespace Zats.Services
                     });
 
                     // CC:0083.01.0A.11.013 
-                    rpt = SetupDeleteCredentialReport(credentialSlot, credentialType, credentialSlot);
-                    lifelineReport = rpt;
+                    rpt = SetupDeleteCredentialReport(userUniqueId, credentialType, credentialSlot,
+                    credentials.Count > 0 ? CredentialReportType.CredentialDeleted : CredentialReportType.CredentialUnchanged);
+                    lifelineReport = credentials.Count > 0 ? rpt : null;
                 }
             }
 
