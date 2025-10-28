@@ -658,7 +658,7 @@ namespace Zats.Services
 
                     MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
                     if ((requestedScaleData != null)                                                // invalid scale request -> ignore command
-                     && MeterSupportData.IsAccumulating(requestedScaleData.ScaleNumber) == false    // ignore non accumulating scales
+                     && MeterSupportData.IsAccumulating(requestedScaleData.ScaleNumber)             // ignore non accumulating scales
                      && requestedMeterType == MeterSupportData.MeterType                            // invalid meter type request -> ignore command
                      && (requestedRateType <= 0x02)                                                 // invalid rate type request -> ignore command
                      && ((requestedRateType & (byte) MeterSupportData.SupportedRateTypes) != 0 || requestedRateType == 0x00))
@@ -701,10 +701,11 @@ namespace Zats.Services
                         return SvResultNames.Successful;
                     }
                 }
+                return SvResultNames.Failed;
             }
             CommandClassSupportUtils.ReportAddLog(MeterSupportData.LogLevel, 
                         "{0} CC @ {1}: MeterReset ignored.", CommandClassShortName, EndPointName);
-            return SvResultNames.Failed;
+            return SvResultNames.Undefined;
         }
 
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
