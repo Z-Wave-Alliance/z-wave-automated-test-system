@@ -23,6 +23,24 @@ namespace Zats.Services
 
     public static class RoleTypes_Extensions
     {
+        public static string GetName(this RoleTypes roleType)
+        {
+            if (!roleType.IsDefinedInZWaveEnums())
+            {
+                return ZWave.Enums.RoleTypes.None.GetName();
+            }
+            return ((ZWave.Enums.RoleTypes)roleType).GetName();
+        }
+
+        public static string GetAbbreviation(this RoleTypes roleType)
+        {
+            if (!roleType.IsDefinedInZWaveEnums())
+            {
+                return ZWave.Enums.RoleTypes.None.GetAbbreviation();
+            }
+            return ((ZWave.Enums.RoleTypes)roleType).GetAbbreviation();
+        }
+
         public static bool IsController(this RoleTypes roleType)
         {
             if (!roleType.IsDefinedInZWaveEnums())
