@@ -6,7 +6,7 @@ using ZWave.Enums;
 
 namespace Zats.Services
 {
-    public enum RoleTypes
+    public enum RoleTypes : byte
     {
         None = ZWave.Enums.RoleTypes.None,
         CONTROLLER_CENTRAL_STATIC = ZWave.Enums.RoleTypes.CONTROLLER_CENTRAL_STATIC,
@@ -39,6 +39,15 @@ namespace Zats.Services
                 return false;
             }
             return ((ZWave.Enums.RoleTypes)roleType).IsStaticController();
+        }
+
+        public static bool IsCsc(this RoleTypes roleType)
+        {
+            if (!roleType.IsDefinedInZWaveEnums())
+            {
+                return false;
+            }
+            return ((ZWave.Enums.RoleTypes)roleType).IsCsc();
         }
 
         public static bool IsEndNode(this RoleTypes roleType)
