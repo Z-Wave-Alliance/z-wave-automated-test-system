@@ -61,7 +61,7 @@ namespace Zats.Services
 
         private static bool IsDefinedInZWaveEnums(this RoleTypes roleType)
         {
-            return Enum.IsDefined(typeof(ZWave.Enums.RoleTypes), roleType);
+            return Enum.IsDefined(typeof(ZWave.Enums.RoleTypes), (byte)roleType);
         }
     }
 }
