@@ -465,6 +465,8 @@ namespace Zats.Services
             Controller controller = (Controller)DeviceManager.GetDevice(controllerNumber);
             DeviceManager.DisableSmartStart(controllerNumber);
             ActionToken addRemoveToken = controller.RemoveNodeFromNetwork((ZWave.Enums.Modes)removeModeFx, timeoutMs, (x) => DeviceManager.EnableSmartStart(controllerNumber));
+            controller.WaitNodeStatusSignal(ZWave.BasicApplication.Enums.NodeStatuses.LearnReady, 1000);
+            Thread.Sleep(1000); //make sure controller is in learn mode
             SetLearnMode(nodeNumber, learnMode, timeoutMs);
             AddRemoveNodeResult res = (AddRemoveNodeResult)addRemoveToken.WaitCompletedSignal();
             return new BasicActionResult.RemoveNode(res);
