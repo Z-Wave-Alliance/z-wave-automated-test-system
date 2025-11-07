@@ -818,8 +818,8 @@ namespace Zats.Services
             };
             var zwpInfoSuppData = new ZWavePlusInfoSupportData()
             {
-                RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                NodeType = ZPINodeTypes.ZWavePlusNode,
+                RoleType = RoleTypes.CONTROLLER_CENTRAL_STATIC,
+                NodeType = NodeTypes.ZWAVEPLUS_NODE,
                 InstallerIconType = new byte[] { 0x01, 0x00 },
                 UserIconType = new byte[] { 0x01, 0x00 }
             };
