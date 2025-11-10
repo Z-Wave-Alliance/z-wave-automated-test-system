@@ -339,21 +339,8 @@ namespace Zats.Services
             var zWavePlusInfoSupportData = new ZWavePlusInfoSupportData()
             {
                 ZWaveVersion = 0x02,
-                // 0x00: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_CENTRAL_STATIC
-                // 0x01: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_SUB_STATIC
-                // 0x02: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_PORTABLE
-                // 0x03: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_PORTABLE_REPORTING
-                // 0x04: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_PORTABLE
-                // 0x05: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_ALWAYS_ON
-                // 0x06: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_SLEEPING_REPORTING
-                // 0x07: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_SLEEPING_LISTENING
-                RoleType = ZPIRoleTypes.EndNodeAlwaysOn,
-                // 0x00: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_NODE
-                // 0x01: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_ROUTER
-                // 0x02: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_GATEWAY
-                // 0x03: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_CLIENT_IP_NODE
-                // 0x04: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_CLIENT_ZWAVE_NODE
-                NodeType = ZPINodeTypes.ZWavePlusNode,
+                RoleType = RoleTypes.END_NODE_ALWAYS_ON,
+                NodeType = ZWave.Enums.NodeTypes.ZWAVEPLUS_NODE,
                 InstallerIconType = new byte[] { 0x07, 0x02 },
                 UserIconType = new byte[] { 0x07, 0x02 }
             };
@@ -365,21 +352,8 @@ namespace Zats.Services
             var zWavePlusInfoSupportData = new ZWavePlusInfoSupportData()
             {
                 ZWaveVersion = 0x01,
-                // 0x00: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_CENTRAL_STATIC
-                // 0x01: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_SUB_STATIC
-                // 0x02: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_PORTABLE
-                // 0x03: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_CONTROLLER_PORTABLE_REPORTING
-                // 0x04: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_PORTABLE
-                // 0x05: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_ALWAYS_ON
-                // 0x06: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_SLEEPING_REPORTING
-                // 0x07: ZWAVEPLUS_INFO_REPORT_ROLE_TYPE_END_NODE_SLEEPING_LISTENING
-                RoleType = ZPIRoleTypes.EndNodeSleepingReporting,
-                // 0x00: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_NODE
-                // 0x01: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_ROUTER
-                // 0x02: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_GATEWAY
-                // 0x03: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_CLIENT_IP_NODE
-                // 0x04: ZWAVEPLUS_INFO_REPORT_NODE_TYPE_ZWAVEPLUS_FOR_IP_CLIENT_ZWAVE_NODE
-                NodeType = ZPINodeTypes.ZWavePlusNode,
+                RoleType = RoleTypes.END_NODE_SLEEPING_REPORTING,
+                NodeType = ZWave.Enums.NodeTypes.ZWAVEPLUS_NODE,
                 InstallerIconType = new byte[] { 0x0C, 0x05 },
                 UserIconType = new byte[] { 0x0C, 0x05 }
             };

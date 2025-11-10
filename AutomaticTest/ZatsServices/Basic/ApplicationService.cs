@@ -818,8 +818,8 @@ namespace Zats.Services
             };
             var zwpInfoSuppData = new ZWavePlusInfoSupportData()
             {
-                RoleType = ZPIRoleTypes.ControllerCentralStatic,
-                NodeType = ZPINodeTypes.ZWavePlusNode,
+                RoleType = RoleTypes.CONTROLLER_CENTRAL_STATIC,
+                NodeType = NodeTypes.ZWAVEPLUS_NODE,
                 InstallerIconType = new byte[] { 0x01, 0x00 },
                 UserIconType = new byte[] { 0x01, 0x00 }
             };
@@ -966,7 +966,8 @@ namespace Zats.Services
             bool sleepingDevice = roleType == RoleTypes.CONTROLLER_PORTABLE ||
                                     roleType == RoleTypes.CONTROLLER_PORTABLE_REPORTING ||
                                     roleType == RoleTypes.END_NODE_PORTABLE ||
-                                    roleType == RoleTypes.END_NODE_SLEEPING_REPORTING;
+                                    roleType == RoleTypes.END_NODE_SLEEPING_REPORTING ||
+                                    roleType == RoleTypes.END_NODE_WAKE_ON_EVENT;
 
             if (sleepingDevice)
             {

@@ -5,7 +5,9 @@ using System.ComponentModel;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
+using ZWave.CommandClasses;
 using ZWave.Devices;
+using ZWave.Enums;
 
 namespace Zats.Services
 {
@@ -41,7 +43,7 @@ namespace Zats.Services
                 var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
-                var scheme = (ZWave.Enums.SecuritySchemes)ReceivedAchData.SecurityScheme;
+                ZWave.Enums.SecuritySchemes scheme = ReceivedAchData.SecurityScheme;
                 bool isHandlingAllowed = IsHandlingAllowed(Network, command, scheme, Secure);
 
                 if (isHandlingAllowed && command != null && command.Length > 1 && ZWavePlusInfoSupportData != null)
@@ -69,8 +71,8 @@ namespace Zats.Services
             rpt = new COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_REPORT()
             {
                 zWaveVersion = ZWavePlusInfoSupportData.ZWaveVersion,
-                roleType = (byte) ZWavePlusInfoSupportData.RoleType,
-                nodeType = (byte) ZWavePlusInfoSupportData.NodeType,
+                roleType = (byte)ZWavePlusInfoSupportData.RoleType,
+                nodeType = (byte)ZWavePlusInfoSupportData.NodeType,
                 installerIconType = ZWavePlusInfoSupportData.InstallerIconType,
                 userIconType = ZWavePlusInfoSupportData.UserIconType
             };
@@ -115,39 +117,31 @@ namespace Zats.Services
     public class ZWavePlusInfoSupportData : CommandClassSupportData
     {
         [ParameterSeparator(1, "Z-Wave Plus Info Report")]
-        [XmlDataParameter(1, 0x5E, 0x02, new byte[] { 0x00 }, EditType.Config)]
+        [XmlDataParameter(1, COMMAND_CLASS_ZWAVEPLUS_INFO.ID, COMMAND_CLASS_ZWAVEPLUS_INFO.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x00 }, EditType.Config)]
         public byte ZWaveVersion { get; set; } = 0x02;
 
-        [XmlDataParameter(1, 0x5E, 0x02, new byte[] { 0x01 }, EditType.Config)]
-        public ZPIRoleTypes RoleType { get; set; } = ZPIRoleTypes.EndNodeAlwaysOn;
+        [XmlDataParameter(1, COMMAND_CLASS_ZWAVEPLUS_INFO.ID, COMMAND_CLASS_ZWAVEPLUS_INFO.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x01 }, EditType.Config)]
+        public RoleTypes RoleType { get; set; } = RoleTypes.END_NODE_ALWAYS_ON;
 
-        [XmlDataParameter(1, 0x5E, 0x02, new byte[] { 0x02 }, EditType.Config)]
-        public ZPINodeTypes NodeType { get; set; } = ZPINodeTypes.ZWavePlusNode;
+        [XmlDataParameter(1, 1, COMMAND_CLASS_ZWAVEPLUS_INFO.ID, COMMAND_CLASS_ZWAVEPLUS_INFO.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x02 }, EditType.Config)]
+        public ZPIV1NodeTypes V1NodeType { get; set; } = ZPIV1NodeTypes.ZWAVEPLUS_NODE;
 
-        [XmlDataParameter(2, 0x5E, 0x02, new byte[] { 0x03 }, EditType.Config)]
+        [XmlDataParameter(2, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x02 }, EditType.Config)]
+        public NodeTypes NodeType { get; set; } = NodeTypes.ZWAVEPLUS_NODE;
+
+        [XmlDataParameter(2, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x03 }, EditType.Config)]
         public byte[] InstallerIconType { get; set; } = { 0x07, 0x00 };
 
-        [XmlDataParameter(2, 0x5E, 0x02, new byte[] { 0x04 }, EditType.Config)]
+        [XmlDataParameter(2, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID, COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_REPORT.ID, new byte[] { 0x04 }, EditType.Config)]
         public byte[] UserIconType { get; set; } = { 0x07, 0x00 };
     }
 
-    public enum ZPIRoleTypes : byte
+    public enum ZPIV1NodeTypes : byte
     {
-        ControllerCentralStatic     = 0x00,
-        ControllerSubStatic         = 0x01,
-        ControllerPortable          = 0x02,
-        ControllerPortableReporting = 0x03,
-        EndNodePortable             = 0x04,
-        EndNodeAlwaysOn             = 0x05,
-        EndNodeSleepingReporting    = 0x06,
-        EndNodeSleepingListening    = 0x07,
-    }
-    public enum ZPINodeTypes : byte
-    {
-        ZWavePlusNode                 = 0x00,
-        ZWavePlusForIpRouter          = 0x01,
-        ZWavePlusForIpGateway         = 0x02,
-        ZWavePlusForIpClientIpNode    = 0x03,
-        ZWavePlusForIpClientZWaveNode = 0x04,
+        ZWAVEPLUS_NODE                      = NodeTypes.ZWAVEPLUS_NODE, // 0x00
+        ZWAVEPLUS_FOR_IP_ROUTER             = 0x01, // obsolete in V2
+        ZWAVEPLUS_FOR_IP_GATEWAY            = NodeTypes.ZWAVEPLUS_FOR_IP_GATEWAY, // 0x02
+        ZWAVEPLUS_FOR_IP_CLIENT_IP_NODE     = 0x03, // obsolete in V2
+        ZWAVEPLUS_FOR_IP_CLIENT_ZWAVE_NODE  = 0x04, // obsolete in V2
     }
 }
