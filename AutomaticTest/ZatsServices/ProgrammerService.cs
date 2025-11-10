@@ -51,50 +51,61 @@ namespace Zats.Services
             return DeviceManager.GetSecurityStatusInfo(deviceNumber);
         }
 
-        private BootloaderPath GetOTABootloaderPath(Alias deviceNumber, params string[] regexFilters)
+        private BootloaderPath GetOTABootloaderPath(Alias deviceNumber, string specificBootloaderName = null, params string[] regexFilters)
         {
             var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             var cs = deviceClient.Host.ChipSeries.Replace("xG28_", "").Replace("ZGM230S_", "");
-            var bootLoaderSearchPatern = new[]
-            {
-                $"*ota-*{cs}*.s37",
-                "OTA-bootloader-fg13-combined.s37"
-            };
+            // TODO: move to FileSystemManager
+            var bootloaderSearchPattern = !string.IsNullOrEmpty(specificBootloaderName) ?
+                new[] { $"*{specificBootloaderName}*{cs}*.s37" } :
+                new[]
+                {
+                    $"*ota-*{cs}*.s37",
+                    "OTA-bootloader-fg13-combined.s37"
+                };
 
-            return DeviceManager.FileSystemManager.
-                GetBootloaderPath(deviceClient, bootLoaderSearchPatern, regexFilters);
+            return DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, bootloaderSearchPattern, regexFilters);
         }
 
-        private BootloaderPath GetOTWBootloaderPath(Alias deviceNumber, bool isSerialApiController, params string[] regexFilters)
+        private BootloaderPath GetOTWBootloaderPath(Alias deviceNumber, string specificBootloaderName = null, params string[] regexFilters)
         {
             BootloaderPath ret = null;
             var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            string[] bl_names;
-            if (deviceClient.Host.ChipSeries.Contains("ZG14"))
+            // TODO: move to FileSystemManager
+            string[] bootloaderSearchPattern;
+            var brdId = deviceClient.Host.ChipSeries.Replace("xG28_", "").Replace("ZGM230S_", "");
+            if (!string.IsNullOrEmpty(specificBootloaderName))
             {
-                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg14-combined.s37" };
+                bootloaderSearchPattern = new[] { $"*{specificBootloaderName}*{brdId}*.s37" };
             }
-            else if (deviceClient.Host.ChipSeries.Contains("xG28"))
+            else if (deviceClient.Host.ChipSeries.Contains("ZG14") || deviceClient.Host.ChipSeries.Contains("xG28"))
             {
-                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries.Replace("xG28_", "")}*.s37", "OTW-bootloader-fg14-combined.s37" };
-            }
-            else if (isSerialApiController && !deviceClient.Host.ChipSeries.Contains("ZGM13") && !deviceClient.Host.ChipSeries.Contains("ZG13") && !deviceClient.Host.ChipSeries.Contains("RZ13"))
-            {
-                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" };
+                bootloaderSearchPattern = new[] { $"otw-*{brdId}*.s37", "OTW-bootloader-fg14-combined.s37" };
             }
             else
             {
-                bl_names = new[] { $"otw-*{deviceClient.Host.ChipSeries}*.s37", "OTW-bootloader-fg13-combined.s37" };
+                bootloaderSearchPattern = new[] { $"otw-*{brdId}*.s37", "OTW-bootloader-fg13-combined.s37" };
             }
-            ret = DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, bl_names, regexFilters);
+
+            ret = DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, bootloaderSearchPattern, regexFilters);
             return ret;
         }
 
-        private BootloaderPath GetBootloaderKeysPath(Alias deviceNumber, bool isSerialApiController, params string[] regexFilters)
+        private BootloaderPath GetBootloaderPath(Alias deviceNumber, bool isOTW = false, string specificBootloaderName = null, params string[] regexFilters)
         {
             BootloaderPath ret = null;
             var deviceClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            ret = DeviceManager.FileSystemManager.GetBootloaderPath(deviceClient, null, regexFilters);
+            var bootloader = isOTW ?
+                GetOTWBootloaderPath(deviceNumber, specificBootloaderName, regexFilters) :
+                GetOTABootloaderPath(deviceNumber, specificBootloaderName, regexFilters);
+
+            if (!string.IsNullOrWhiteSpace(specificBootloaderName) &&
+                string.IsNullOrEmpty(bootloader.Bootloader))
+            {
+                throw new ArgumentException($"Specific Bootloader not found for the next filter: {specificBootloaderName}");
+            }
+
+            ret = bootloader;
             return ret;
         }
 
@@ -111,50 +122,57 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetOTWBootloaderPath(deviceNumber, true);
+            var bootloader = GetOTWBootloaderPath(deviceNumber);
             ret = DeviceManager.ProgramBootLoader(deviceHostClient, bootloader);
             return ret;
         }
 
+        //TODO: Rename to ProgramSample and remove duplicatations 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
         public int ProgramSampleWithBootloaderKeys(Alias deviceNumber, string filePath)
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var bootloader = GetBootloaderKeysPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
+            var bootloader = GetBootloaderPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
             ret = DeviceManager.ProgramSampleWithBootLoaderKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
 
-        public int ProgramSampleWithOTABootloaderImageAndKeys(Alias deviceNumber, string filePath)
+        //TODO: Rename to ProgramSample and remove duplicatations 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
+        public int ProgramSampleWithOTABootloaderImageAndKeys(Alias deviceNumber, string filePath, bool isOTW = false, string specificBootloaderName = null)
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             var tempBasePath = DeviceManager.FileSystemManager.BasePath;
             var srcRoot = Directory.GetParent(filePath);
+
             DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
-            var bootloader = GetOTABootloaderPath(deviceNumber);
+            var bootloader = GetBootloaderPath(deviceNumber, isOTW, specificBootloaderName);
             DeviceManager.FileSystemManager.BasePath = tempBasePath;
+
             ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
 
-        public int ProgramSampleWithOTWBootloaderImageAndKeys(Alias deviceNumber, string filePath)
+        //TODO: remove duplicate (see: refactor)
+        public int ProgramSampleWithOTWBootloaderImageAndKeys(Alias deviceNumber, string filePath, bool isOTW = false, string specificBootloaderName = null)
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             var tempBasePath = DeviceManager.FileSystemManager.BasePath;
             var srcRoot = Directory.GetParent(filePath);
+
             DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
-            var bootloader = GetOTWBootloaderPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
+            var bootloader = GetBootloaderPath(deviceNumber, isOTW, specificBootloaderName);
             DeviceManager.FileSystemManager.BasePath = tempBasePath;
+
             ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
 
-        private void UpdateDeviceHostClientAfterProgramSample(Alias deviceNumber, DeviceHostClient deviceHostClient)
+        private void UpdateDeviceHostClientAfterProgramSample(Alias deviceNumber, DeviceHostClient deviceHostClient, string bootloaderFilter = null)
         {
             System.Threading.Thread.Sleep(1000);
             DeviceManager.LoadDSK(deviceHostClient);

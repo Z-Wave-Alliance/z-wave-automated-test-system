@@ -45,11 +45,11 @@ namespace Zats.Services
             if (files != null && files.Length > 0)
             {
                 var file = files.OrderByDescending(x => x.CreationTime).First();
-                FileStream fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
-                XmlReader reader = XmlReader.Create(fs);
-                ret = (FilePatternDefinition)serializer.Deserialize(reader);
-                fs.Close();
-
+                using (FileStream fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read))
+                using (XmlReader reader = XmlReader.Create(fs))
+                {
+                    ret = (FilePatternDefinition)serializer.Deserialize(reader);
+                }
             }
             return ret;
         }
