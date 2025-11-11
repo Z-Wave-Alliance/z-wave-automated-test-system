@@ -176,7 +176,7 @@ namespace Zats.Services
                             switch (lib)
                             {
                                 case Libraries.RailTest: //from ZATS\Resources\railtest
-                                    if ((new[] { ChipSeries.ZG23_BRD4204C, ChipSeries.ZG23_BRD4204D, ChipSeries.ZG23_BRD4210A })
+                                    if ((new[] { ChipSeries.ZG23_BRD4204C, ChipSeries.ZG23_BRD4204C, ChipSeries.ZG23_BRD4204D, ChipSeries.ZG23_BRD4210A })
                                         .Select(x => x.ToString()).Contains(chipSeries))
                                     {
                                         rtResourceName = "rt823B.hex";
@@ -431,6 +431,7 @@ namespace Zats.Services
             var expectedFileName = string.Empty;
             switch (chipSeries)
             {
+                case ChipSeries.ZG23_BRD4204A:
                 case ChipSeries.ZG23_BRD4204C:
                 case ChipSeries.ZG23_BRD4204D:
                 case ChipSeries.ZG23_BRD4210A:

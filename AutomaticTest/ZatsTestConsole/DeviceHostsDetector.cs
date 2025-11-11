@@ -185,12 +185,14 @@ namespace ZatsTestConsole
                     {
                         var comparer = new OrderComparer<string>(new[]
                         {
-                                ChipSeries.ZGM130S_BRD4207A,
-                                ChipSeries.ZGM130S_BRD4202A,
-                                ChipSeries.ZGM230S_BRD4205B,
-                                ChipSeries.ZG23_BRD4204D,
-                                ChipSeries.ZG23_BRD4204C,
-                                ChipSeries.ZGM230S_BRD4205A,
+                            ChipSeries.ZGM130S_BRD4207A,
+                            ChipSeries.ZGM130S_BRD4202A,
+                            ChipSeries.ZGM230S_BRD4205B,
+                            ChipSeries.ZG23_BRD4204D,
+                            ChipSeries.ZG23_BRD4204C,
+                            ChipSeries.ZG23_BRD4204A,
+                            ChipSeries.ZG23_BRD4210A,
+                            ChipSeries.ZGM230S_BRD4205A,
                             }.Select(x => x.ToString()));
                         znifferDhc = _deviceHostClients.Where(x => x.Host.SType == InterfaceTypes.TCP && x.Host.ChipSeries != null).OrderBy(x => x.HasPName).OrderBy(x => x.Host.ChipSeries, comparer).FirstOrDefault();
                         if (znifferDhc != null)
@@ -802,8 +804,10 @@ namespace ZatsTestConsole
                 case ChipSeries.ZGM230S_BRD4205A:
                 case ChipSeries.ZGM230S_BRD4205B:
                 case ChipSeries.ZGM230_BRD2603A:
+                case ChipSeries.ZG23_BRD4204A:
                 case ChipSeries.ZG23_BRD4204C:
                 case ChipSeries.ZG23_BRD4204D:
+                case ChipSeries.ZG23_BRD4210A:
                     if ((ledMask & 0x01) > 0)
                     {
                         deviceG.Send($"00 E6 01 00 06 {stateStr}".GetBytes()); Thread.Sleep(100);
@@ -853,8 +857,10 @@ namespace ZatsTestConsole
                 case ChipSeries.ZGM230S_BRD4205A:
                 case ChipSeries.ZGM230S_BRD4205B:
                 case ChipSeries.ZGM230_BRD2603A:
+                case ChipSeries.ZG23_BRD4204A:
                 case ChipSeries.ZG23_BRD4204C:
                 case ChipSeries.ZG23_BRD4204D:
+                case ChipSeries.ZG23_BRD4210A:
                     if ((ledMask & 0x01) > 0)
                     {
                         deviceG.Send("00 E6 05 00 06".GetBytes()); Thread.Sleep(100);

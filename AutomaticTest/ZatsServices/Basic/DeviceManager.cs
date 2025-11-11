@@ -43,17 +43,18 @@ namespace Zats.Services
         public bool IsSkipCheckPortExists { get; set; }
         static public readonly string[] SpecificChips = new[] { "ZGM13", "ZG13", "RZ13", "ZG14" };
 
-        private readonly List<ChipSeries> ChipSeriesWithControllerPriority =
-            new List<ChipSeries>
+        private readonly List<ChipSeries> ChipSeriesWithControllerPriority = new List<ChipSeries>
             {
                 ChipSeries.ZG14_BRD4201A,
                 ChipSeries.ZG14_BRD4206A,
                 ChipSeries.ZG14_BRD4208A,
+                ChipSeries.ZG23_BRD4204A,
                 ChipSeries.ZG23_BRD4204C,
-                ChipSeries.ZG23_BRD4204D };
+                ChipSeries.ZG23_BRD4204D,
+                ChipSeries.ZG23_BRD4210A
+            };
 
-        private readonly List<ChipSeries> ChipSeriesWithSampleAppPriority =
-             new List<ChipSeries>
+        private readonly List<ChipSeries> ChipSeriesWithSampleAppPriority = new List<ChipSeries>
              {
                  ChipSeries.ZG13L_BRD4201C,
                  ChipSeries.RZ13_BRD4201B,
@@ -262,8 +263,10 @@ namespace Zats.Services
         private ChipSeries[] _ZW080xList = new[]
         {
             ChipSeries.ZW080x,
+            ChipSeries.ZG23_BRD4204A,
             ChipSeries.ZG23_BRD4204C,
             ChipSeries.ZG23_BRD4204D,
+            ChipSeries.ZG23_BRD4210A,
             ChipSeries.ZGM230S_BRD4205A,
             ChipSeries.ZGM230S_BRD4205B,
             ChipSeries.ZGM230_BRD2603A,
@@ -780,41 +783,11 @@ namespace Zats.Services
                 }
                 else if (rcs.Key == ChipSeries.ZW080x)
                 {
-                    list = new[]
-                    {
-                        ChipSeries.ZW080x,
-                        ChipSeries.ZG23_BRD4204C,
-                        ChipSeries.ZG23_BRD4204D,
-                        ChipSeries.ZGM230S_BRD4205A,
-                        ChipSeries.ZGM230S_BRD4205B,
-                        ChipSeries.ZGM230_BRD2603A,
-                        ChipSeries.ZG23_BRD4210A,
-                        ChipSeries.xG28_BRD4400A,
-                        ChipSeries.xG28_BRD4401A,
-                        ChipSeries.xG28_BRD4400B,
-                        ChipSeries.xG28_BRD4401B,
-                        ChipSeries.xG28_BRD4400C,
-                        ChipSeries.xG28_BRD4401C,
-                        ChipSeries.xG28_BRD2705A,
-                    }.Select(x => x.ToString()).ToArray();
+                    list = _ZW080xList.Select(x => x.ToString()).ToArray();
                 }
                 else if (rcs.Key == ChipSeries.ZW070x)
                 {
-                    list = new[]
-                    {
-                        ChipSeries.ZW070x,
-                        ChipSeries.ZG14_BRD4201A,
-                        ChipSeries.ZG14_BRD4206A,
-                        ChipSeries.ZG14_BRD4208A,
-                        ChipSeries.ZGM130S_BRD4200A,
-                        ChipSeries.ZGM130S_BRD4202A,
-                        ChipSeries.ZGM130S_BRD4207A,
-                        ChipSeries.ZG13L_BRD4201C,
-                        ChipSeries.RZ13_BRD4201B,
-                        ChipSeries.RZ13_BRD4203A,
-                        ChipSeries.ZG13S_BRD4201D,
-                        ChipSeries.RZ13_BRD4209A
-                    }.Select(x => x.ToString()).ToArray();
+                    list = _ZW070xList.Select(x => x.ToString()).ToArray();
                 }
                 else if (rcs.Key == ChipSeries.ZW0713)
                 {
@@ -1985,7 +1958,8 @@ namespace Zats.Services
         {
             if (required == ChipSeries.ZW080x)
             {
-                if (available == ChipSeries.ZG23_BRD4204C.ToString()
+                if (available == ChipSeries.ZG23_BRD4204A.ToString()
+                    || available == ChipSeries.ZG23_BRD4204C.ToString()
                     || available == ChipSeries.ZG23_BRD4204D.ToString()
                     || available == ChipSeries.ZGM230S_BRD4205A.ToString()
                     || available == ChipSeries.ZGM230S_BRD4205B.ToString()

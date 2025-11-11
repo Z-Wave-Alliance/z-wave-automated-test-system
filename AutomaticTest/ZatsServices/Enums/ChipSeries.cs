@@ -53,6 +53,8 @@ namespace Zats.Services
         RZ13_BRD4209A = ZWave.Enums.ChipTypes.RZ13_BRD4209A,
 
         [Description("EFR32ZG23 868-915 MHz 14 dBm Radio Board")]
+        ZG23_BRD4204A = ZWave.Enums.ChipTypes.ZG23_BRD4204A,
+        [Description("EFR32ZG23 868-915 MHz 14 dBm Radio Board")]
         ZG23_BRD4204C = ZWave.Enums.ChipTypes.ZG23_BRD4204C,
         [Description("EFR32ZG23 868-915 MHz 14 dBm Radio Board")]
         ZG23_BRD4204D = ZWave.Enums.ChipTypes.ZG23_BRD4204D,
