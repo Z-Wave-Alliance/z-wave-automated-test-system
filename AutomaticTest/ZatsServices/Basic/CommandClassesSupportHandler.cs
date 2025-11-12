@@ -528,7 +528,6 @@ namespace Zats.Services
         {
             var meterSupportData = new MeterSupportData() {
                 MeterType = MeterTypeNames.Electric,
-                DefaultScale = 0x00,    // 0x00 (internal default) ... 0x03 (Spec Requirement), according to the supported Meter Type
 
                 // V2+ Supported Report
                 MeterResetSupported = true,

@@ -319,7 +319,6 @@ namespace Zats.Services
             {
                 MeterType = MeterTypeNames.Electric,
                 MeterResetSupported = true,
-                DefaultScale = 0x00,
                 SupportedRateTypes = RateTypeNames.Import
             };
 

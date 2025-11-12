@@ -113,12 +113,12 @@ namespace Zats.Services
 
         private byte[] PrepareMeterReportV1(bool updatePreviousValueAndDeltaTime)
         {
-            ScaleNames requestedScaleNumber = MeterSupportData.DefaultScale;
-            MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
+            MeterValue requestedScaleData = MeterSupportData.MeterValues.FirstOrDefault();
+
             if (requestedScaleData != null)
             {
                 COMMAND_CLASS_METER.METER_REPORT rpt = new COMMAND_CLASS_METER.METER_REPORT();
-                byte reportedScaleIndex = (byte) MeterSupportData.DefaultScale;
+                byte reportedScaleIndex = (byte)requestedScaleData.ScaleNumber;
                 byte reportedSize = requestedScaleData.SizeConsuming;
                 byte reportedPrecision = requestedScaleData.PrecisionConsuming;
                 double reportedValue = requestedScaleData.ValueConsuming;
@@ -138,11 +138,13 @@ namespace Zats.Services
         }
         private byte[] PrepareMeterReportV2(ScaleNames requestedScaleNumber, bool updatePreviousValueAndDeltaTime)
         {
-            if (requestedScaleNumber == 0)
-            {
-                requestedScaleNumber = MeterSupportData.DefaultScale;
-            }
             MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
+
+            if (requestedScaleNumber == 0 && requestedScaleData == null)
+            {
+                requestedScaleData = MeterSupportData.MeterValues.FirstOrDefault();
+            }
+
             if (requestedScaleData != null)
             {
                 COMMAND_CLASS_METER_V2.METER_REPORT rpt = new COMMAND_CLASS_METER_V2.METER_REPORT();
@@ -205,11 +207,13 @@ namespace Zats.Services
         }
         private byte[] PrepareMeterReportV3(ScaleNames requestedScaleNumber, bool updatePreviousValueAndDeltaTime)
         {
-            if (requestedScaleNumber == 0)
-            {
-                requestedScaleNumber = MeterSupportData.DefaultScale;
-            }
             MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
+
+            if (requestedScaleNumber == 0 && requestedScaleData == null)
+            {
+                requestedScaleData = MeterSupportData.MeterValues.FirstOrDefault();
+            }
+
             if (requestedScaleData != null)
             {
                 COMMAND_CLASS_METER_V3.METER_REPORT rpt = new COMMAND_CLASS_METER_V3.METER_REPORT();
@@ -273,14 +277,12 @@ namespace Zats.Services
         }
         private byte[] PrepareMeterReportV4(ScaleNames requestedScaleNumber, byte requestedRateType, bool updatePreviousValueAndDeltaTime)
         {
-            if (requestedScaleNumber == 0)
-            {
-                requestedScaleNumber = MeterSupportData.DefaultScale;
-            }
             MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
 
-            //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: MeterGet V4+ received. rateType: {2}, scale: {3}",
-            //            CommandClassShortName, EndPointName, requestedRateType, requestedScaleNumber);
+            if (requestedScaleNumber == 0 && requestedScaleData == null)
+            {
+                requestedScaleData = MeterSupportData.MeterValues.FirstOrDefault();
+            }
 
             if ((requestedScaleData != null)    // invalid scale request -> ignore command
              && (requestedRateType <= 0x02)     // invalid rate type request -> ignore command
@@ -751,11 +753,9 @@ namespace Zats.Services
                     MeterSupportData.SimulationTickLogSec = newData.SimulationTickLogSec;
                 }
 
-                if (MeterSupportData.DefaultScale != newData.DefaultScale
-                 || MeterSupportData.MeterResetSupported != newData.MeterResetSupported
+                if (MeterSupportData.MeterResetSupported != newData.MeterResetSupported
                  || MeterSupportData.SupportedRateTypes != newData.SupportedRateTypes)
                 {
-                    MeterSupportData.DefaultScale = newData.DefaultScale;
                     MeterSupportData.MeterResetSupported = newData.MeterResetSupported;
                     MeterSupportData.SupportedRateTypes = newData.SupportedRateTypes;
                     supportedReportRequired = true;
@@ -869,7 +869,6 @@ namespace Zats.Services
         public uint SimulationTickLogSec { get; set; } = 10;    // Logging each SimulationTickLogSec seconds
 
         public MeterTypeNames MeterType { get; set; } = MeterTypeNames.Electric; // Set default to Electric Meter so EDE shows input fields right away, CTT TCs should set this explicitely
-        public ScaleNames DefaultScale { get; set; } = 0x00;      // 0x00 ... 0x03 (Spec Requirement) according to the supported Meter Type
 
         // V2+ Supported Report
         [CustomDataParameter(2, "Meter Reset Supported", UiControl.CheckBox, InputType.Boolean, EditType.Config)]
