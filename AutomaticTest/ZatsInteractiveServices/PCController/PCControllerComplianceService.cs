@@ -32,6 +32,11 @@ namespace Zats.Services
             throw new NotImplementedException();
         }
 
+        public BasicResult.AssignReturnRoute AssignReturnRoute(Alias controllerNumber, Node srcNode, Node destNode)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte FirmwareUpdateV2(Alias deviceNumber, Node nodeid, string filePath)
         {
             throw new NotImplementedException();

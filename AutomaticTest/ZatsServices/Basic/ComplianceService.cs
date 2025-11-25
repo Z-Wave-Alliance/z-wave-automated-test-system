@@ -486,9 +486,14 @@ namespace Zats.Services
 
         public BasicResult.AssignReturnRoute AssignReturnRoute(Alias controllerNumber, Alias srcNode, Node destNode)
         {
-            Controller controller = (Controller)DeviceManager.GetDevice(controllerNumber);
             Device srcDevice = DeviceManager.GetDevice(srcNode);
-            AssignReturnRouteResult res = controller.AssignReturnRoute(srcDevice.Network.NodeTag, destNode, out ActionToken token);
+            return AssignReturnRoute(controllerNumber, srcDevice.Network.NodeTag, destNode);
+        }
+
+        public BasicResult.AssignReturnRoute AssignReturnRoute(Alias controllerNumber, Node srcNode, Node destNode)
+        {
+            Controller controller = (Controller)DeviceManager.GetDevice(controllerNumber);
+            AssignReturnRouteResult res = controller.AssignReturnRoute(srcNode, destNode, out ActionToken token);
             return new BasicResult.AssignReturnRoute(res);
         }
 

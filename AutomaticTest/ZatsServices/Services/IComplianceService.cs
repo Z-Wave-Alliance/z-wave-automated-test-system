@@ -8,6 +8,7 @@ namespace Zats.Services
         ISendDataSettings SendDataSettings { get; }
         BasicResult.Void ApplicationVirtualDeviceNodeInformation(Alias bridgeNumber, Node endDeviceNode, bool isListening, byte generic, byte specific, byte[] cmdClasses);
         BasicResult.AssignReturnRoute AssignReturnRoute(Alias controllerNumber, Alias srcNode, Node destNode);
+        BasicResult.AssignReturnRoute AssignReturnRoute(Alias controllerNumber, Node srcNode, Node destNode);
         byte FirmwareUpdateV2(Alias deviceNumber, Node nodeid, string filePath);
         byte FirmwareUpdateV3(Alias deviceNumber, Node nodeid, string filePath);
         byte FirmwareUpdateV3(Alias deviceNumber, Node nodeid, string filePath, ushort fragmentSize);
