@@ -148,7 +148,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
-                        item.Value.RfRegion != RfRegions.UNKNOWN ? item.Value.RfRegion.ToFrequency() : _managers.Context.Frequency,
+                        item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         null,
                         null)
@@ -164,7 +164,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
-                        item.Value.RfRegion != RfRegions.UNKNOWN ? item.Value.RfRegion.ToFrequency() : _managers.Context.Frequency,
+                        item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         item.Value.FileNameFilter,
                         item.Value.Hop)
@@ -221,7 +221,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
-                        item.Value.RfRegion != RfRegions.UNKNOWN ? item.Value.RfRegion.ToFrequency() : _managers.Context.Frequency,
+                        item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         item.Value.FileNameFilter,
                         item.Value.Hop)

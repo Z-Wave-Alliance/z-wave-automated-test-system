@@ -14,7 +14,7 @@ namespace Zats.Services
         public ChipSeries ChipSeries { get; set; }
         public string FileNameFilter { get; set; }
         public bool IsTestInterface { get; protected set; }
-        public RfRegions RfRegion { get; set; }
+        public RfRegions RfRegion { get; set; } = RfRegions.UNKNOWN;
         public InterfaceTypes InterfaceType { get; set; }
         public string Hop { get; set; }
 
@@ -104,7 +104,7 @@ namespace Zats.Services
         public ChipSeries ChipSeries { get; set; }
         public string FileNameFilter { get; set; }
         public bool IsTestInterface { get; protected set; }
-        public RfRegions RfRegion { get; set; }
+        public RfRegions RfRegion { get; set; } = RfRegions.UNKNOWN;
         public InterfaceTypes InterfaceType { get; set; }
         public string Hop { get; set; }
 

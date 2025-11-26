@@ -218,12 +218,10 @@ namespace ZatsTestConsole
             {
                 _gammaProgrammer = new ProgrammingGammaProvider(ActiveProfile.CommanderAppPath, consoleOutPut.ReportDiagnosticToConsole);
             }
-
-            var tcsPath = Path.GetDirectoryName(_cmdLineSettings.AssemblyFile);
-            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole, tcsPath)
-            {
-                BasePath = _cmdLineSettings.BasePath,
-            };
+            
+            var testCaseAssemblyPath = Path.GetDirectoryName(_cmdLineSettings.AssemblyFile);
+            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole,
+                testCaseAssemblyPath, _cmdLineSettings.BasePath, _cmdLineSettings.ReportsPath);
 
             // Check if mesh network router is present.
             var meshRoutersFilterList = GetSerialNumbersToFilter(_cmdLineSettings.MeshRoutersDevicesFilter);

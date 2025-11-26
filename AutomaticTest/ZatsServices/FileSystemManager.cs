@@ -19,21 +19,61 @@ namespace Zats.Services
         private const string FilePatternDefinitionName = "FilePatternDefinition.xml";
 
         private Action<bool, string> _logAction;
-        private string _defaultResourcesPath;
-        private FilePatternDefinition _definition = null;
+        private FilePatternDefinition _filePatternDefinition = null;
 
-        public string BasePath { get; set; }
+        /// <summary>Test Case Assembly resources path with predefined files.</summary>
+        /// <remarks>3rd priority for finding files.</remarks>
+        private readonly string _defaultResourcesPath;
+        /// <summary>Root folder for DevKits</summary>
+        /// <remarks>May contain multiple paths separated by ';'.Used for the main file storage provided by the user in the CLI. 2nd priority for finding files</remarks>
+        private readonly string _baseDevKitPath;
+        /// <summary>Root folder for reports.</summary>
+        private readonly string _reportsRootPath;
+        /// <summary>Specific test case run folder.</summary>
+        /// <remarks>Used for temporary files storage. 1st priority for finding files.</remarks>
+        private string _testCaseFolder;
 
-        public FileSystemManager(Action<bool, string> logAction, string resourcesPath)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileSystemManager"/> class.
+        /// </summary>
+        /// <param name="logAction">Log action to display error messages</param>
+        /// <param name="resourcesPath">Resources path</param>
+        /// <param name="baseDevKitPath">Base path with user-defined DevKits</param>
+        /// <param name="reportsPath">ZATS Reports path</param>
+        public FileSystemManager(Action<bool, string> logAction, string resourcesPath, string baseDevKitPath, string reportsPath)
         {
             _logAction = logAction;
             _defaultResourcesPath = string.IsNullOrEmpty(resourcesPath) ?
                  Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), RESOURSES_FOLDER) :
                  Path.Combine(resourcesPath, RESOURSES_FOLDER);
-            if (_definition == null)
+            if (_filePatternDefinition == null)
             {
                 var location = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "XmlFiles");
-                _definition = GetFilePatternDefinition(location, FilePatternDefinitionName);
+                _filePatternDefinition = GetFilePatternDefinition(location, FilePatternDefinitionName);
+            }
+
+            _baseDevKitPath = baseDevKitPath;
+            _reportsRootPath = reportsPath;
+
+            ValidateInitialization();
+        }
+
+        /// <summary>
+        /// Warns if initialization parameters are missing.
+        /// </summary>
+        private void ValidateInitialization()
+        {
+            if (_filePatternDefinition == null)
+            {
+                _logAction(false, $"File pattern definition '{FilePatternDefinitionName}' is missing or invalid");
+            }
+            if (string.IsNullOrEmpty(_baseDevKitPath))
+            {
+                _logAction(false, "'Base path' parameter (-bp <path>) is missing");
+            }
+            if (string.IsNullOrEmpty(_reportsRootPath))
+            {
+                _logAction(false, "'Reports path' parameter (-rp <path>) is missing");
             }
         }
 
@@ -54,46 +94,22 @@ namespace Zats.Services
             return ret;
         }
 
-        private static FileSystemInfo[] GetFullNames(FileSystemInfo[] fs, params string[] cascadeFilters)
+        /// <summary>
+        /// Apply filter to file paths.
+        /// </summary>
+        /// <param name="filePaths">File paths to filter</param>
+        /// <param name="regexFilters">Regex filter to apply</param>
+        /// <returns>Filtered items</returns>
+        private static string[] FilterFilePaths(string[] filePaths, params string[] regexFilters)
         {
-            FileSystemInfo[] ret = fs;
-            if (fs != null && fs.Length > 0)
-            {
-                foreach (var filter in cascadeFilters)
-                {
-                    if (!string.IsNullOrEmpty(filter))
-                    {
-                        var rgx = new Regex(filter, RegexOptions.IgnoreCase);
-                        ret = ret.Where(x => rgx.Match(x.FullName).Success).ToArray();
-                    }
-                }
-            }
-            return ret;
-        }
+            if (filePaths == null || filePaths.Length == 0) return filePaths;
+            if (regexFilters == null || regexFilters.Length == 0) return filePaths;
 
-        private static string[] GetFullNames(string[] fs, params string[] cascadeFilters)
-        {
-            string[] ret = fs;
-            if (fs != null && fs.Length > 0)
-            {
-                foreach (var filter in cascadeFilters)
-                {
-                    if (!string.IsNullOrEmpty(filter))
-                    {
-                        var rgx = new Regex(filter, RegexOptions.IgnoreCase);
-                        ret = ret.Where(x => rgx.Match(x).Success).ToArray();
-                    }
-                }
-            }
-            return ret;
-        }
-
-        private static string[] GetExistingFileNames(string[] fs, params string[] cascadeFilters)
-        {
-            string[] ret = fs;
-            foreach (var filter in cascadeFilters)
+            string[] ret = filePaths;
+            foreach (var filter in regexFilters.Where(x => !string.IsNullOrEmpty(x)))
             {
                 var rgx = new Regex(filter, RegexOptions.IgnoreCase);
+                //ret = ret.Where(x => rgx.Match(x).Success).ToArray();
                 var tmpFs = ret.Where(x => rgx.Match(x).Success);
                 if (tmpFs.Any())
                 {
@@ -103,133 +119,141 @@ namespace Zats.Services
             return ret;
         }
 
-        public string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, DevKits devKit, params string[] filters)
-        {
-            return GetLatestFilePath(lib, chipSeries, frequency, null, devKit, filters);
-        }
-
-        public string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, string ending, DevKits devKit, params string[] filters)
+        public string GetLatestFirmwareFilePath(Libraries applicationLibrary, string chipSeries, string frequency, string ending, params string[] filters)
         {
             string resultFilePath = null;
-            var requiresSpecific = new[]
+            var genericChipSeries = new[]
             {
                 ChipSeries.ZW080x, ChipSeries.ZW070x, ChipSeries.ZW0713, ChipSeries.ZW0714, ChipSeries.Default
             }.Select(x => x.ToString());
 
-            if (!requiresSpecific.Contains(chipSeries))
+            if (genericChipSeries.Contains(chipSeries))
             {
-                var binPat = _definition?.BinaryPatterns?.FirstOrDefault(x => x.ChipSeries == chipSeries.ToString());
-                if (binPat == null)
-                {
-                    var brdTokens = chipSeries.ToString().Split('_');
-                    if (brdTokens != null && brdTokens.Length == 2)
-                    {
-                        binPat = new BinaryPattern();
-                        binPat.ChipSeries = chipSeries.ToString();
-                        binPat.PathFilters = _definition.PathFilters.Select(x => new PathFilter()
-                        {
-                            Pattern = x.Pattern.Replace("{Brd0}", brdTokens[0]).Replace("{Brd1}", brdTokens[1])
-                        }).ToArray();
-                    }
-                }
-
-                string devkitsRootFolders = BasePath + ";" + _defaultResourcesPath;
-                if (!string.IsNullOrEmpty(devkitsRootFolders))
-                {
-                    var folders = devkitsRootFolders.Split(';');
-                    foreach (var devkitsRootFolder in folders)
-                    {
-                        if (string.IsNullOrEmpty(devkitsRootFolder) || !Directory.Exists(devkitsRootFolder))
-                        {
-                            continue;
-                        }
-                        var lm = binPat.LibTokens?.FirstOrDefault(x => x.Library == lib.ToString());
-                        if (string.IsNullOrWhiteSpace(lm?.Token))
-                        {
-                            lm = _definition.LibTokens.FirstOrDefault(x => x.Library == lib.ToString());
-                            if (string.IsNullOrWhiteSpace(lm?.Token))
-                            {
-                                lm = new LibToken() { Library = lib.ToString(), Token = lib.ToString() };
-                            }
-                        }
-                        var freq = lm.SkipFrequency ? string.Empty : frequency;
-                        var end = ending ?? string.Empty;
-                        resultFilePath = GetLatestFilePathInternal(devKit, filters, devkitsRootFolder, binPat, lm, freq, end, string.Empty);
-
-                        if (!string.IsNullOrEmpty(resultFilePath))
-                        {
-                            break;
-                        }
-                        else //look for DEBUG versions:
-                        {
-                            resultFilePath = GetLatestFilePathInternal(devKit, filters, devkitsRootFolder, binPat, lm, freq, "_DEBUG" + end, string.Empty);
-                        }
-
-                        if (!string.IsNullOrEmpty(resultFilePath))
-                        {
-                            break;
-                        }
-                        else //use hardcoded files from resources:
-                        {
-                            var location = _defaultResourcesPath;
-                            var rtResourceName = string.Empty;
-                            switch (lib)
-                            {
-                                case Libraries.RailTest: //from ZATS\Resources\railtest
-                                    if ((new[] { ChipSeries.ZG23_BRD4204A, ChipSeries.ZG23_BRD4204C, ChipSeries.ZG23_BRD4204D, ChipSeries.ZG23_BRD4210A })
-                                        .Select(x => x.ToString()).Contains(chipSeries))
-                                    {
-                                        rtResourceName = "rt823B.hex";
-                                    }
-                                    else if ((new[] { ChipSeries.ZGM230S_BRD4205A, ChipSeries.ZGM230S_BRD4205B, ChipSeries.ZGM230_BRD2603A })
-                                        .Select(x => x.ToString()).Contains(chipSeries))
-                                    {
-                                        rtResourceName = "rt8230.hex";
-                                    }
-                                    else if ((new[] { ChipSeries.xG28_BRD4400C, ChipSeries.xG28_BRD4401C })
-                                        .Select(x => x.ToString()).Contains(chipSeries))
-                                    {
-                                        rtResourceName = "rtxG28.hex";
-                                    }
-                                    else if ((new[] { ChipSeries.ZG14_BRD4201A, ChipSeries.ZG14_BRD4206A, ChipSeries.ZG14_BRD4208A })
-                                     .Select(x => x.ToString()).Contains(chipSeries))
-                                    {
-                                        rtResourceName = "rt714.hex";
-                                    }
-                                    else if ((new[] { ChipSeries.ZGM130S_BRD4200A, ChipSeries.ZGM130S_BRD4202A, ChipSeries.ZGM130S_BRD4207A, ChipSeries.RZ13_BRD4209A })
-                                  .Select(x => x.ToString()).Contains(chipSeries))
-                                    {
-                                        rtResourceName = "rt713.hex";
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                            var resourcePath = Path.Combine(location, rtResourceName);
-                            if (File.Exists(resourcePath))
-                            {
-                                resultFilePath = resourcePath;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    _logAction(false, "'Base path' parameter (-bp <path>) is missing");
-                }
-                if (string.IsNullOrWhiteSpace(resultFilePath))
-                {
-                    _logAction(false, $"Not Found {lib}, {binPat.ChipSeries}, {frequency}{ending} in {devkitsRootFolders}");
-                }
+                throw new ArgumentException($"Invalid chip series {chipSeries} specified");
             }
             else
             {
-                throw new ArgumentException($"Invalid chip series {chipSeries} specified");
+                var binaryPattern = GetBinaryPattern(chipSeries);
+
+                // File search priority: 1) devkits folder 2) resources folder
+                string devkitsRootFolders = _baseDevKitPath + ";" + _defaultResourcesPath;
+                var folders = devkitsRootFolders.Split(';');
+                foreach (var devkitsRootFolder in folders)
+                {
+                    if (string.IsNullOrEmpty(devkitsRootFolder) || !Directory.Exists(devkitsRootFolder))
+                    {
+                        continue;
+                    }
+                    //Try find specific library token for the chip series:
+                    var libToken = binaryPattern.LibTokens?.FirstOrDefault(x => x.Library == applicationLibrary.ToString());
+                    if (string.IsNullOrWhiteSpace(libToken?.Token))
+                    {
+                        //Try find general library token from file pattern definition:
+                        libToken = _filePatternDefinition.LibTokens.FirstOrDefault(x => x.Library == applicationLibrary.ToString());
+                        if (string.IsNullOrWhiteSpace(libToken?.Token))
+                        {
+                            //Use library name as token:
+                            libToken = new LibToken() { Library = applicationLibrary.ToString(), Token = applicationLibrary.ToString() };
+                        }
+                    }
+                    var freq = libToken.SkipFrequency ? string.Empty : frequency;
+                    var end = ending ?? string.Empty;
+                    resultFilePath = GetLatestFilePathInternal(filters, devkitsRootFolder, binaryPattern, libToken, freq, end, string.Empty);
+
+                    if (string.IsNullOrEmpty(resultFilePath))
+                    {
+                        //Extra try to look for DEBUG versions:
+                        resultFilePath = GetLatestFilePathInternal(filters, devkitsRootFolder, binaryPattern, libToken, freq, "_DEBUG" + end, string.Empty);
+                    }
+
+                    if (!string.IsNullOrEmpty(resultFilePath)) { break; }
+                }
+
+                if (string.IsNullOrEmpty(resultFilePath)) //use hardcoded files from resources:
+                {
+                    var location = _defaultResourcesPath;
+                    var predefinedResourceName = string.Empty;
+                    switch (applicationLibrary)
+                    {
+                        case Libraries.RailTest:
+                            predefinedResourceName = GetRailTestResourceName(chipSeries);
+                            break;
+                        default:
+                            break;
+                    }
+                    var resourcePath = Path.Combine(location, predefinedResourceName);
+                    if (File.Exists(resourcePath))
+                    {
+                        resultFilePath = resourcePath;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(resultFilePath))
+                {
+                    _logAction(false, $"Not Found {applicationLibrary}, {binaryPattern.ChipSeries}, {frequency}{ending} in {devkitsRootFolders}");
+                }
             }
             return resultFilePath;
         }
 
-        private string GetLatestFilePathInternal(DevKits devKit, string[] filters, string devkitsRootFolder, BinaryPattern binPat, LibToken lm, string freq, string end, string subtype)
+        private BinaryPattern GetBinaryPattern(string chipSeries)
+        {
+            var binaryPattern = _filePatternDefinition?.BinaryPatterns?.FirstOrDefault(x => x.ChipSeries == chipSeries.ToString());
+            if (binaryPattern == null)
+            {
+                var brdTokens = chipSeries.ToString().Split('_');
+                if (brdTokens != null && brdTokens.Length == 2)
+                {
+                    binaryPattern = new BinaryPattern();
+                    binaryPattern.ChipSeries = chipSeries.ToString();
+                    binaryPattern.PathFilters = _filePatternDefinition.PathFilters.Select(x => new PathFilter()
+                    {
+                        Pattern = x.Pattern.Replace("{Brd0}", brdTokens[0]).Replace("{Brd1}", brdTokens[1])
+                    }).ToArray();
+                }
+            }
+
+            return binaryPattern;
+        }
+
+        /// <summary>
+        /// Get predefined RailTest resource name from resources based on chip series.
+        /// </summary>
+        /// <param name="chipSeries">Chip series identifier.</param>
+        /// <returns>Predefined RailTest resource name.</returns>
+        private static string GetRailTestResourceName(string chipSeries)
+        {
+            string rtResourceName = string.Empty;
+            if ((new[] { ChipSeries.ZG23_BRD4204A, ChipSeries.ZG23_BRD4204C, ChipSeries.ZG23_BRD4204D, ChipSeries.ZG23_BRD4210A })
+                .Select(x => x.ToString()).Contains(chipSeries))
+            {
+                rtResourceName = "rt823B.hex";
+            }
+            else if ((new[] { ChipSeries.ZGM230S_BRD4205A, ChipSeries.ZGM230S_BRD4205B, ChipSeries.ZGM230_BRD2603A })
+                .Select(x => x.ToString()).Contains(chipSeries))
+            {
+                rtResourceName = "rt8230.hex";
+            }
+            else if ((new[] { ChipSeries.xG28_BRD4400C, ChipSeries.xG28_BRD4401C })
+                .Select(x => x.ToString()).Contains(chipSeries))
+            {
+                rtResourceName = "rtxG28.hex";
+            }
+            else if ((new[] { ChipSeries.ZG14_BRD4201A, ChipSeries.ZG14_BRD4206A, ChipSeries.ZG14_BRD4208A })
+                .Select(x => x.ToString()).Contains(chipSeries))
+            {
+                rtResourceName = "rt714.hex";
+            }
+            else if ((new[] { ChipSeries.ZGM130S_BRD4200A, ChipSeries.ZGM130S_BRD4202A, ChipSeries.ZGM130S_BRD4207A, ChipSeries.RZ13_BRD4209A })
+                .Select(x => x.ToString()).Contains(chipSeries))
+            {
+                rtResourceName = "rt713.hex";
+            }
+
+            return rtResourceName;
+        }
+
+        private string GetLatestFilePathInternal(string[] filters, string devkitsRootFolder, BinaryPattern binPat, LibToken lm, string freq, string end, string subtype)
         {
             string resultFilePath = null;
             foreach (var pathFilterPattern in binPat.PathFilters)
@@ -242,18 +266,20 @@ namespace Zats.Services
                                                 Replace("{Freq}", freq).
                                                 Replace("{End}", end);
 
-                    string[] regexFilters = new string[] { "" };
-                    string[] priorityFilters = new string[] { "" };
+                    string[] regexFilters = new string[0];
                     if (binPat.RegexFilters != null && binPat.RegexFilters.Count > 0)
                     {
                         regexFilters = binPat.RegexFilters.ToArray();
                     }
+                    regexFilters = regexFilters.Concat(filters).ToArray();
+
+                    string[] priorityFilters = new string[0];
                     if (binPat.PriorityRegexFilters != null && binPat.PriorityRegexFilters.Count > 0)
                     {
                         priorityFilters = binPat.PriorityRegexFilters.ToArray();
                     }
-                    regexFilters = regexFilters.Concat(filters).ToArray();
                     priorityFilters = priorityFilters.Concat(new[] { ".hex" }).ToArray();
+
                     var di = new DirectoryInfo(devkitsRootFolder);
                     resultFilePath = GetFile(di, pathFilter, regexFilters, priorityFilters);
                     if (!string.IsNullOrWhiteSpace(resultFilePath))
@@ -269,105 +295,92 @@ namespace Zats.Services
             return resultFilePath;
         }
 
-        private string GetFile(DirectoryInfo di, string pathFilter, string[] regexFilters, string[] priorityFilters)
+        /// <summary>
+        /// Search file in root directory and subdirectories applying filters in order by creation time.
+        /// </summary>
+        /// <param name="rootDirectory">Start root directory to search in.</param>
+        /// <param name="searchPattern">Search pattern to match files against.</param>
+        /// <param name="regexFilters">Regular expression filters to apply.</param>
+        /// <param name="priorityRegexFilters">Priority regular expression filters to apply.</param>
+        /// <returns>First matching file path or null if not found.</returns>
+        private string GetFile(DirectoryInfo rootDirectory, string searchPattern, string[] regexFilters, string[] priorityRegexFilters)
         {
-            string ret = null;
-            string[] fs = null;
+            // Select files in the current root directory matching the search pattern:
+            var filteredFilePaths = GetMatchingFiles(rootDirectory, searchPattern);
+            // Low priority filtering:
+            filteredFilePaths = FilterFilePaths(filteredFilePaths, regexFilters);
+            // High priority filtering:
+            filteredFilePaths = FilterFilePaths(filteredFilePaths, priorityRegexFilters);
+
+            var resultFilePath = filteredFilePaths?.FirstOrDefault();
+            if (string.IsNullOrEmpty(resultFilePath))
+            {
+                var subFolders = rootDirectory.GetDirectories().OrderByDescending(x => x.CreationTime);
+                foreach (var dir in subFolders)
+                {
+                    resultFilePath = GetFile(dir, searchPattern, regexFilters, priorityRegexFilters);
+                    if (resultFilePath != null)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _logAction(true, $"{resultFilePath}");
+            }
+            return resultFilePath;
+        }
+
+        /// <summary>
+        /// Find files matching the search pattern in the specified root directory.
+        /// </summary>
+        /// <param name="rootDirectory">Root directory to search in.</param>
+        /// <param name="searchPattern">Search pattern to match files against.</param>
+        /// <param name="topFolder"></param>
+        /// <returns>Array of matching file paths.</returns>
+        private static string[] GetMatchingFiles(DirectoryInfo rootDirectory, string searchPattern, bool topFolder = true)
+        {
+            string[] filteredFilePaths = new string[0];
             try
             {
-#if !NETCOREAPP
-                fs = di.GetFiles(pathFilter, SearchOption.TopDirectoryOnly).Select(x => x.FullName).ToArray();
+#if NETCOREAPP
+                filteredFilePaths = Directory.GetFiles(rootDirectory.FullName, searchPattern,
+                    new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = !topFolder });
 #else
-                fs = Directory.GetFiles(di.FullName, pathFilter, new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive });
+                filteredFilePaths = rootDirectory.
+                    GetFiles(searchPattern,  topFolder? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories).
+                    Select(x => x.FullName).ToArray();
 #endif
-                fs = GetFullNames(fs, regexFilters);
-                fs = GetExistingFileNames(fs, priorityFilters);
             }
             catch (Exception ex)
             {
                 "{0}"._DLOG(ex);
             }
 
-            string file = fs?.FirstOrDefault();
-            if (file != null)
-            {
-                ret = file;
-                _logAction(true, $"{file}");
-            }
-            else
-            {
-                var dirs = di.GetDirectories();
-                if (dirs != null && dirs.Length > 0)
-                {
-                    foreach (var dir in dirs.OrderByDescending(x => x.CreationTime))
-                    {
-                        ret = GetFile(dir, pathFilter, regexFilters, priorityFilters);
-                        if (ret != null)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            return ret;
+            return filteredFilePaths;
         }
 
-        public string GetLatestFilePath(string filter, DevKits devKit, params string[] filters)
+        public string GetLatestFilePath(string searchPattern, params string[] filters)
         {
             var resultFilePath = string.Empty;
-            string devkitsRootFolders = BasePath;
-            if (!string.IsNullOrEmpty(devkitsRootFolders))
+            // File search priority: 1) specific file (downloaded, modified by TC) in test case folder 2) devkits folder 3) resources folder
+            string devkitsRootFolders = _testCaseFolder + ";" + _baseDevKitPath + ";" + _defaultResourcesPath;
+
+            var folders = devkitsRootFolders.Split(';');
+            foreach (var devkitsRootFolder in folders)
             {
-                var folders = devkitsRootFolders.Split(';');
-                foreach (var devkitsRootFolder in folders)
+                if (string.IsNullOrEmpty(devkitsRootFolder) || !Directory.Exists(devkitsRootFolder))
                 {
-                    if (string.IsNullOrEmpty(devkitsRootFolder) || !Directory.Exists(devkitsRootFolder))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
+                var di = new DirectoryInfo(devkitsRootFolder);
 
-                    string[] regexFilters = new string[] { "" };
-                    regexFilters = regexFilters.Concat(filters).ToArray();
+                resultFilePath = GetFile(di, searchPattern, filters, new string[0]);
 
-                    var di = new DirectoryInfo(devkitsRootFolder);
-                    FileSystemInfo[] dirs = di.GetDirectories();
-                    if (dirs == null || dirs.Length == 0)
-                    {
-                        dirs = new[] { di };
-                    }
-                    if (devKit != DevKits.Default)
-                    {
-                        dirs = GetFullNames(dirs, devKit.ToString().Substring(1));
-                    }
-                    foreach (DirectoryInfo dir in dirs.OrderByDescending(x => x.CreationTime))
-                    {
-                        try
-                        {
-#if !NETCOREAPP
-                            var fs = dir.GetFiles(filter, SearchOption.AllDirectories).Select(x => x.FullName).ToArray();
-#else
-                            var fs = Directory.GetFiles(dir.FullName, filter, new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = true });
-#endif
-                            fs = GetFullNames(fs, regexFilters);
-                            if (fs != null)
-                            {
-                                var file = fs.FirstOrDefault();
-                                if (file != null)
-                                {
-                                    resultFilePath = file;
-                                    break;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            "{0}"._DLOG(ex);
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(resultFilePath))
-                    {
-                        break;
-                    }
+                if (!string.IsNullOrEmpty(resultFilePath))
+                {
+                    break;
                 }
             }
             return resultFilePath;
@@ -382,17 +395,17 @@ namespace Zats.Services
             var isSerialApiControlled = !deviceHostClient.Library.IsSampleApplication();
             var isSAPI = isSerialApiControlled && !isSpecialCase;
             var defaultSearchPattern = string.Empty;
-            if (_definition != null && _definition.DefaultBootloaderInfos != null && _definition.DefaultBootloaderInfos.Length > 1)
+            if (_filePatternDefinition != null && _filePatternDefinition.DefaultBootloaderInfos != null && _filePatternDefinition.DefaultBootloaderInfos.Length > 1)
             {
                 //Set predefined keys from RESOURSES_FOLDER:
                 var idx = isSAPI ? 1 : 0;
-                var keyTokensFileName = _definition.DefaultBootloaderInfos?[idx].KeyTokensFileName;
-                var encryptKeyFileName = _definition.DefaultBootloaderInfos?[idx].EncryptKeyFileName;
-                var signKeyFileName = _definition.DefaultBootloaderInfos?[idx].SignKeyFileName;
+                var keyTokensFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].KeyTokensFileName;
+                var encryptKeyFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].EncryptKeyFileName;
+                var signKeyFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].SignKeyFileName;
 
                 var idxBrd = deviceHostClient.Host.ChipSeries.ToLower().IndexOf("brd");
                 var brdNumber = string.Concat(deviceHostClient.Host.ChipSeries.Skip(idxBrd)); // specify filter for board from chip version.
-                defaultSearchPattern = _definition.DefaultBootloaderInfos?[idx].Pattern.Replace("{brdNumber}", brdNumber);
+                defaultSearchPattern = _filePatternDefinition.DefaultBootloaderInfos?[idx].Pattern.Replace("{brdNumber}", brdNumber);
 
                 var location = _defaultResourcesPath;
                 ret.KeysToken = Path.Combine(location, keyTokensFileName);
@@ -403,7 +416,7 @@ namespace Zats.Services
             var expectedFileNames = specificFileNamePattern ?? new[] { defaultSearchPattern };
             foreach (var item in expectedFileNames)
             {
-                var bootloaderFilePath = GetLatestFilePath(item, DevKits.Default, regexFilters);
+                var bootloaderFilePath = GetLatestFilePath(item, regexFilters);
                 ret.Bootloader = bootloaderFilePath;
 
                 //try to update keys if exists from detected bootloader path:
@@ -426,6 +439,7 @@ namespace Zats.Services
             return ret;
         }
 
+        /// <inheritdoc/>
         public string GetPredefinedControllerPathFromResources(ChipSeries chipSeries)
         {
             var expectedFileName = string.Empty;
@@ -478,6 +492,34 @@ namespace Zats.Services
             return ret;
         }
 
+        /// <inheritdoc/>
+        public string GetPath(PathTypes pathType)
+        {
+            var ret = _baseDevKitPath;
+            switch (pathType)
+            {
+                case PathTypes.TestCaseTemp:
+                    ret = _testCaseFolder;
+                    break;
+                case PathTypes.ReportsRoot:
+                    ret = _reportsRootPath;
+                    break;
+                case PathTypes.DefaultResources:
+                    ret = _defaultResourcesPath;
+                    break;
+                case PathTypes.DevKitsRoot:
+                default:
+                    break;
+            }
+            return ret;
+        }
+
+        /// <inheritdoc/>
+        public void SetTestCaseFolderPath(string testCaseFolderName)
+        {
+            var fullOrTemp = Path.Combine(_reportsRootPath ?? Path.GetTempPath(), testCaseFolderName, "temps");
+            _testCaseFolder = fullOrTemp;
+        }
     }
 
     public class BootloaderPath

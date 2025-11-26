@@ -127,30 +127,24 @@ namespace Zats.Services
             return ret;
         }
 
-        //TODO: Rename to ProgramSample and remove duplicatations 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
+        //TODO: Rename to ProgramSample and remove duplications 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
         public int ProgramSampleWithBootloaderKeys(Alias deviceNumber, string filePath)
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             var bootloader = GetBootloaderPath(deviceNumber, filePath.Contains("SerialAPI_Controller"));
-            ret = DeviceManager.ProgramSampleWithBootLoaderKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
+            ret = DeviceManager.ProgramSampleWithBootLoaderKeys(deviceHostClient, DeviceManager.ConvertToZWaveRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
 
-        //TODO: Rename to ProgramSample and remove duplicatations 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
+        //TODO: Rename to ProgramSample and remove duplications 'ProgramSampleWithOTWBootloaderImageAndKeys' (refactor)
         public int ProgramSampleWithOTABootloaderImageAndKeys(Alias deviceNumber, string filePath, bool isOTW = false, string specificBootloaderName = null)
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var tempBasePath = DeviceManager.FileSystemManager.BasePath;
-            var srcRoot = Directory.GetParent(filePath);
-
-            DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
             var bootloader = GetBootloaderPath(deviceNumber, isOTW, specificBootloaderName);
-            DeviceManager.FileSystemManager.BasePath = tempBasePath;
-
-            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
+            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.ConvertToZWaveRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
@@ -160,14 +154,9 @@ namespace Zats.Services
         {
             int ret = -1;
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var tempBasePath = DeviceManager.FileSystemManager.BasePath;
-            var srcRoot = Directory.GetParent(filePath);
-
-            DeviceManager.FileSystemManager.BasePath = string.Concat(srcRoot, ";", tempBasePath);
             var bootloader = GetBootloaderPath(deviceNumber, isOTW, specificBootloaderName);
-            DeviceManager.FileSystemManager.BasePath = tempBasePath;
 
-            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, bootloader);
+            ret = DeviceManager.ProgramSampleWithBootLoaderImageAndKeys(deviceHostClient, DeviceManager.ConvertToZWaveRegion(deviceHostClient.Frequency), filePath, bootloader);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
             return ret;
         }
@@ -176,6 +165,7 @@ namespace Zats.Services
         {
             System.Threading.Thread.Sleep(1000);
             DeviceManager.LoadDSK(deviceHostClient);
+            //DeviceManager.InitDeviceHostClient(deviceHostClient); >> PresetSerialAPIDevice ?
             var device = DeviceManager.GetDevice(deviceNumber);
             if (device != null)
             {
@@ -188,9 +178,11 @@ namespace Zats.Services
                     }
                     if (device.Network.IsSupportedSerialApiCommand((byte)ZWave.BasicApplication.Enums.CommandTypes.CmdSerialApiSetup))
                     {
-                        var rfregion = (ZWave.BasicApplication.Enums.RfRegions)(Enum.Parse(typeof(ZWave.BasicApplication.Enums.RfRegions), deviceHostClient.Frequency));
-                        device.SetRfRegion(rfregion);
-                        device.SoftReset(); // After serialAPI Setup required! impacts on max Payload size:
+                        if (Enum.TryParse(deviceHostClient.Frequency, out ZWave.BasicApplication.Enums.RfRegions rfRegion))
+                        {
+                            device.SetRfRegion(rfRegion);
+                            device.SoftReset(); // After serialAPI Setup required! impacts on max Payload size:
+                        }
                         device.GetMaxPayloadSize();
                         device.GetMaxLRPayloadSize();
                     }
@@ -221,7 +213,7 @@ namespace Zats.Services
             }
             catch { }
 
-            DeviceManager.ProgramSample(deviceHostClient, DeviceManager.GetRegion(deviceHostClient.Frequency), filePath, prk, puk);
+            DeviceManager.ProgramSample(deviceHostClient, DeviceManager.ConvertToZWaveRegion(deviceHostClient.Frequency), filePath, prk, puk);
             UpdateDeviceHostClientAfterProgramSample(deviceNumber, deviceHostClient);
         }
         public void RenewDsk(Alias deviceNumber)
@@ -277,6 +269,24 @@ namespace Zats.Services
         {
             var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
             return DeviceManager.GetZafApiVersion(deviceHostClient);
+        }
+
+        /// <summary>
+        /// Retrieve Z-Wave region from device using programmer.
+        /// </summary>
+        public byte[] ReadDSK(Alias deviceNumber)
+        {
+            var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
+            return DeviceManager.ReadDSK(deviceHostClient);
+        }
+
+        /// <summary>
+        /// Retrieve Z-Wave region from device using programmer.
+        /// </summary>
+        public ZWave.Enums.ZWaveRegions ReadZwRegion(Alias deviceNumber)
+        {
+            var deviceHostClient = DeviceManager.GetDeviceHostClient(deviceNumber);
+            return DeviceManager.ReadZwRegion(deviceHostClient);
         }
     }
 

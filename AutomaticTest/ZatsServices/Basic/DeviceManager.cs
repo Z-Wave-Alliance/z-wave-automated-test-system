@@ -238,6 +238,13 @@ namespace Zats.Services
             return _ZW050xList.Select(x => x.ToString()).Contains(device.Host?.ChipSeries ?? "");
         }
 
+        private bool IsLegacyChipSeries(ChipSeries chipSeries)
+        {
+            var legacyChipSeriesList = new[] { ChipSeries.ZW010x, ChipSeries.ZW020x, ChipSeries.ZW030x, ChipSeries.ZW040x };
+            //, ChipSeries.ZW050x ? 
+            return legacyChipSeriesList.Contains(chipSeries);
+        }
+
         private ChipSeries[] _ZW070xList = new[]
         {
             ChipSeries.ZW070x,
@@ -1502,22 +1509,20 @@ namespace Zats.Services
 
                         Parallel.ForEach(devices2Append, pair =>
                         {
-                            var isUzb = pair.Item1.IsTestInterface ? false : pair.Item2.Host.IsUZB;
                             List<string> filters = new List<string>();
-                            filters.Add(isUzb ? IncludeUsbVcpRegexFilter : ExcludeUsbVcpRegexFilter);
+                            var isUzb = pair.Item1.IsTestInterface ? false : pair.Item2.Host.IsUZB;
+                            filters.Add(isUzb ? IncludeUsbVcpRegexFilter : ExcludeUsbVcpRegexFilter); //for IsLegacyChipSeries(chipSeries), let it be..
                             if (!string.IsNullOrWhiteSpace(pair.Item1.FileNameFilter))
                             {
+                                // add custom filter from test case requirement
                                 filters.Add(pair.Item1.FileNameFilter);
                             }
-                            filters.Add(".hex");
                             var chipSeries = (ChipSeries)Enum.Parse(typeof(ChipSeries), pair.Item2.Host.ChipSeries);
-                            string samplePath = GetLatestFilePath(pair.Item1.Libraries, chipSeries, pair.Item1.Frequency, null, pair.Item1.DevKit, filters.ToArray());
+                            var libs = AdjustRequiredLibraries(pair.Item1.Libraries, chipSeries); //IDK? moved out from GetLatestFirmwareFilePath
+                            string samplePath = GetLatestFirmwareFilePath(libs[0], chipSeries, pair.Item1.Frequency, null, filters.ToArray());
                             if (!string.IsNullOrEmpty(samplePath))
                             {
-                                // init after overwrite - set to default
-                                //pair.Item1.DevKit = DevKits.Default;
-                                //device.ChipSeries = ChipSeries.Default;
-                                var region = GetRegion(pair.Item1.Frequency);
+                                var region = ConvertToZWaveRegion(pair.Item1.Frequency);
                                 int exitCode = ProgramSample(pair.Item2, region, samplePath, prk, puk);
                                 if (exitCode == 0)
                                 {
@@ -1596,39 +1601,49 @@ namespace Zats.Services
             }
         }
 
-        public string GetLatestFilePath(Libraries[] libs, ChipSeries chipSeries, string freq, string ending, DevKits devKit, params string[] regexFilters)
+        public string GetLatestFirmwareFilePath(Libraries appLibrary, ChipSeries chipSeries, string frequencyCode, string ending, params string[] regexFilters)
         {
-            string samplePath = null;
-            if (!new[] { ChipSeries.ZW010x, ChipSeries.ZW020x, ChipSeries.ZW030x, ChipSeries.ZW040x, ChipSeries.ZW040x }.Contains(chipSeries))
+            string resultFirmwareFilePath = null;
+            if (IsLegacyChipSeries(chipSeries)) // maybe +500s
             {
-                libs = AdjustRequiredLibraries(libs, chipSeries);
-                foreach (var frequency in new[] { freq, "EU", "US_LR", "EU_LR" })
+                resultFirmwareFilePath = FileSystemManager.
+                    GetLatestFirmwareFilePath(appLibrary, chipSeries.ToString(), frequencyCode, ending, regexFilters);
+            }
+            else
+            {
+                var is800 = _ZW080xList.Contains(chipSeries); // skip region filter for ZW080x
+                var frequencyFilters = is800 ? new[] { string.Empty } : new[] { frequencyCode, "EU", "US_LR", "EU_LR" };
+                foreach (var frequencyFilter in frequencyFilters)
                 {
-                    samplePath = FileSystemManager.GetLatestFilePath(libs[0], chipSeries.ToString(), frequency, ending, devKit, regexFilters);
-                    if (samplePath == null && libs[0] == Libraries.ControllerPortableLib)
+                    resultFirmwareFilePath = FileSystemManager.
+                        GetLatestFirmwareFilePath(appLibrary, chipSeries.ToString(), frequencyFilter, ending, regexFilters);
+
+                    //IDK: Some special cases to verify?
+                    if (resultFirmwareFilePath == null && appLibrary == Libraries.ControllerPortableLib)
                     {
-                        var controllerBridgePath = FileSystemManager.GetLatestFilePath(Libraries.ControllerBridgeLib, chipSeries.ToString(), frequency, ending, devKit, regexFilters);
-                        if (controllerBridgePath != null /*&& notImplementedPortableControllerVersions.Any(x => controllerBridgePath.Contains(x))*/)
+                        var controllerBridgePath = FileSystemManager.
+                            GetLatestFirmwareFilePath(Libraries.ControllerBridgeLib, chipSeries.ToString(), frequencyFilter, ending, regexFilters);
+                        if (controllerBridgePath != null)
                         {
-                            libs[0] = Libraries.ControllerBridgeLib;
-                            samplePath = controllerBridgePath;
+                            resultFirmwareFilePath = controllerBridgePath;
                         }
                     }
-                    if (File.Exists(samplePath))
+                    if (File.Exists(resultFirmwareFilePath))
                     {
                         break;
                     }
                 }
             }
-            else
-            {
-                samplePath = FileSystemManager.GetLatestFilePath(libs[0], chipSeries.ToString(), freq, ending, devKit, regexFilters);
-            }
 
-            return samplePath;
+            return resultFirmwareFilePath;
         }
 
-        public ZWaveRegions GetRegion(string frequency)
+        /// <summary>
+        /// Convert frequency string value to ZWaveRegions enum.
+        /// </summary>
+        /// <param name="frequency">string value for frequency.</param>
+        /// <returns>ZWaveRegions enum value in case of success, otherwise REGION_DEFAULT.</returns>
+        public ZWaveRegions ConvertToZWaveRegion(string frequency)
         {
             ZWaveRegions ret = ZWaveRegions.REGION_DEFAULT;
             if (!string.IsNullOrWhiteSpace(frequency))
@@ -1790,41 +1805,40 @@ namespace Zats.Services
         private void InitDeviceHostClient(DeviceHostClient item)
         {
             var client = item.SClient as Device;
-            var cmdClasses = new byte[] { COMMAND_CLASS_BASIC.ID };
-            if (client != null)
-            {
-                client.SessionClient.AddSubstituteManager(new SettingsSubstituteManager(client.Network));
-                var deviceOption = ZWave.Enums.DeviceOptions.Listening;
-                var genericType = (byte)GenericTypes.STATIC_CONTROLLER;
-                var specificType = SpecificTypes.PC_CONTROLLER;
+            if (client == null) return;
 
-                switch (client.Library)
-                {
-                    case Libraries.InstallerLib:
-                    case Libraries.ControllerStaticLib:
-                    case Libraries.ControllerBridgeLib:
-                        deviceOption = ZWave.Enums.DeviceOptions.Listening;
-                        genericType = (byte)GenericTypes.STATIC_CONTROLLER;
-                        specificType = SpecificTypes.PC_CONTROLLER;
-                        break;
-                    case Libraries.ControllerPortableLib:
-                        deviceOption = ZWave.Enums.DeviceOptions.NoneListening;
-                        genericType = (byte)GenericTypes.GENERIC_CONTROLLER;
-                        specificType = SpecificTypes.PORTABLE_REMOTE_CONTROLLER;
-                        break;
-                    case Libraries.EndDeviceLib:
-                    case Libraries.EndDeviceLegacyLib:
-                    case Libraries.EndDeviceLegacyRoutingLib:
-                    case Libraries.TestController:
-                        deviceOption = ZWave.Enums.DeviceOptions.Listening;
-                        genericType = (byte)GenericTypes.SWITCH_MULTILEVEL;
-                        specificType = SpecificTypes.NOT_USED;
-                        break;
-                    default:
-                        break;
-                }
-                PresetSerialAPIDevice(item, client, cmdClasses, deviceOption, genericType, specificType);
+            var cmdClasses = new byte[] { COMMAND_CLASS_BASIC.ID };
+            client.SessionClient.AddSubstituteManager(new SettingsSubstituteManager(client.Network));
+            var deviceOption = ZWave.Enums.DeviceOptions.Listening;
+            var genericType = (byte)GenericTypes.STATIC_CONTROLLER;
+            var specificType = SpecificTypes.PC_CONTROLLER;
+
+            switch (client.Library)
+            {
+                case Libraries.InstallerLib:
+                case Libraries.ControllerStaticLib:
+                case Libraries.ControllerBridgeLib:
+                    deviceOption = ZWave.Enums.DeviceOptions.Listening;
+                    genericType = (byte)GenericTypes.STATIC_CONTROLLER;
+                    specificType = SpecificTypes.PC_CONTROLLER;
+                    break;
+                case Libraries.ControllerPortableLib:
+                    deviceOption = ZWave.Enums.DeviceOptions.NoneListening;
+                    genericType = (byte)GenericTypes.GENERIC_CONTROLLER;
+                    specificType = SpecificTypes.PORTABLE_REMOTE_CONTROLLER;
+                    break;
+                case Libraries.EndDeviceLib:
+                case Libraries.EndDeviceLegacyLib:
+                case Libraries.EndDeviceLegacyRoutingLib:
+                case Libraries.TestController:
+                    deviceOption = ZWave.Enums.DeviceOptions.Listening;
+                    genericType = (byte)GenericTypes.SWITCH_MULTILEVEL;
+                    specificType = SpecificTypes.NOT_USED;
+                    break;
+                default:
+                    break;
             }
+            PresetSerialAPIDevice(item, client, cmdClasses, deviceOption, genericType, specificType);
         }
 
         private void PresetSerialAPIDevice(DeviceHostClient item, Device client, byte[] cmdClasses, ZWave.Enums.DeviceOptions deviceOption, byte genericType, byte specificType)
@@ -2454,6 +2468,25 @@ namespace Zats.Services
                 return (_gammaProgrammer as ProgrammingGammaProvider).ReadZafApiVersionFromNVM(deviceHostClient);
             }
             return new byte[0];
+        }
+
+        /// <summary>Read RF region from device NVM.</summary>
+        internal ZWaveRegions ReadZwRegion(DeviceHostClient deviceHostClient)
+        {
+            var rfRegion = deviceHostClient.HasJName ?
+                _gammaProgrammer?.GetZWaveRegion(deviceHostClient) :
+                _alphaProgrammer?.GetZWaveRegion(deviceHostClient);
+            if (rfRegion == null) rfRegion = ZWaveRegions.REGION_DEFAULT;
+            return rfRegion.Value;
+        }
+
+        /// <summary>Read DSK from device NVM. </summary>
+        internal byte[] ReadDSK(DeviceHostClient deviceHostClient)
+        {
+            byte[] dskValue = deviceHostClient.HasJName ?
+                _gammaProgrammer?.GetDsk(deviceHostClient) :
+                _alphaProgrammer?.GetDsk(deviceHostClient);
+            return dskValue;
         }
     }
 

@@ -4,12 +4,27 @@ using ZWave.Enums;
 
 namespace Zats.Services
 {
+    public enum PathTypes
+    {
+        DevKitsRoot = 0,
+        DefaultResources,
+        ReportsRoot,
+        TestCaseTemp,
+    }
+
     public interface IFileSystemManager
     {
-        string BasePath { get; set; }
-        string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, string ending, DevKits devKit, params string[] regexFilters);
-        string GetLatestFilePath(Libraries lib, string chipSeries, string frequency, DevKits devKit, params string[] regexFilters);
-        string GetLatestFilePath(string filter, DevKits devKit, params string[] regexFilters);
+        /// <summary>
+        /// Retrieves the latest firmware file path based on the provided parameters.
+        /// <remarks>Not filter by parameter in case of null or empty parameter values</remarks>
+        /// </summary>
+        /// <param name="applicationLibrary">Demo application firmware library.</param>
+        /// <param name="chipSeries">Specific chip series.</param>
+        /// <param name="frequency">Rf frequency.</param>
+        /// <param name="ending">File ending.</param>
+        /// <param name="regexFilters">Regular expression filters.</param>
+        /// <returns>Latest firmware file path.</returns>
+        string GetLatestFirmwareFilePath(Libraries applicationLibrary, string chipSeries, string frequency, string ending, params string[] regexFilters);
         /// <summary>
         /// Get Bootloader and keys file paths needed for the application flashing to the device.
         /// Default root path to search specified in the IFileSystemManager.BasePath. (Resources folder)
@@ -28,5 +43,16 @@ namespace Zats.Services
         /// <param name="chipSeries">Chip series for the controller.</param>
         /// <returns>File path for the predefined controller.</returns>
         string GetPredefinedControllerPathFromResources(ChipSeries chipSeries);
+        /// <summary>
+        /// Gets folder path based on path type
+        /// </summary>
+        /// <param name="pathType">The type of path to retrieve</param>
+        /// <returns>Folder path.</returns>
+        string GetPath(PathTypes pathType);
+        /// <summary>
+        /// Specific test case run folder setting
+        /// </summary>
+        /// <param name="testCaseFolder"></param>
+        void SetTestCaseFolderPath(string testCaseFolder);
     }
 }

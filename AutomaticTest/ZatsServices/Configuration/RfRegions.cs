@@ -13,26 +13,43 @@ namespace Zats.Services
     /// </summary>
     public enum RfRegions
     {
-        UNKNOWN, /* Unknown/Invalid*/
-        EU,      /* European Union*/
-        US,      /* United States*/
-        ANZ,     /* Australia/New Zealand*/
-        HK,      /* Hong Kong*/
-        MY,      /* Malaysia*/
-        IN,      /* India*/
-        JP,      /* Japan*/
-        RU,      /* Russian Federation*/
-        IL,      /* Israel*/
-        KR,      /* Korea*/
-        CN,      /* China*/
-        EU_LR,   /* European Union, Long Range */
-        US_LR,   /* United States, Long Range */
+        /// <summary>Undefined/unknown region. This value SHOULD be used if there was an error retrieving the configured region.</summary>
+        UNKNOWN = ZWave.BasicApplication.Enums.RfRegions.Undefined,
+        /// <summary>European Union</summary>
+        EU = ZWave.BasicApplication.Enums.RfRegions.EU,
+        /// <summary>United States</summary>
+        US = ZWave.BasicApplication.Enums.RfRegions.US,
+        /// <summary>Australia/New Zealand</summary>
+        ANZ = ZWave.BasicApplication.Enums.RfRegions.ANZ,
+        /// <summary>Hong Kong</summary>
+        HK = ZWave.BasicApplication.Enums.RfRegions.HK,
+        /// <summary>Malaysia</summary>
+        /// <remarks>Deprecated: should no longer be used.</remarks>
+        //MY = ZWave.BasicApplication.Enums.RfRegions.MY,
+        /// <summary>India</summary>
+        IN = ZWave.BasicApplication.Enums.RfRegions.IN,
+        /// <summary>Japan</summary>
+        JP = ZWave.BasicApplication.Enums.RfRegions.JP,
+        /// <summary>Russian Federation</summary>
+        RU = ZWave.BasicApplication.Enums.RfRegions.RU,
+        /// <summary>Israel</summary>
+        IL = ZWave.BasicApplication.Enums.RfRegions.IL,
+        /// <summary>Korea</summary>
+        KR = ZWave.BasicApplication.Enums.RfRegions.KR,
+        /// <summary>China</summary>
+        CN = ZWave.BasicApplication.Enums.RfRegions.CN,
+        /// <summary>European Union, Long Range</summary>
+        EU_LR = ZWave.BasicApplication.Enums.RfRegions.EU_LR,
+        /// <summary>United States, Long Range</summary>
+        US_LR = ZWave.BasicApplication.Enums.RfRegions.US_LR,
     }
 
     public enum RfLongRangeRegions
     {
-        US_LR,   /* United States, Long Range */
-        EU_LR,   /* European Union, Long Range */
+        /// <summary>United States, Long Range</summary>
+        US_LR = ZWave.BasicApplication.Enums.RfRegions.US_LR,
+        /// <summary>European Union, Long Range</summary>
+        EU_LR = ZWave.BasicApplication.Enums.RfRegions.EU_LR,
     }
 
 
@@ -153,9 +170,6 @@ namespace Zats.Services
                     break;
                 case RfRegions.HK:
                     ret = ZWave.BasicApplication.Enums.RfRegions.HK;
-                    break;
-                case RfRegions.MY:
-                    ret = ZWave.BasicApplication.Enums.RfRegions.Undefined;
                     break;
                 case RfRegions.IN:
                     ret = ZWave.BasicApplication.Enums.RfRegions.IN;

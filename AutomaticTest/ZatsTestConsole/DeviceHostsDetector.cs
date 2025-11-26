@@ -351,7 +351,7 @@ namespace ZatsTestConsole
                         ChipSeries.ZG14_BRD4201A, ChipSeries.ZG14_BRD4206A, ChipSeries.ZG14_BRD4208A
                     }.Select(y => y.ToString()).Contains(x.ChipSeries))
                     {
-                        var firmware = _fileSystemManager.GetLatestFilePath(Libraries.Manipulator, chipRes, null, null, DevKits.Default, ".hex");
+                        var firmware = _fileSystemManager.GetLatestFirmwareFilePath(Libraries.Manipulator, chipRes, null, null, ".hex");
                         _gammaProgrammer.ProgramSample(dhc, null, firmware, false, null, null);
                     }
                 }

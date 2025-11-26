@@ -16,6 +16,14 @@ namespace Zats.Services
 {
     public class ProgrammingGammaProvider : ProgrammingProviderBase, IProgrammingProvider
     {
+        /// <summary>
+        /// 60 seconds timeout duration, in milliseconds, for the flash programmer operations.
+        /// </summary>
+        private const int FLASH_PROGRAMMER_TIMEOUT_MS = 60000;
+        /// <summary>
+        /// 10 seconds timeout to get result from Commander CLI (programmer)
+        /// </summary>
+        private const int DEFAULT_PROGRAMMER_TIMEOUT_MS = 10000;
         public ProgrammingGammaProvider(string appPath, Action<bool, string> logAction)
             : base(appPath, logAction) { }
 
@@ -24,21 +32,21 @@ namespace Zats.Services
             int ret = 0;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var manipulatorPort = GetHostManipulatorPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             string args;
             if (manipulatorPort != null)
             {
                 args = $"device reset {manipulatorPort}";
-                ret = ProgrammerAction(args, "Reset", 30000);
+                ret = ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS);
             }
             for (int i = 0; i < 3; i++)
             {
                 args = $"device masserase {devicePort} {deviceId}";
-                ret = ProgrammerAction(args, "Erase Flash", 30000);
+                ret = ProgrammerAction(args, "Erase Flash", DEFAULT_PROGRAMMER_TIMEOUT_MS);
                 if (ret != 0)
                 {
                     args = $"device recover {devicePort}";
-                    ret = ProgrammerAction(args, "Recover Bricked Device", 30000);
+                    ret = ProgrammerAction(args, "Recover Bricked Device", FLASH_PROGRAMMER_TIMEOUT_MS);
                 }
                 else
                 {
@@ -73,9 +81,9 @@ namespace Zats.Services
             int ret = 0;
             string args;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             args = $"device pageerase --region @lockbits {devicePort} {deviceId}";
-            ret = ProgrammerAction(args, "Erase DSK", 30000, out string output);
+            ret = ProgrammerAction(args, "Erase DSK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
             Thread.Sleep(10000); // wait for adapter restore 
             ret = BoardHardReset(deviceHostClient);
             return ret;
@@ -85,7 +93,7 @@ namespace Zats.Services
         {
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var args = $"adapter reset {devicePort}";
-            var ret = ProgrammerAction(args, "Reset Adapter", 30000, out string output);
+            var ret = ProgrammerAction(args, "Reset Adapter", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
             Thread.Sleep(10000); // wait for adapter restore 
             return ret;
         }
@@ -99,7 +107,7 @@ namespace Zats.Services
             string output = string.Empty;
             for (int i = 0; i < 3; i++)
             {
-                int chipRet = ProgrammerAction(args, "Get Adapter Info", 30000, out output);
+                int chipRet = ProgrammerAction(args, "Get Adapter Info", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 if (chipRet == 0)
                 {
                     break;
@@ -142,7 +150,7 @@ namespace Zats.Services
         public string GetChipSeries(DeviceHostClient deviceHostClient)
         {
             var res = string.IsNullOrEmpty(deviceHostClient.Host.ChipSeries) ?
-                GetAdapterInfo(deviceHostClient) : 
+                GetAdapterInfo(deviceHostClient) :
                 deviceHostClient.Host.ChipSeries;
             return res;
         }
@@ -151,13 +159,13 @@ namespace Zats.Services
         {
             ZWaveRegions zwRegion = ZWaveRegions.REGION_UNDEFINED;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"tokendump --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ {devicePort} {deviceId}";
             int ret = 0;
             string output = null;
             for (int i = 0; i < 3; i++)
             {
-                ret = ProgrammerAction(args, "Get Z-Wave Region", 30000, out output);
+                ret = ProgrammerAction(args, "Get Z-Wave Region", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 if (ret != 0)
                 {
                     AwakeDeviceWithTestInterface(deviceHostClient);
@@ -174,7 +182,7 @@ namespace Zats.Services
                 if (lines != null)
                 {
                     var zwRegionLine = lines.FirstOrDefault(x => x.StartsWith("MFG_ZWAVE_COUNTRY_FREQ"))?.Replace("MFG_ZWAVE_COUNTRY_FREQ", "").Replace(" ", "").Replace(":", "");
-                    if (zwRegionLine != null && zwRegionLine.StartsWith("0x") || zwRegionLine.StartsWith("0X"))
+                    if (zwRegionLine != null && zwRegionLine.StartsWith("0x"))
                     {
                         byte zwRegionVal = (int)ZWaveRegions.REGION_UNDEFINED;
                         if (byte.TryParse(zwRegionLine.Substring(2), NumberStyles.HexNumber, null, out zwRegionVal))
@@ -199,13 +207,13 @@ namespace Zats.Services
         {
             List<byte> dskValue = new List<byte>();
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"tokendump --tokengroup znet --token MFG_ZW_PUK {devicePort} {deviceId}";
             int ret = 0;
             string output = null;
             for (int i = 0; i < 3; i++)
             {
-                ret = ProgrammerAction(args, "Get DSK", 30000, out output);
+                ret = ProgrammerAction(args, "Get DSK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 if (ret != 0)
                 {
                     AwakeDeviceWithTestInterface(deviceHostClient);
@@ -264,10 +272,10 @@ namespace Zats.Services
         {
             List<byte> prkValue = new List<byte>();
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"tokendump --tokengroup znet --token MFG_ZW_PRK --token MFG_ZW_PUK {devicePort} {deviceId}";
 
-            int ret = ProgrammerAction(args, "Get PRK", 30000, out string output);
+            int ret = ProgrammerAction(args, "Get PRK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
             try
             {
                 string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
@@ -294,11 +302,12 @@ namespace Zats.Services
             return prkValue.ToArray();
         }
 
-        public string GetPowerMeasure(DeviceHostClient deviceHostClient, int windowLenght)
+
+        public string GetPowerMeasure(DeviceHostClient deviceHostClient, int windowLength)
         {
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var args = string.Format($"aem measure {devicePort} --windowlength {windowLenght}");
-            int ret = ProgrammerAction(args, "Get Power Measure", 30000, out string output);
+            var args = string.Format($"aem measure {devicePort} --windowlength {windowLength}");
+            int ret = ProgrammerAction(args, "Get Power Measure", windowLength + DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
             return output;
         }
 
@@ -311,48 +320,48 @@ namespace Zats.Services
         {
             int ret = 0;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             string args, output;
             for (int i = 0; i < 3; i++)
             {
                 args = string.Format($"device masserase {devicePort} {deviceId}");
-                ret = ProgrammerAction(args, "Erase Flash", 30000, out output);
+                ret = ProgrammerAction(args, "Erase Flash", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
 
                 if (ret == 0)
                 {
                     args = string.Format($"device reset {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Reset", 30000, out output);
+                    ret = ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)) &&
                     File.Exists(bootloaderPaths?.Bootloader))
                 {
                     args = string.Format($"device pageerase --region @bootloader {devicePort} {deviceId}");
-                    ProgrammerAction(args, "Erase Bootloader", 30000, out output);
+                    ProgrammerAction(args, "Erase Bootloader", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x)))
                 {
                     args = string.Format($"device pageerase --region @lockbits {devicePort} {deviceId}");
-                    ProgrammerAction(args, "Erase Lockbits", 30000, out output);
+                    ProgrammerAction(args, "Erase Lockbits", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0)
                 {
                     args = string.Format($"device pageerase --region @userdata {devicePort} {deviceId}");
-                    ProgrammerAction(args, "Erase User Data", 30000, out output);
+                    ProgrammerAction(args, "Erase User Data", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && File.Exists(bootloaderPaths?.Bootloader))
                 {
                     args = string.Format($"flash \"{bootloaderPaths.Bootloader}\" {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Program Bootloader", 30000, out output);
+                    ret = ProgrammerAction(args, "Program Bootloader", FLASH_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && samplePath != null)
                 {
                     args = string.Format($"flash \"{samplePath}\" --address 0x0 {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Program Flash", 60000, out output);
+                    ret = ProgrammerAction(args, "Program Flash", FLASH_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && File.Exists(bootloaderPaths?.EncryptKey) && File.Exists(bootloaderPaths?.KeysToken))
@@ -363,25 +372,25 @@ namespace Zats.Services
                         $"--tokenfile \"{bootloaderPaths.KeysToken}\"");
 
                     args = string.Format($"flash --tokengroup znet {tokenfiles} {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Program Keys", 30000, out output);
+                    ret = ProgrammerAction(args, "Program Keys", FLASH_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0) //+
                 {
                     args = string.Format($"device reset {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, "Reset", 30000, out output);
+                    ret = ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret == 0 && region != null)
                 {
                     args = string.Format($"flash --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ:0x{(byte)region:X2} {devicePort} {deviceId}");
-                    ret = ProgrammerAction(args, $"Set Z-Wave Region {region}=0x{(byte)region:X2}", 30000, out output);
+                    ret = ProgrammerAction(args, $"Set Z-Wave Region {region}=0x{(byte)region:X2}", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
                 if (ret != 0)
                 {
                     args = $"device recover {devicePort}";
-                    ret = ProgrammerAction(args, "Recover Bricked Device", 30000, out output);
+                    ret = ProgrammerAction(args, "Recover Bricked Device", FLASH_PROGRAMMER_TIMEOUT_MS, out output);
                 }
                 else
                 {
@@ -398,7 +407,7 @@ namespace Zats.Services
                 if (sclient != null && sclient.TransportClient.IsOpen && IsSerialApi(deviceHostClient.Library))
                 {
                     var serialApiExpectToken = deviceHostClient.SClient.Expect(new ByteIndex[] { 0x00, 0x0A }, delay, null);
-                    ProgrammerAction(args, "Reset", 30000, out output);
+                    ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                     var serialApiExpectRes = serialApiExpectToken.WaitCompletedSignal();
                     if (serialApiExpectRes)
                     {
@@ -411,7 +420,7 @@ namespace Zats.Services
                 }
                 else
                 {
-                    ProgrammerAction(args, "Reset", 30000, out output);
+                    ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
                 Thread.Sleep(500);
             }
@@ -443,7 +452,7 @@ namespace Zats.Services
             int ret = 0;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var args = string.Format($" {devicePort} -pr {backUpPath}");
-            ProgrammerAction(args, "BackUp", 4 * 60 * 1000, out string output);
+            ProgrammerAction(args, "BackUp", 5 * FLASH_PROGRAMMER_TIMEOUT_MS, out string output);
 
             return ret;
         }
@@ -457,7 +466,7 @@ namespace Zats.Services
             if (manipulatorPort != null)
             {
                 args = $"device reset {manipulatorPort}";
-                ret = ProgrammerAction(args, "Reset", 30000);
+                ret = ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS);
             }
             args = $"device reset {devicePort}";
             ActionToken token = null;
@@ -466,7 +475,7 @@ namespace Zats.Services
             {
                 token = deviceHostClient.SClient.Expect(new ByteIndex[] { 0x00, 0x0A }, 5000, null);
             }
-            ret = ProgrammerAction(args, "Reset", 5000);
+            ret = ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS);
             if (ret == 0)
             {
                 if (deviceHostClient != null && deviceHostClient.SClient != null && token != null)
@@ -497,9 +506,9 @@ namespace Zats.Services
         private int UnlockDebugAccess(DeviceHostClient deviceHostClient)
         {
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"device {deviceId} lock {devicePort} --debug disable";
-            int ret = ProgrammerAction(args, "Unlock Debug Access", 30000, out string output);
+            int ret = ProgrammerAction(args, "Unlock Debug Access", FLASH_PROGRAMMER_TIMEOUT_MS, out string output);
             return ret;
         }
 
@@ -527,7 +536,7 @@ namespace Zats.Services
         {
             var compressParam = isSeries2 ? "lzma" : "lz4"; // important to use correct compress param for specific Series: "lz4" for 700 and "lzma" for 800!
             var args = $"gbl create \"{gblFilePath}\" --app \"{hexFilePath}\" --sign {signKeyFilePath} --encrypt {encryptKeyFilePath} --compress {compressParam}";
-            int ret = ProgrammerAction(args, "Create .gbl File", 30000, out string output);
+            int ret = ProgrammerAction(args, "Create .gbl File", FLASH_PROGRAMMER_TIMEOUT_MS, out string output);
             return ret;
         }
 
@@ -558,7 +567,7 @@ namespace Zats.Services
 
         public string GetVersion()
         {
-            ProgrammerAction("--version", string.Empty, 6000, out string versionOutput);
+            ProgrammerAction("--version", string.Empty, DEFAULT_PROGRAMMER_TIMEOUT_MS, out string versionOutput);
             return versionOutput;
         }
 
@@ -566,13 +575,13 @@ namespace Zats.Services
         {
             var ret = string.Empty;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"security status {deviceId} {devicePort}";
 
             string output = string.Empty;
             for (int i = 0; i < 3; i++)
             {
-                int chipRet = ProgrammerAction(args, "Get Security Status Info", 30000, out output);
+                int chipRet = ProgrammerAction(args, "Get Security Status Info", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 if (chipRet == 0)
                 {
                     ret = output;
@@ -582,7 +591,7 @@ namespace Zats.Services
             return ret;
         }
 
-        private string getDeviceIdentifierWithArg(DeviceHost deviceHost)
+        private string GetDeviceIdentifierArgument(DeviceHost deviceHost)
         {
             if (deviceHost == null)
             {
@@ -599,7 +608,7 @@ namespace Zats.Services
         }
 
         /// <summary>
-        /// Read NVM3 to specific file and retrive Application Framework API Version
+        /// Read NVM3 to specific file and retrieve Application Framework API Version
         /// </summary>
         /// <param name="deviceHostClient">Device host information.</param>
         /// <returns>Z-Wave Application Framework API Version from NVM3: [APP_VERSION, APP_REVISION, APP_PATCH]</returns>
@@ -621,13 +630,13 @@ namespace Zats.Services
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, fileName);
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
-            var deviceId = getDeviceIdentifierWithArg(deviceHostClient.Host);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
             var args = $"nvm3 read -o {path} {devicePort} {deviceId}";
-            ret = ProgrammerAction(args, $"Read NVM3", 3000, out string output);
+            ret = ProgrammerAction(args, $"Read NVM3", FLASH_PROGRAMMER_TIMEOUT_MS, out string output);
             if (ret >= 0)
             {
                 args = $"nvm3 parse {path} --key {ZAF_KEY} "; //--json
-                ret = ProgrammerAction(args, $"Parse ZAF Key from NVM3", 3000, out output);
+                ret = ProgrammerAction(args, $"Parse ZAF Key from NVM3", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 if (ret >= 0)
                 {
                     string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
