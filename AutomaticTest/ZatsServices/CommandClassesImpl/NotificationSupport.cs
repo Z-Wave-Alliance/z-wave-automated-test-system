@@ -1183,6 +1183,8 @@ namespace Zats.Services
         FanFailure = 0x14,
         [Description("0x15 Compressor failure")]
         CompressorFailure = 0x15,
+        [Description("0x16 Safety Interlock Engaged")]
+        SafetyInterlockEngaged = 0x16,
         [Description("0xFE Unknown event")]
         UnknownEvent = 0xFE
     }
