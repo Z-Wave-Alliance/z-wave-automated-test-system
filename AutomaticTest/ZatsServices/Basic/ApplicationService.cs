@@ -1601,9 +1601,7 @@ namespace Zats.Services
             else
             {
                 var chs = (ChipSeries)Enum.Parse(typeof(ChipSeries), chipSeries);
-                ret = DeviceManager.GetLatestFirmwareFilePath(lib, chs, frequency, ending, regexFilters);
-                if (!string.IsNullOrEmpty(ret)) return ret;
-
+                
                 //prepare .gbl if it doesn't exist for possible OTA test to avoid all test changes:
                 if (regexFilters.Any(x => x.Contains(".gbl")))
                 {
@@ -1615,6 +1613,10 @@ namespace Zats.Services
                         ret = DeviceManager.GblCreateCustom(fp, null, blp, isChipSeries2);
                     }
                 }
+                
+                ret = DeviceManager.GetLatestFirmwareFilePath(lib, chs, frequency, ending, regexFilters);
+                if (!string.IsNullOrEmpty(ret)) return ret;
+                
             }
             return ret;
         }
