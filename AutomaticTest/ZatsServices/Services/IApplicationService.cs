@@ -109,7 +109,7 @@ namespace Zats.Services
         BasicToken.Void[] SetApplicationCmd(Alias deviceNumber, bool IsS0, bool IsS2, LibTypes Library, byte[] wakeUpInterval);
         BasicToken.Void[] SetApplicationCmd(Alias deviceNumber, bool IsS0, bool IsS2, LibTypes Library, byte zwavePlusVersion);
         BasicToken.Void[] SetApplicationCmd(Alias deviceNumber, bool IsS0, bool IsS2, LibTypes Library, byte[] wakeUpInterval, byte zwavePlusVersion);
-        BasicToken.Void[] SetApplicationResponse(Alias deviceNumber, LibTypes Library, byte[] FullCmd);        
+        BasicToken.Void[] SetApplicationResponse(Alias deviceNumber, LibTypes Library, byte[] FullCmd);
         BasicToken.Void[] SetApplicationResponse(Alias deviceNumber, LibTypes Library, byte[] FullCmd, byte[] wakeUpInterval, byte zWavePlusersion);
         BasicToken.Void[] SetApplicationCmdWithExtraClasses(Alias deviceNumber, bool IsS0, bool IsS2, LibTypes Library, byte[] extraClasses);
         BasicToken.Void[] SetApplicationResponsePreconfigured(Alias deviceNumber, IPreconfiguredDevice preconfiguredDevice);
@@ -159,19 +159,25 @@ namespace Zats.Services
         /// <summary>
         /// Downloads a file from the specified URI and saves it to the destination folder.
         /// </summary>
+        /// <remarks>
+        /// By default, it will be the TC report folder if <paramref name="destinationFolder"/> is not specified.
+        /// </remarks>
         /// <param name="url">The URL of the file to download.</param>
-        /// <param name="destinationFolder">The destination folder where the file will be saved.</param>
+        /// <param name="destinationFolder">The destination folder where the file will be saved. By default, it will be the TC report folder.</param>
         /// <param name="fileName">Optional file name to use for saving. If not specified, the name will be extracted from the URI.</param>
         /// <returns>The full path to the downloaded file.</returns>
-        string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null);
+        string DownloadFileFromUrl(string url, string destinationFolder, string fileName);
         /// <summary>
         /// Downloads a file from the specified URI asynchronously and saves it to the destination folder.
         /// </summary>
+        /// <remarks>
+        /// By default, it will be the TC report folder if <paramref name="destinationFolder"/> is not specified.
+        /// </remarks>
         /// <param name="url">The URL of the file to download.</param>
         /// <param name="destinationFolder">The destination folder where the file will be saved.</param>
         /// <param name="fileName">Optional file name to use for saving. If not specified, the name will be extracted from the URI.</param>
         /// <returns>The full path to the downloaded file.</returns>
-        Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName = null);
+        Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName);
     }
 
     public class Parameters

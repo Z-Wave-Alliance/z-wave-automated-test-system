@@ -219,11 +219,9 @@ namespace ZatsTestConsole
                 _gammaProgrammer = new ProgrammingGammaProvider(ActiveProfile.CommanderAppPath, consoleOutPut.ReportDiagnosticToConsole);
             }
 
-            var tcsPath = Path.GetDirectoryName(_cmdLineSettings.AssemblyFile);
-            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole, tcsPath)
-            {
-                BasePath = _cmdLineSettings.BasePath,
-            };
+            var testCaseAssemblyPath = Path.GetDirectoryName(_cmdLineSettings.AssemblyFile);
+            IFileSystemManager _fileSystemManager = new FileSystemManager(consoleOutPut.ReportDiagnosticToConsole,
+                testCaseAssemblyPath, _cmdLineSettings.BasePath, _cmdLineSettings.ReportsPath);
 
             // Check if mesh network router is present.
             var meshRoutersFilterList = GetSerialNumbersToFilter(_cmdLineSettings.MeshRoutersDevicesFilter);
@@ -799,6 +797,9 @@ namespace ZatsTestConsole
                                                     }
                                                     catch (Exception e)
                                                     {
+                                                        res = TestCaseResult.Skip;
+                                                        consoleOutPut.ReportToConsole("Test Case initialization failed", "*", LogLevels.Error);
+                                                        consoleOutPut.ReportResultToConsole(tcDefinition, res, _stopWatch, runCounter, tcCounter, tc.OutputMessage);
                                                         consoleOutPut.ConsoleWriteLine(e.ToString(), LogLevels.Information);
                                                         consoleOutPut.ConsoleWriteLine("Test threw an internal exception and was skipped", LogLevels.Error);
                                                     }

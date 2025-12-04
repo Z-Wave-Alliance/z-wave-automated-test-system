@@ -36,6 +36,7 @@ namespace Zats.Services
 
         protected int ProgrammerAction(string args, string message, int timeoutMs, out string output)
         {
+            output = string.Empty;
             var process = new Process();
             process.StartInfo.FileName = _appPath;
             process.StartInfo.Arguments = args;
@@ -47,11 +48,31 @@ namespace Zats.Services
             var res = process.WaitForExit(timeoutMs);
             if (!res)
             {
-                process.Kill();
+                try
+                {
+                    process.Kill();
+                    // Ensure process exits after kill, but do not block indefinitely
+                    if (!process.WaitForExit(5000))
+                    {
+                        LogProgrammerAction(false, $"{message} args:{args} - Process failed to exit after kill.");
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    LogProgrammerAction(false, $"{message} args:{args} - Process termination issue.");
+                }
             }
-            output = tmp.Result;
             
-            int ret = process.ExitCode;
+            try
+            {
+                output = tmp.Result;
+            }
+            catch (AggregateException)
+            {
+                LogProgrammerAction(false, $"{message} args:{args} - Read output result");
+            }
+
+            int ret = process.HasExited ? process.ExitCode : -1;
             process.Close();
             LogProgrammerAction(ret, $"{message} args:{args}");
             if (ret != 0)

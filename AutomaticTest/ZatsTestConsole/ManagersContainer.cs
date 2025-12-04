@@ -264,6 +264,8 @@ namespace ZatsTestConsole
             {
                 Directory.CreateDirectory(ReportManager.TestCaseFolder);
             }
+            DeviceManager.FileSystemManager.SetupTestCaseTempDirectory(ReportManager.TestCaseFolder);
+
             ReportManager.TestCaseLogName = Zats.Services.ReportManager.GetFileName(ReportManager.TestCaseFolder, testCaseName, frequency, false);
 
             _keyDirTotal = Path.Combine(Directory.GetCurrentDirectory(), KEY_FOLDER_NAME);

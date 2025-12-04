@@ -264,7 +264,7 @@ namespace Zats.Services
         }
 
         public List<BasicToken.ResponseData> SetupRootDevice(Alias deviceNumber, DeviceOptions deviceOptions, byte genericDeviceClass, byte specificDeviceClass,
-            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, IEnumerable<CommandClassSupport> commandClassSupportList, 
+            bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, IEnumerable<CommandClassSupport> commandClassSupportList,
             Configuration.ConfigurationItem configuration = null)
         {
             Device device = DeviceManager.GetDevice(deviceNumber);
@@ -316,7 +316,7 @@ namespace Zats.Services
                         new COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET() { requestedCommandClass = COMMAND_CLASS_CRC_16_ENCAP.ID }, 3);
 
             AddOrModifySecurityConfigured( // includes CreateInclusionControllerSupportTask
-                deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray()); 
+                deviceNumber, securityVersions, configuration?.SecuritySettings?.NetworkKeys, false, secureCCs.ToArray());
 
             byte s0Version = 0;
             if (securityVersions.HasFlag(SecurityVersions.S0))
@@ -792,7 +792,7 @@ namespace Zats.Services
             AddOrModifySecurityConfigured(deviceNumber, securityVersions, null, false, supportedCC);
         }
 
-        public TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, 
+        public TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions,
             bool transportService, bool overwriteConfig = false)
         {
             Device controllerDevice = DeviceManager.GetDevice(deviceNumber);
@@ -825,13 +825,13 @@ namespace Zats.Services
             };
 
             // Prepare Supported CCs
-            var zwpInfoSupp = new ZWavePlusInfoSupport(zwpInfoSuppData)     { Version = 2, Secure = false };
-            var agiSupp = new AssociationGroupInfoSupport(assocSuppData)    { Version = 3, Secure = true };
-            var assocSupp = new AssociationSupport(assocSuppData)           { Version = 2, Secure = true };
+            var zwpInfoSupp = new ZWavePlusInfoSupport(zwpInfoSuppData) { Version = 2, Secure = false };
+            var agiSupp = new AssociationGroupInfoSupport(assocSuppData) { Version = 3, Secure = true };
+            var assocSupp = new AssociationSupport(assocSuppData) { Version = 2, Secure = true };
             var mcaSupp = new MultiChannelAssociationSupport(assocSuppData) { Version = 3, Secure = true };
-            var basicSupp = new BasicSupport()                              { Version = 2, Secure = true };
-            var deviceResetLocallySupp = new DeviceResetLocallySupport()    { Version = 1, Secure = true };
-            var manSpecSupp = new ManufacturerSpecificSupport()             { Version = 2, Secure = true };
+            var basicSupp = new BasicSupport() { Version = 2, Secure = true };
+            var deviceResetLocallySupp = new DeviceResetLocallySupport() { Version = 1, Secure = true };
+            var manSpecSupp = new ManufacturerSpecificSupport() { Version = 2, Secure = true };
             var fakeInclCtrlSupp = new GenericCcSupport(COMMAND_CLASS_INCLUSION_CONTROLLER.ID) { Version = 1, Secure = false };
             byte versionSuppVersion = 3;
             bool isVersionSuppSecure = true;
@@ -876,16 +876,16 @@ namespace Zats.Services
 
                 var supportedCCs = new List<CommandClassSupport>();
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_ZWAVEPLUS_INFO.ID))
-                { 
-                    supportedCCs.Add(zwpInfoSupp); 
+                {
+                    supportedCCs.Add(zwpInfoSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID))
-                { 
-                    supportedCCs.Add(agiSupp); 
+                {
+                    supportedCCs.Add(agiSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_ASSOCIATION_V2.ID))
-                { 
-                    supportedCCs.Add(assocSupp); 
+                {
+                    supportedCCs.Add(assocSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID)
                     && multiChannel)
@@ -897,12 +897,12 @@ namespace Zats.Services
                     supportedCCs.Add(basicSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID))
-                { 
-                    supportedCCs.Add(deviceResetLocallySupp); 
+                {
+                    supportedCCs.Add(deviceResetLocallySupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_MANUFACTURER_SPECIFIC.ID))
-                { 
-                    supportedCCs.Add(manSpecSupp); 
+                {
+                    supportedCCs.Add(manSpecSupp);
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_INCLUSION_CONTROLLER.ID))
                 {
@@ -910,21 +910,21 @@ namespace Zats.Services
                 }
                 if (configuration.Network.HasCommandClass(COMMAND_CLASS_VERSION.ID))
                 {
-                    supportedCCs.Add(new VersionSupport(supportedCCs)           { Version = versionSuppVersion, Secure = isVersionSuppSecure }); 
+                    supportedCCs.Add(new VersionSupport(supportedCCs) { Version = versionSuppVersion, Secure = isVersionSuppSecure });
                 }
 
                 if (securityVersions != SecurityVersions.None)
                 {
-                    SetupRootDevice(deviceNumber, 
+                    SetupRootDevice(deviceNumber,
                         deviceOptions,
                         genericType,
                         specificType,
-                        multiChannel, 
-                        supervision, 
-                        configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID), 
-                        securityVersions, 
-                        transportService, 
-                        supportedCCs, 
+                        multiChannel,
+                        supervision,
+                        configuration.Network.HasCommandClass(COMMAND_CLASS_CRC_16_ENCAP.ID),
+                        securityVersions,
+                        transportService,
+                        supportedCCs,
                         configuration);
                 }
                 else
@@ -984,7 +984,7 @@ namespace Zats.Services
                 if (resNop.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteOk)
                 {
                     // Final check if the DUT still awake before asking for a Wake Up Notification
-                    resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS, 
+                    resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS,
                         ZWave.Enums.SecuritySchemes.NONE);
                 }
 
@@ -1601,18 +1601,22 @@ namespace Zats.Services
             else
             {
                 var chs = (ChipSeries)Enum.Parse(typeof(ChipSeries), chipSeries);
-                ret = DeviceManager.GetLatestFilePath(new[] { lib }, chs, frequency, ending, devKit, regexFilters);
+                ret = DeviceManager.GetLatestFirmwareFilePath(lib, chs, frequency, ending, regexFilters);
                 if (!string.IsNullOrEmpty(ret)) return ret;
 
                 //prepare .gbl if it doesn't exist for possible OTA test to avoid all test changes:
                 if (regexFilters.Any(x => x.Contains(".gbl")))
                 {
-                    var fp = DeviceManager.GetLatestFilePath(new[] { deviceHostClient.Library }, chs, deviceHostClient.Frequency, ending, DevKits.Default, ".hex");
-                    if (File.Exists(fp))
+                    var srcHex = DeviceManager.GetLatestFirmwareFilePath(lib, chs, deviceHostClient.Frequency, ending, ".hex");
+                    if (File.Exists(srcHex))
                     {
+                        // Generate .gbl from .hex with the same name into TC temp folder:
+                        var newGblName = Path.GetFileName(srcHex).Replace(".hex", ".gbl");
+                        var gblFilePath = Path.Combine(DeviceManager.FileSystemManager.GetPath(PathTypes.TestCaseTemp), newGblName);
+
                         var blp = DeviceManager.FileSystemManager.GetBootloaderPath(deviceHostClient, null);
-                        var isSeres2 = DeviceManager.IsZW080x(deviceNumber);
-                        ret = DeviceManager.GblCreateCustom(fp, null, blp, isSeres2);
+                        var isChipSeries2 = DeviceManager.IsZW080x(deviceNumber);
+                        ret = DeviceManager.GblCreateCustom(srcHex, gblFilePath, blp, isChipSeries2);
                     }
                 }
             }
@@ -1632,7 +1636,7 @@ namespace Zats.Services
         public string GetFile(LibTypes library, ChipSeries chipSeries, string frequency, DevKits devKit, params string[] regexFilters)
         {
             ZWave.Enums.Libraries lib = GetZWaveLibrary(library);
-            return DeviceManager.FileSystemManager.GetLatestFilePath(lib, chipSeries.ToString(), frequency, devKit, regexFilters);
+            return DeviceManager.FileSystemManager.GetLatestFirmwareFilePath(lib, chipSeries.ToString(), frequency, string.Empty, regexFilters);
         }
 
         private ZWave.Enums.Libraries GetZWaveLibrary(LibTypes library)
@@ -2188,7 +2192,7 @@ namespace Zats.Services
                 {
                     ccVersionToReport = 3;
                 }
-                
+
                 if (allSupportCommandClassesForDevice.Any(y => y.CommandClassId == cmd))
                 {
                     var supportCC = allSupportCommandClassesForDevice.FirstOrDefault(y => y.CommandClassId == cmd);
@@ -2568,17 +2572,17 @@ namespace Zats.Services
         }
 
         /// <inheritdoc/>
-        public string DownloadFileFromUrl(string url, string destinationFolder, string fileName = null)
+        public string DownloadFileFromUrl(string url, string destinationFolder, string fileName)
         {
             return DownloadFileFromUrlAsync(url, destinationFolder, fileName).GetAwaiter().GetResult();
         }
 
         /// <inheritdoc/>
-        public async Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName = null)
+        public async Task<string> DownloadFileFromUrlAsync(string url, string destinationFolder, string fileName)
         {
             if (string.IsNullOrEmpty(destinationFolder))
             {
-                destinationFolder = Path.GetTempPath();
+                destinationFolder = DeviceManager.FileSystemManager.GetPath(PathTypes.TestCaseTemp);
             }
             if (!Directory.Exists(destinationFolder))
             {

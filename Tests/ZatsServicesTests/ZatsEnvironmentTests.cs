@@ -1626,8 +1626,10 @@ namespace ZatsServicesTests
         [TestCase(ChipSeries.ZG13S_BRD4201D)]
         [TestCase(ChipSeries.ZGM130S_BRD4202A)]
         [TestCase(ChipSeries.RZ13_BRD4203A)]
+        [TestCase(ChipSeries.ZG23_BRD4204A)]
         [TestCase(ChipSeries.ZG23_BRD4204C)]
         [TestCase(ChipSeries.ZG23_BRD4204D)]
+        [TestCase(ChipSeries.ZG23_BRD4210A)]
         [TestCase(ChipSeries.ZGM230S_BRD4205A)]
         [TestCase(ChipSeries.ZGM230S_BRD4205B)]
         [TestCase(ChipSeries.ZGM230_BRD2603A)]
@@ -1689,6 +1691,7 @@ namespace ZatsServicesTests
             NUnit.Framework.Assert.AreEqual(1, dm.Devices.Count());
         }
 
+        [TestCase(ChipSeries.ZG23_BRD4204A)]
         [TestCase(ChipSeries.ZG23_BRD4204C)]
         [TestCase(ChipSeries.ZG23_BRD4204D)]
         [TestCase(ChipSeries.ZGM230S_BRD4205A)]
