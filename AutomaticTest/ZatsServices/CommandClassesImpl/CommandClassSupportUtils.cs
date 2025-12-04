@@ -189,7 +189,7 @@ namespace Zats.Services
             ulong value = 0;
             if (bytes != null)
             {
-                if (bytes.Length == size && size >= 1 && size <= 4)
+                if (bytes.Length == size && size >= 1 && size <= 8)
                 {
                     for (int i = 0; i < size; i++)
                     {
@@ -205,7 +205,7 @@ namespace Zats.Services
             long value = 0;
             if (bytes != null)
             {
-                if (bytes.Length == size && size >= 1 && size <= 4)
+                if (bytes.Length == size && size >= 1 && size <= 8)
                 {
                     if ((bytes[0] & 0x80) != 0x00)
                         value = -1;
