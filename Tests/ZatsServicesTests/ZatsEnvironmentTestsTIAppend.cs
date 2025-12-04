@@ -71,10 +71,8 @@ namespace ZatsServicesTests
         {
             var updated = new Dictionary<string, Libraries>();
             var fileSystemManagerMock = new Mock<IFileSystemManager>();
-            fileSystemManagerMock.Setup(x => x.GetLatestFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DevKits>(), It.IsAny<string[]>()))
-                .Returns<Libraries, string, string, string, DevKits, string[]>((l, c, f, e, d, s) => l.ToString());
-            fileSystemManagerMock.Setup(x => x.GetLatestFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DevKits>(), It.IsAny<string[]>()))
-                .Returns<Libraries, string, string, DevKits, string[]>((l, c, f, d, s) => l.ToString());
+            fileSystemManagerMock.Setup(x => x.GetLatestFirmwareFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
+                .Returns<Libraries, string, string, string, string[]>((l, c, f, e, s) => l.ToString());
             fileSystemManagerMock.Setup(x => x.GetBootloaderPath(It.IsAny<DeviceHostClient>(), It.IsAny<string[]>(), It.IsAny<string[]>())).Returns(new BootloaderPath());
 
             var alphaProgrammerMock = new Mock<IProgrammingProvider>();

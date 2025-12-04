@@ -70,8 +70,7 @@ namespace ZatsServicesTests
             List<string> usedSrcs = new List<string>();
 
             var fileSystemManagerMock = new Mock<IFileSystemManager>();
-            fileSystemManagerMock.Setup(x => x.GetLatestFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DevKits>(), It.IsAny<string[]>())).Returns("string FGx");
-            fileSystemManagerMock.Setup(x => x.GetLatestFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DevKits>(), It.IsAny<string[]>())).Returns("string FGx");
+            fileSystemManagerMock.Setup(x => x.GetLatestFirmwareFilePath(It.IsAny<Libraries>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>())).Returns("string FGx");
 
             var alphaProgrammerMock = new Mock<IProgrammingProvider>();
             alphaProgrammerMock.Setup(x => x.ProgramSample(It.IsAny<DeviceHostClient>(), It.IsAny<ZWaveRegions?>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<byte[]>(), It.IsAny<byte[]>())).Returns(0);
