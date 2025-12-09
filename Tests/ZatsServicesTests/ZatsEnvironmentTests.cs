@@ -2882,7 +2882,7 @@ namespace ZatsServicesTests
         }
 
         [Test]
-        [Ignore("Zniffer is not start by that logic ?!")]
+        [Ignore("Zniffer is not started by that logic?!")]
         public void ZnifferRequired_NotBusy_InitTrue()
         {
             var expected = "COM101";
