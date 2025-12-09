@@ -24,7 +24,7 @@ namespace Zats.Services
         /// <summary>Hong Kong</summary>
         HK = ZWave.BasicApplication.Enums.RfRegions.HK,
         /// <summary>Malaysia</summary>
-        /// <remarks>Deprecated: should no longer be used.</remarks>
+        /// <remarks>Obsoleted: Must no longer be used.</remarks>
         //MY = ZWave.BasicApplication.Enums.RfRegions.MY,
         /// <summary>India</summary>
         IN = ZWave.BasicApplication.Enums.RfRegions.IN,
