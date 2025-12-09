@@ -30,7 +30,7 @@ namespace Zats.Services
         IN = ZWave.BasicApplication.Enums.RfRegions.IN,
         /// <summary>Japan</summary>
         JP = ZWave.BasicApplication.Enums.RfRegions.JP,
-        /// <summary>ru</summary>
+        /// <summary>Russia</summary>
         RU = ZWave.BasicApplication.Enums.RfRegions.RU,
         /// <summary>Israel</summary>
         IL = ZWave.BasicApplication.Enums.RfRegions.IL,
