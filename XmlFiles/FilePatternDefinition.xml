@@ -32,7 +32,6 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
 		<PathFilter Pattern="*{Lib}*BRD4205A*{Freq}_custom_config{End}.*"/>
         <PathFilter Pattern="*{Lib}*BRD4205A{End}.*"/>
         <PathFilter Pattern="*{Lib}*ZGM230SA*{Freq}{End}.*"/>
-        <!--<PathFilter Pattern="*{Lib}*ZGM230S*{Freq}{End}.*"/>-->
       </PathFilters>
     </BinaryPattern>
     <BinaryPattern ChipSeries="ZGM230S_BRD4205B">
