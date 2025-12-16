@@ -187,35 +187,35 @@ namespace Zats.Services
             substituteSettings.IsSkipWaitingSendCallbackEnabled = SendDataSettings.GetSkipWaitingSendCallback(senderNumber);
             substituteSettings.CallbackWaitTimeoutMs = SendDataSettings.GetCallbackWaitTimeoutMs(senderNumber);
             return substituteSettings;
-        }        
+        }
 
         /// <summary>
         /// Applies Multi Channel settings to SubstituteSettings in accordance with ComplianceService.SendDataSettings.
         /// </summary>
         /// <returns>SubstituteSettings</returns>
         private SubstituteSettings ApplyMultiChannelSettingsToSubstSettings(Alias senderNumber, SubstituteSettings substituteSettings)
-            {
+        {
             if (substituteSettings == null)
-                {
+            {
                 substituteSettings = GetCommonSubstituteSettings(senderNumber);
-                }
+            }
 
             if (SendDataSettings.GetMultiChannel(senderNumber))
-                {
+            {
                 substituteSettings.SubstituteFlags |= ZWave.Enums.SubstituteFlags.UseMultiChannel;
-                }
+            }
             substituteSettings.IsBitAdress = SendDataSettings.GetBitAdress(senderNumber);
             substituteSettings.DstEndPoint = SendDataSettings.GetDstEndPoint(senderNumber);
             substituteSettings.SrcEndPoint = SendDataSettings.GetSrcEndPoint(senderNumber);
             return substituteSettings;
-            }
+        }
 
         /// <summary>
         /// Applies CRC16 settings to SubstituteSettings in accordance with ComplianceService.SendDataSettings.
         /// </summary>
         /// <returns>SubstituteSettings</returns>
         private SubstituteSettings ApplyCRC16SettingsToSubstSettings(Alias senderNumber, SubstituteSettings substituteSettings)
-            {
+        {
             if (substituteSettings == null)
             {
                 substituteSettings = GetCommonSubstituteSettings(senderNumber);
@@ -224,7 +224,7 @@ namespace Zats.Services
             if (SendDataSettings.GetCRC16(senderNumber))
             {
                 substituteSettings.SubstituteFlags |= ZWave.Enums.SubstituteFlags.UseCrc16Encap;
-        }
+            }
             return substituteSettings;
         }
 
@@ -289,8 +289,8 @@ namespace Zats.Services
                         new COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT(),
                         2000);
                 }
-            return new BasicActionResult.SendData(res);
-        }
+                return new BasicActionResult.SendData(res);
+            }
             else
             {
                 SendDataResult res = sender.SendDataEx(receiverNode, data, (ZWave.Enums.TransmitOptions)txOptions, substituteSettings, (ZWave.Enums.TransmitSecurityOptions)txSecOptions, (ZWave.Enums.SecuritySchemes)scheme, (ZWave.Enums.TransmitOptions2)txOptions2);
@@ -819,7 +819,7 @@ namespace Zats.Services
                     node,
                     fwuMDRequestGetData,
                     (ZWave.Enums.TransmitOptions)TX_OPTIONS,
-                    fwuMDRequestReportData, 3000);
+                    fwuMDRequestReportData, 15000);
 
             if (res == true && res.Command != null)
             {
