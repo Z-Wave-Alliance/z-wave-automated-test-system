@@ -18,6 +18,7 @@ namespace Zats.Services.CommandClassesImpl
         RadioButton,
         ListComboBox,
         ListCheckBox,
+        DateTimePicker,
     }
 
     public enum InputType

@@ -68,6 +68,18 @@ namespace Zats.Services
             } 
         }
 
+        public TimeSupportData TimeSupportData { get; set; } = null;
+
+        public DateTime GetDeviceDateTime()
+        {
+            if (TimeSupportData != null)
+            {
+                return TimeSupportData.DeviceDateTime;
+            }
+            return DateTime.Now;
+        }
+
+
         #region Reporting
         /// <summary>
         /// Z-Wave device which shall send the report

@@ -93,6 +93,7 @@
     <Compile Include="Clusters\Unify_ConfigurationParametersCluster.cs" />
     <Compile Include="Clusters\Unify_NameAndLocationCluster.cs" />
     <Compile Include="Clusters\Unify_SystemMetrics.cs" />
+    <Compile Include="CommandClassesImpl\ActiveScheduleSupport.cs" />
     <Compile Include="CommandClassesImpl\AntiTheftSupport.cs" />
     <Compile Include="CommandClassesImpl\AntiTheftSupportBase.cs" />
     <Compile Include="CommandClassesImpl\AntiTheftUnlockSupport.cs" />
@@ -111,6 +112,9 @@
     <Compile Include="CommandClassesImpl\CommandClassSupportEnums.cs" />
     <Compile Include="CommandClassesImpl\CommandClassSupportUtils.cs" />
     <Compile Include="CommandClassesImpl\ConfigurationSupport.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\ActiveSchedule\IActiveScheduleSupport.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\ActiveSchedule\IActiveScheduleSupportData.cs" />
+    <Compile Include="CommandClassesImpl\Definitions\Interfaces\ActiveSchedule\IActiveScheduleTarget.cs" />
     <Compile Include="CommandClassesImpl\Definitions\Interfaces\ICommandClass.cs" />
     <Compile Include="CommandClassesImpl\Definitions\Interfaces\INestedItem.cs" />
     <Compile Include="CommandClassesImpl\Definitions\Interfaces\INodeItem.cs" />
@@ -134,6 +138,7 @@
     <Compile Include="CommandClassesImpl\ThermostatOperatingStateSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatSetbackSupport.cs" />
     <Compile Include="CommandClassesImpl\ThermostatSetpointSupport.cs" />
+    <Compile Include="CommandClassesImpl\TimeSupport.cs" />
     <Compile Include="CommandClassesImpl\UserCredentialSupport.cs" />
     <Compile Include="CommandClassesImpl\WakeUpSupport.cs" />
     <Compile Include="CommandClassesImpl\ManufacturerSpecificSupport.cs" />

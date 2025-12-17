@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Utils;
+using Zats.Services.CommandClassesImpl.Definitions.Interfaces.ActiveSchedule;
 using ZatsServices_netcore.CommandClassesImpl.Definitions.Interfaces;
 using ZWave;
 using ZWave.BasicApplication;
@@ -22,10 +23,12 @@ namespace Zats.Services
     [CommandClassName("User Credential Command Class")]
     [CommandClassId(COMMAND_CLASS_USER_CREDENTIAL.ID)]
     [MinVersion(1)]
-    [MaxVersion(1)]
+    [MaxVersion(2)]
 
-    public class UserCredentialSupport : CommandClassSupport
+    public class UserCredentialSupport : CommandClassSupport, IActiveScheduleSupport
     {
+        public const byte MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT = 2;
+
         private UserCredentialSupportData UserCredentialSupportData { get; set; }
         public override CommandClassSupportData CommandClassSupportData
         {
@@ -33,7 +36,91 @@ namespace Zats.Services
             set { UserCredentialSupportData = (UserCredentialSupportData)value; }
         }
 
-        public ScheduleEntryLockSupportData ScheduleEntryLockSupportData = null;
+        #region Active Schedule Specific
+        public byte TargetCC => CommandClassId;
+        public IActiveScheduleSupportData ScheduleSupportData
+        {
+            get
+            {
+                return CommandClassSupportData as IActiveScheduleSupportData;
+            }
+        }
+
+        public bool IsActiveScheduleTargetCaptableByVersion()
+        {
+            return Version >= MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT;
+        }
+
+        public void UpdateTarget(UInt16? targetId = null)
+        {
+            SupportDelegates?.DeviceDataUpdate?.Invoke(this);
+        }
+
+        public void AddOrModifyYearDaySchedule(ushort targetId, ushort scheduleSlot, ActiveYearDaySchedule yearDaySchedule)
+        {
+            UserSlot target = UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId);
+
+            if (target != null)
+            {
+                if (target.YearDaySchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveYearDaySchedule existingSchedule)
+                {
+                    target.YearDaySchedules.Remove(existingSchedule);
+                }
+                target.YearDaySchedules.Add(yearDaySchedule);
+            }
+        }
+
+        public void EraseYearDaySchedule(ushort targetId, ushort scheduleSlot)
+        {
+            var schedule = UserCredentialSupportData?.
+                UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.YearDaySchedules.FirstOrDefault(x => x.Slot == scheduleSlot);
+            UserCredentialSupportData?.
+                UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.YearDaySchedules.Remove(schedule);
+        }
+
+        public void EraseYearDaySchedules(ushort targetId)
+        {
+            UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.YearDaySchedules.Clear();
+        }
+
+        public void EraseYearDaySchedules()
+        {
+            UserCredentialSupportData?.UserSlots.ForEach(x => x.YearDaySchedules.Clear());
+        }
+
+
+        public void AddOrModifyDailyRepeatingSchedule(ushort targetId, ushort scheduleSlot, ActiveDailyRepeatingSchedule dailyRepeatingSchedule)
+        {
+            UserSlot target = UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId);
+
+            if (target != null)
+            {
+                if (target.DailyRepeatingSchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveDailyRepeatingSchedule existingSchedule)
+                {
+                    target.DailyRepeatingSchedules.Remove(existingSchedule);
+                }
+                target.DailyRepeatingSchedules.Add(dailyRepeatingSchedule);
+            }
+        }
+
+        public void EraseDailyRepeatingSchedule(ushort targetId, ushort scheduleSlot)
+        {
+            var schedule = UserCredentialSupportData?.
+                UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.DailyRepeatingSchedules.FirstOrDefault(x => x.Slot == scheduleSlot);
+            UserCredentialSupportData?.
+                UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.DailyRepeatingSchedules.Remove(schedule);
+        }
+
+        public void EraseDailyRepeatingSchedules(ushort targetId)
+        {
+            UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId)?.DailyRepeatingSchedules.Clear();
+        }
+
+        public void EraseDailyRepeatingSchedules()
+        {
+            UserCredentialSupportData?.UserSlots.ForEach(x => x.DailyRepeatingSchedules.Clear());
+        }
+        #endregion
 
         public DoorLockSupport DoorLockSupport = null;
 
@@ -100,12 +187,6 @@ namespace Zats.Services
 
             if (MatchesDestinationEndPoint())
             {
-                /*if (UserCodeSupportData.Users.Count == 0)
-                {
-                    InitializeUsersForCTT();
-                    InitializeCapabilitiesForCTT();
-                }*/
-
                 var sendDstNode = new NodeTag(ReceivedAchData.DstNode.Id, DstNode.EndPointId);
                 var sendSrcNode = ReceivedAchData.SrcNode;
                 byte[] command = ReceivedAchData.Command;
@@ -128,8 +209,6 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_SET.ID)
                     {
                         ResultForSv = HandleUserSetCmd(command, sendSrcNode, out autoReportDueToSet);
-                        //UserCredentialSupportData.PrintUsersInfo();
-                        //LogUserCodes();
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_GET.ID && !IsSupervised())
                     {
@@ -138,8 +217,6 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_SET.ID)
                     {
                         ResultForSv = HandleCredentialSetCmd(command, sendSrcNode, out autoReportDueToSet);
-                        //UserCredentialSupportData.PrintUsersInfo();
-                        //LogUserCodes();
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_GET.ID && !IsSupervised())
                     {
@@ -147,7 +224,6 @@ namespace Zats.Services
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_LEARN_START.ID)
                     {
-                        //UserCredentialSupportData.PrintUsersInfo();
                         CredentialLearningStarted += async (UserCredentialSupport userCredentialSupport) =>
                         {
                             userCredentialSupport.UserCredentialSupportData.CredentialLearningStatus = CredentialLearningStatus.Started;
@@ -164,9 +240,7 @@ namespace Zats.Services
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET.ID)
                     {
-                        //UserCredentialSupportData.PrintUsersInfo();
                         ResultForSv = HandleCredentialAssociationSetCmd(command, sendSrcNode, out autoReportDueToSet);
-                        //UserCredentialSupportData.PrintUsersInfo();
                     }
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL.ALL_USERS_CHECKSUM_GET.ID && !IsSupervised())
                     {
@@ -188,6 +262,20 @@ namespace Zats.Services
                     {
                         rpt = PrepareAdminPinCodeReport();
                     }
+                    #region V2
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_GET.ID && !IsSupervised())
+                    {
+                        rpt = PrepareKeyLockerCapabilitiesReport();
+                    }
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_SET.ID)
+                    {
+                        ResultForSv = HandleKeyLockerEntrySet(command, sendSrcNode, out autoReportDueToSet);
+                    }
+                    else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_GET.ID && !IsSupervised())
+                    {
+                        rpt = PrepareKeyLockerEntryReport(command);
+                    }
+                    #endregion // V2
 
                     // Report due to Get command
                     if (rpt != null && IsAnsweringAllowed())
@@ -198,7 +286,7 @@ namespace Zats.Services
 
                     // "Auto-Report" due to Set command
                     if (autoReportDueToSet != null) // Contrary to Get-type commands: Broadcast, Multicast and MC Bit Addressing are NO specified reasons to prevent
-                                                // sending the "Auto-Reports" upon a Set-type command in User Credential CC.
+                                                    // sending the "Auto-Reports" upon a Set-type command in User Credential CC.
                     {
                         ApiOperation sendData = new SendDataExOperation(_network, sendDstNode, sendSrcNode, autoReportDueToSet, TxOptions, TxSecOptions, scheme, TxOptions2);
                         ou.SetNextActionItems(sendData);
@@ -227,6 +315,7 @@ namespace Zats.Services
                 case COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_LEARN_CANCEL.ID:
                 case COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET.ID:
                 case COMMAND_CLASS_USER_CREDENTIAL.ADMIN_PIN_CODE_SET.ID:
+                case COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_SET.ID:
                     if (ResultForSv == SvResultNames.Successful)
                     {
                         supervisionReport.status = (byte)SvStatusNames.Success;
@@ -238,12 +327,14 @@ namespace Zats.Services
 
         private byte[] PrepareUserCapabilitiesReport()
         {
-            List<byte> suppUserTypesBitMask = CommandClassSupportUtils.CreateBitmaskFromList(UserCredentialSupportData.SupportedUserTypes, 0);
+            List<byte> suppUserTypesBitMask = CommandClassSupportUtils.
+                CreateBitmaskFromList(UserCredentialSupportData.SupportedUserTypes, 0);
 
             var usrCapaReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_CAPABILITIES_REPORT()
             {
                 numberOfSupportedUserUniqueIdentifiers = Tools.GetBytes(UserCredentialSupportData.NoOfSupportedUsers),
-                supportedCredentialRulesBitMask = CommandClassSupportUtils.CreateBitmaskFromList(UserCredentialSupportData.SupportedCredentialRules, 0, true).First(),
+                supportedCredentialRulesBitMask = CommandClassSupportUtils.
+                    CreateBitmaskFromList(UserCredentialSupportData.SupportedCredentialRules, 0, true).First(),
                 maxLengthOfUserName = UserCredentialSupportData.MaxUserNameLength,
                 properties1 = new COMMAND_CLASS_USER_CREDENTIAL.USER_CAPABILITIES_REPORT.Tproperties1()
                 {
@@ -253,7 +344,7 @@ namespace Zats.Services
                     /*Bit 4*/ utf16EncodingSupport = (byte)(UserCredentialSupportData.UserNameEncodingsAdvertisedAsSupported.Contains(UserNameEncoding.UTF16BE) ? 0x01 : 0x00),
                     /*Bit 5*/ userChecksumSupport = (byte)(UserCredentialSupportData.UserChecksumSupport ? 0x01 : 0x00),
                     /*Bit 6*/ allUsersChecksumSupport = (byte)(UserCredentialSupportData.AllUsersChecksumSupport ? 0x01 : 0x00),
-                    /*Bit 7*/ userScheduleSupport = (byte)(UserCredentialSupportData.UserScheduleSupport ? 0x01 : 0x00),
+                    /*Bit 7*/ userScheduleSupport = (byte)(UserCredentialSupportData.UserScheduleSupport && IsActiveScheduleTargetCaptableByVersion() ? 0x01 : 0x00),
                 },
                 supportedUserTypesBitMaskLength = (byte)suppUserTypesBitMask.Count,
                 supportedUserTypesBitMask = suppUserTypesBitMask,
@@ -370,8 +461,6 @@ namespace Zats.Services
                 {
                     UserCredentialSupportData.DeleteUser(existingUserSlot);
 
-                    DeleteUsersSchedules(userUniqueId);
-
                     // CC:0083.01.05.11.013 - sending User Report to sender and lifeline
                     userReport = existingUserSlot;
                     userReport.userReportType = (byte)UserReportType.UsersDeleted;
@@ -403,7 +492,9 @@ namespace Zats.Services
             }
             else if (opType == UserSetOperationType.Add || opType == UserSetOperationType.Modify)
             {
-                resultForSv = EncodeString(userSetCmd.userName.ToArray(), userNameEncoding, UserCredentialSupportData.MaxUserNameLength, out string userName) ? SvResultNames.Successful : SvResultNames.Failed;
+                resultForSv = EncodeString(
+                    userSetCmd.userName.ToArray(), userNameEncoding, UserCredentialSupportData.MaxUserNameLength, out string userName) 
+                    ? SvResultNames.Successful : SvResultNames.Failed;
 
                 // CC:0083.01.05.11.014, CC:0083.01.05.11.015 - irgnore command when userUniqueId is out of range
                 if (userUniqueId == 0 || userUniqueId > UserCredentialSupportData.NoOfSupportedUsers)
@@ -483,7 +574,10 @@ namespace Zats.Services
                     return SvResultNames.Failed;
                 }
 
-                if (opType == UserSetOperationType.Modify && userType == UserCredentialUserType.ExpiringUser && expiringTimeout == 0 && existingUserSlot.Type != UserCredentialUserType.ExpiringUser)
+                if (opType == UserSetOperationType.Modify 
+                    && userType == UserCredentialUserType.ExpiringUser 
+                    && expiringTimeout == 0 
+                    && existingUserSlot.Type != UserCredentialUserType.ExpiringUser)
                 {
                     userReport = existingUserSlot;
                     userReport.userReportType = (byte)UserReportType.ZeroExpiringInvalid;
@@ -721,8 +815,10 @@ namespace Zats.Services
             byte[] lifelineReport = null;
 
             var user = UserCredentialSupportData.UserSlots.Find(x => x.UserUniqeId == newCredentialData.UserUniqeId);
-            var existingCredential = UserCredentialSupportData.UserCredentials.Find(x => x.SlotId == newCredentialData.SlotId /* && x.UserUniqeId == newCredentialData.UserUniqeId */ && x.Type == newCredentialData.Type);
-            var duplicateCredential = UserCredentialSupportData.UserCredentials.Find(x => x.Type == newCredentialData.Type && Enumerable.SequenceEqual(x.Data, newCredentialData.Data));
+            var existingCredential = UserCredentialSupportData.
+                UserCredentials.Find(x => x.SlotId == newCredentialData.SlotId /* && x.UserUniqeId == newCredentialData.UserUniqeId */ && x.Type == newCredentialData.Type);
+            var duplicateCredential = UserCredentialSupportData.
+                UserCredentials.Find(x => x.Type == newCredentialData.Type && Enumerable.SequenceEqual(x.Data, newCredentialData.Data));
 
             var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == newCredentialData.Type);
 
@@ -869,7 +965,8 @@ namespace Zats.Services
 
                 // CC:0083.01.0A.11.011, CC:0083.01.0A.11.012
                 COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_REPORT credentialReport = 
-                    newCredentialData.CreateUserCredentialReport(opType == CredentialSetOperationType.Add ? CredentialReportType.CredentialAdded : CredentialReportType.CredentialModified);
+                    newCredentialData.CreateUserCredentialReport(
+                        opType == CredentialSetOperationType.Add ? CredentialReportType.CredentialAdded : CredentialReportType.CredentialModified);
 
                 credentialReport.nextCredentialSlot = Tools.GetBytes(nextCredential?.SlotId ?? 0);
                 credentialReport.nextCredentialType = (byte)(nextCredential?.Type ?? 0);
@@ -905,37 +1002,43 @@ namespace Zats.Services
 
             if (userUniqueId != 0 && credentialType != 0 && credentialSlot != 0) // CC:0083.01.0B.11.003 
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
                 credential = credentialsList.Find(x => x.Type == credentialType && x.SlotId == credentialSlot);
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
             else if (userUniqueId != 0 && credentialType == 0 && credentialSlot == 0) // CC:0083.01.0B.11.005
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
                 credential = credentialsList.FirstOrDefault();
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
             else if (userUniqueId == 0 && credentialType != 0 && credentialSlot != 0) // CC:0083.01.0B.11.008
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
                 credential = credentialsList.Find(x => x.SlotId == credentialSlot && x.Type == credentialType);
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
             else if (userUniqueId == 0 && credentialType != 0 && credentialSlot == 0) // CC:0083.01.0B.11.007
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.FindAll(x => x.Type == credentialType).OrderBy(x => x.SlotId).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.FindAll(x => x.Type == credentialType).OrderBy(x => x.SlotId).ToList();
                 credential = credentialsList.FirstOrDefault();
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
             else if (userUniqueId != 0 && credentialType != 0 && credentialSlot == 0) // CC:0083.01.0B.11.010
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.FindAll(x => x.UserUniqeId == userUniqueId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
                 credential = credentialsList.FirstOrDefault(x => x.Type == credentialType);
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
             else if (userUniqueId == 0 && credentialType == 0 && credentialSlot == 0) // CC:0083.01.0B.11.011
             {
-                var credentialsList = UserCredentialSupportData.UserCredentials.OrderBy(x => x.UserUniqeId).OrderBy(x => x.Type).OrderBy(x => x.SlotId).ToList();
+                var credentialsList = UserCredentialSupportData.
+                    UserCredentials.OrderBy(x => x.UserUniqeId).OrderBy(x => x.Type).OrderBy(x => x.SlotId).ToList();
                 credential = credentialsList.FirstOrDefault();
                 nextCredential = GetNextCredential(credentialsList, credential);
             }
@@ -980,7 +1083,8 @@ namespace Zats.Services
 
         private UserCredential GetNextUsersCredential(UserCredential currentCredential)
         {
-            var credentialsList = UserCredentialSupportData.UserCredentials.FindAll(x => x.UserUniqeId == currentCredential.UserUniqeId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
+            var credentialsList = UserCredentialSupportData.
+                UserCredentials.FindAll(x => x.UserUniqeId == currentCredential.UserUniqeId).OrderBy(x => x.SlotId).OrderBy(x => x.Type).ToList();
             //credential = credentialsList.Find(x => x.Type == credentialType && x.SlotId == credentialSlot);
             return GetNextCredential(credentialsList, currentCredential);
         }
@@ -996,7 +1100,8 @@ namespace Zats.Services
             byte learnTimeout = learnStartCmd.credentialLearnTimeout.Value;
 
             UserSlot user = UserCredentialSupportData.UserSlots.Find(x => x.UserUniqeId == userUniqueId);
-            UserCredential existingCredential = UserCredentialSupportData.UserCredentials.Find(x => x.UserUniqeId == userUniqueId && x.SlotId == credentialSlot && x.Type == credentialType);
+            UserCredential existingCredential = UserCredentialSupportData.
+                UserCredentials.Find(x => x.UserUniqeId == userUniqueId && x.SlotId == credentialSlot && x.Type == credentialType);
 
             var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == credentialType);
 
@@ -1015,7 +1120,8 @@ namespace Zats.Services
                 return SvResultNames.Failed;
             }
 
-            if (opType == CredentialLearnOperationType.CredentialLearnAdd && UserCredentialSupportData.UserCredentials.FindAll(x => x.Type == credentialType).Count >= credentialTypeSettings.NoOfSupportedSlots)
+            if (opType == CredentialLearnOperationType.CredentialLearnAdd && UserCredentialSupportData.
+                UserCredentials.FindAll(x => x.Type == credentialType).Count >= credentialTypeSettings.NoOfSupportedSlots)
             {
                 return SvResultNames.Failed;
             }
@@ -1084,7 +1190,8 @@ namespace Zats.Services
             return SvResultNames.Successful;
         }
 
-        private SvResultNames HandleCredentialAssociationSetCmd(COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET associationSetCmd, NodeTag srcNode, out byte[] rpt)
+        private SvResultNames HandleCredentialAssociationSetCmd(
+            COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET associationSetCmd, NodeTag srcNode, out byte[] rpt)
         {
             rpt = null;
 
@@ -1375,7 +1482,8 @@ namespace Zats.Services
             buffer = buffer.Append((byte)userName.Length).ToArray();
             buffer = buffer.Concat(userName).ToArray();
 
-            var credentials = UserCredentialSupportData.UserCredentials.FindAll(y => y.UserUniqeId == user.UserUniqeId).OrderBy(y => y.SlotId).OrderBy(y => y.Type).ToList();
+            var credentials = UserCredentialSupportData.
+                UserCredentials.FindAll(y => y.UserUniqeId == user.UserUniqeId).OrderBy(y => y.SlotId).OrderBy(y => y.Type).ToList();
 
             credentials.ForEach(credential => {
                 buffer = AppendCredentialDataToBuffer(buffer, credential, true);
@@ -1398,7 +1506,8 @@ namespace Zats.Services
             return buffer;
         }
 
-        private COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_REPORT SetupDeleteCredentialReport(ushort userUniqueId, CredentialType credentialType, ushort credentialSlot, CredentialReportType reportType = CredentialReportType.CredentialDeleted)
+        private COMMAND_CLASS_USER_CREDENTIAL.CREDENTIAL_REPORT SetupDeleteCredentialReport(
+            ushort userUniqueId, CredentialType credentialType, ushort credentialSlot, CredentialReportType reportType = CredentialReportType.CredentialDeleted)
         {
             var credentialTypeSettings = UserCredentialSupportData.SupportedCredentialTypes.FirstOrDefault(x => x.Type == credentialType);
 
@@ -1417,7 +1526,8 @@ namespace Zats.Services
             return rpt;
         }
 
-        private byte[] SetupCredentialNotificationReport(NotificationAccessControlEvents notificationEvent, ushort userUniqeId, CredentialType credentialType, ushort credentialSlot)
+        private byte[] SetupCredentialNotificationReport(
+            NotificationAccessControlEvents notificationEvent, ushort userUniqeId, CredentialType credentialType, ushort credentialSlot)
         {
             // Setup Notifications Credential Usage Data (free datastream)
             var data = Tools.GetBytes(userUniqeId).                     // User Unique Identifier as MSB, LSB
@@ -1438,7 +1548,8 @@ namespace Zats.Services
             return notificationReport;
         }
 
-        private byte[] SetupCredentialAssociationReport(COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET associationSetCmd, UserCredentialAssociationStatus status)
+        private byte[] SetupCredentialAssociationReport(
+            COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_SET associationSetCmd, UserCredentialAssociationStatus status)
         {
             var credentialAssociationReport = new COMMAND_CLASS_USER_CREDENTIAL.USER_CREDENTIAL_ASSOCIATION_REPORT()
             {
@@ -1450,19 +1561,192 @@ namespace Zats.Services
             return credentialAssociationReport;
         }
 
-        private void DeleteUsersSchedules(ushort userUniqueId)
+        private COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT PrepareKeyLockerCapabilitiesReport()
         {
-            if (ScheduleEntryLockSupportData == null)
+            var rpt = new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT();
+
+            rpt.numberOfSupportedEntryTypes = (byte)UserCredentialSupportData.KeyLockerEntryTypes.Count;
+            rpt.vg1SupportedEntryType = 
+                UserCredentialSupportData.KeyLockerEntryTypes.Select(x => 
+                    new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT.TVG1SUPPORTEDENTRYTYPE() { 
+                        supportedEntryType = (byte)x.EntryType 
+                    }
+                ).ToList();
+            rpt.vg2NumberOfEntrySlotsPerEntryType =
+                UserCredentialSupportData.KeyLockerEntryTypes.Select(x =>
+                    new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT.TVG2NUMBEROFENTRYSLOTSPERENTRYTYPE() {
+                        numberOfEntrySlots = Tools.GetBytes(x.SupportedNumberOfEntrySlots) 
+                    }
+                ).ToList();
+            rpt.vg3MinLengthOfEntryDataPerEntryType =
+                UserCredentialSupportData.KeyLockerEntryTypes.Select(x =>
+                    new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT.TVG3MINLENGTHOFENTRYDATAPERENTRYTYPE() {
+                        minLengthOfEntryData = Tools.GetBytes(x.MinLength) 
+                    }
+                ).ToList();
+            rpt.vg4MaxLengthOfEntryDataPerEntryType =
+                UserCredentialSupportData.KeyLockerEntryTypes.Select(x =>
+                    new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_REPORT.TVG4MAXLENGTHOFENTRYDATAPERENTRYTYPE() {
+                        maxLengthOfEntryData = Tools.GetBytes(x.MaxLength) 
+                    }
+                ).ToList();
+            return rpt;
+        }
+
+        private SvResultNames HandleKeyLockerEntrySet(
+            COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_SET command, NodeTag srcNode, out byte[] rpt)
+        {
+            rpt = null;
+            var opType = (KeyLockerEntrySetOperationType)command.properties1.operationType;
+            KeyLockerEntryType type = (KeyLockerEntryType)command.entryType.Value;
+            UInt16 slot = Tools.ByteArrayToUInt16(command.entrySlot);
+            UInt16 dataLength = Tools.ByteArrayToUInt16(command.entryDataLength);
+
+            // CC:0083.02.1E.11.002: Do not handle SET when there are no KeyLockerEntryTypes supported.
+            if (UserCredentialSupportData.KeyLockerEntryTypes.Count == 0)
             {
-                return;
+                return SvResultNames.Undefined;
             }
 
-            var usersSchedules = ScheduleEntryLockSupportData.ScheduleSlots.FindAll(x => x.UserIdentifier == userUniqueId);
 
-            foreach (var schedule in usersSchedules)
+            if (opType == KeyLockerEntrySetOperationType.Delete)
             {
-                ScheduleEntryLockSupportData?.ScheduleSlots.Remove(schedule);
+                if (type == 0x00 && slot == 0x00) // Delete all key locker entries of any type
+                {
+                    bool isAnyDeleted = false;
+                    foreach (var entryType in UserCredentialSupportData.KeyLockerEntryTypes)
+                    {
+                        isAnyDeleted |= entryType.Entries.Count > 0;
+                        entryType.Entries.Clear();
+                    }
+
+                    if (isAnyDeleted)
+                    {
+                        SendUnsolicitedReport(PrepareKeyLockerEntryReport(type, slot, false), srcNode);
+                    }
+                    return SvResultNames.Successful;
+                } 
+                else if (type != 0x00 && slot == 0x00) // Delete all slots of the given type
+                {
+                    var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
+
+                    if (entryType != null)
+                    {
+                        if (entryType.Entries.Count > 0)
+                        {
+                            entryType.Entries.Clear();
+
+                            SendUnsolicitedReport(PrepareKeyLockerEntryReport(type, slot, false), srcNode);
+                        }
+                        return SvResultNames.Successful;
+                    }
+                    return SvResultNames.Failed;
+                }
+                else if (type != 0x00 && slot != 0x00) // Delete given type and slot
+                {
+                    var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
+
+                    if (entryType != null)
+                    {
+                        if (entryType.Entries.FirstOrDefault(x => x.Slot == slot) is KeyLockerEntry entry)
+                        {
+                            entryType.Entries.Remove(entry);
+
+                            SendUnsolicitedReport(PrepareKeyLockerEntryReport(type, slot, false), srcNode);
+                        }
+                        return SvResultNames.Successful;
+                    }
+                    return SvResultNames.Failed;
+                }
+                else
+                {
+                    // this case must be ignored (CC:0083.02.1F.11.008)
+                    return SvResultNames.Undefined;
+                }
             }
+            else if (slot != 0x00)
+            {
+                var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
+
+                if (entryType != null)
+                {
+                    var existingEntry = entryType.Entries.FirstOrDefault(x => x.Slot == slot);
+
+                    if (opType == KeyLockerEntrySetOperationType.Add)
+                    {
+                        if (existingEntry == null)
+                        {
+                            if (slot <= entryType.SupportedNumberOfEntrySlots &&
+                                dataLength >= entryType.MinLength && 
+                                dataLength <= entryType.MaxLength)
+                            {
+                                entryType.Entries.Add(new KeyLockerEntry()
+                                {
+                                    Slot = slot,
+                                    Data = command.entryData.ToArray()
+                                });
+
+                                SendUnsolicitedReport(PrepareKeyLockerEntryReport(type, slot, true), srcNode);
+
+                                return SvResultNames.Successful;
+                            }
+                        }
+                        else
+                        {
+                            rpt = new COMMAND_CLASS_APPLICATION_STATUS.APPLICATION_REJECTED_REQUEST();
+                        }
+                    }
+                    else if (opType == KeyLockerEntrySetOperationType.Modify)
+                    {
+                        if (existingEntry != null)
+                        {
+                            if (slot <= entryType.SupportedNumberOfEntrySlots &&
+                                dataLength >= entryType.MinLength &&
+                                dataLength <= entryType.MaxLength)
+                            {
+                                existingEntry.Data = command.entryData.ToArray();
+
+                                SendUnsolicitedReport(PrepareKeyLockerEntryReport(type, slot, true), srcNode);
+
+                                return SvResultNames.Successful;
+                            }
+                        }
+                        else
+                        {
+                            rpt = new COMMAND_CLASS_APPLICATION_STATUS.APPLICATION_REJECTED_REQUEST();
+                        }
+                    }
+                }
+            }
+            return SvResultNames.Failed;
+        }
+
+        private byte[] PrepareKeyLockerEntryReport(COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_GET command)
+        {
+            KeyLockerEntryType entryType = (KeyLockerEntryType)command.entryType.Value;
+            UInt16 entrySlot = Tools.ByteArrayToUInt16(command.entrySlot);
+
+            // CC:0083.02.1E.11.002: Do not answer get if there are no KeyLockerEntryTypes supported.
+            if (UserCredentialSupportData.KeyLockerEntryTypes.Count == 0) return null;
+
+            var supportedEntryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == entryType);
+            bool occupied = supportedEntryType?.Entries.FirstOrDefault(x => x.Slot == entrySlot) != null;
+
+            return PrepareKeyLockerEntryReport(entryType, entrySlot, occupied);
+        }
+
+        private COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_REPORT PrepareKeyLockerEntryReport(
+            KeyLockerEntryType entryType, UInt16 entrySlot, bool occupied)
+        {
+            var rpt = new COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_ENTRY_REPORT()
+            {
+                entryType = (byte)entryType,
+                entrySlot = Tools.GetBytes(entrySlot)
+
+            };
+            rpt.properties1.occupied = (byte) (occupied ? 0x01 : 0x00);
+
+            return rpt;
         }
 
         public static bool EncodeString(byte[] data, UserNameEncoding userNameEncoding, int maxLenghtInBytes, out string userName)
@@ -1579,7 +1863,12 @@ namespace Zats.Services
             {
                 if (--CredentialLearning.RemainingSteps == 0)
                 {
-                    var credential = UserCredential.CreateCredential(CredentialLearning.UserUniqueId, CredentialLearning.CredentialType, CredentialLearning.CredentialSlot, credentialData, ModifierType.Locally);
+                    var credential = UserCredential.CreateCredential(
+                        CredentialLearning.UserUniqueId, 
+                        CredentialLearning.CredentialType, 
+                        CredentialLearning.CredentialSlot, 
+                        credentialData, 
+                        ModifierType.Locally);
 
                     var result = HandleAddOrModifyCredential(
                         CredentialLearning.OperationType == CredentialLearnOperationType.CredentialLearnAdd ? CredentialSetOperationType.Add : CredentialSetOperationType.Modify,
@@ -1674,7 +1963,13 @@ namespace Zats.Services
 
                 if (correspondingUser.ActiveState == UserCredentialUserActiveState.OccupiedDisabled)
                 {
-                    notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToUserActiveStateBeingSetToOccupiedDisabled, credential.UserUniqeId, credential.Type, credential.SlotId));
+                    notifications.Add(
+                        SetupCredentialNotificationReport(
+                            NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToUserActiveStateBeingSetToOccupiedDisabled,
+                            credential.UserUniqeId,
+                            credential.Type,
+                            credential.SlotId)
+                        );
                     result = EnterCredentialResult.UserOccupiedDisabled;
                 }
                 else
@@ -1682,13 +1977,19 @@ namespace Zats.Services
                     switch (correspondingUser.Type)
                     {
                         case UserCredentialUserType.GeneralUser:
-                            if (CheckForUsersSchedule(correspondingUser.UserUniqeId))
+                            if (CheckForTargetsSchedules(correspondingUser))
                             {
                                 notifications.Add(HandleDoorLockMode(doorLockOperationType, credential));
                             }
                             else
                             {
-                                notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, credential.UserUniqeId, credential.Type, credential.SlotId));
+                                notifications.Add(
+                                    SetupCredentialNotificationReport(
+                                        NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive,
+                                        credential.UserUniqeId,
+                                        credential.Type,
+                                        credential.SlotId)
+                                    );
                             }
                             break;
 
@@ -1698,11 +1999,17 @@ namespace Zats.Services
                             break;
 
                         case UserCredentialUserType.NonAccessUser:
-                            notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.NonAccessCredentialEnteredViaLocalInterface, credential.UserUniqeId, credential.Type, credential.SlotId));
+                            notifications.Add(
+                                SetupCredentialNotificationReport(
+                                    NotificationAccessControlEvents.NonAccessCredentialEnteredViaLocalInterface,
+                                    credential.UserUniqeId,
+                                    credential.Type,
+                                    credential.SlotId)
+                                );
                             break;
 
                         case UserCredentialUserType.DuressUser:
-                            if (CheckForUsersSchedule(correspondingUser.UserUniqeId))
+                            if (CheckForTargetsSchedules(correspondingUser))
                             {
                                 if (doorLockOperationType.IsUnlockingType())
                                 {
@@ -1718,12 +2025,18 @@ namespace Zats.Services
                             }
                             else
                             {
-                                notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, credential.UserUniqeId, credential.Type, credential.SlotId));
+                                notifications.Add(
+                                    SetupCredentialNotificationReport(
+                                        NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive,
+                                        credential.UserUniqeId,
+                                        credential.Type,
+                                        credential.SlotId)
+                                    );
                             }
                             break;
 
                         case UserCredentialUserType.DisposableUser:
-                            if (CheckForUsersSchedule(correspondingUser.UserUniqeId))
+                            if (CheckForTargetsSchedules(correspondingUser))
                             {
                                 if (doorLockOperationType.IsUnlockingType())
                                 {
@@ -1740,19 +2053,31 @@ namespace Zats.Services
                             }
                             else
                             {
-                                notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, credential.UserUniqeId, credential.Type, credential.SlotId));
+                                notifications.Add(
+                                    SetupCredentialNotificationReport(
+                                        NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, 
+                                        credential.UserUniqeId,
+                                        credential.Type,
+                                        credential.SlotId)
+                                    );
                             }
                             break;
 
                         case UserCredentialUserType.ExpiringUser:
-                            if (CheckForUsersSchedule(correspondingUser.UserUniqeId))
+                            if (CheckForTargetsSchedules(correspondingUser))
                             {
                                 notifications.Add(HandleDoorLockMode(doorLockOperationType, credential));
                                 HandleExpiringUsers(correspondingUser);
                             }
                             else
                             {
-                                notifications.Add(SetupCredentialNotificationReport(NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, credential.UserUniqeId, credential.Type, credential.SlotId));
+                                notifications.Add(
+                                    SetupCredentialNotificationReport(
+                                        NotificationAccessControlEvents.ValidCredentialAccessDeniedDueToTheUserScheduleBeingInactive, 
+                                        credential.UserUniqeId, 
+                                        credential.Type, 
+                                        credential.SlotId)
+                                    );
                             }
                             break;
 
@@ -1780,7 +2105,8 @@ namespace Zats.Services
 
 
             // Door Lock Operation via Association
-            if (RootAssociationData?.FindGroupByCommand(COMMAND_CLASS_DOOR_LOCK.ID, COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_SET.ID) is List<AssociationGroupEx> doorLockAssociationGroups &&
+            if (RootAssociationData?.
+                FindGroupByCommand(COMMAND_CLASS_DOOR_LOCK.ID, COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_SET.ID) is List<AssociationGroupEx> doorLockAssociationGroups &&
                 doorLockAssociationGroups.Count > 0)
             {
                 var doorLockOperationSetCmd = new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_SET()
@@ -1803,11 +2129,13 @@ namespace Zats.Services
 
             if (doorLockMode.IsUnlockingType())
             {
-                notification = SetupCredentialNotificationReport(NotificationAccessControlEvents.CredentialUnlockOpenOperation, credential.UserUniqeId, credential.Type, credential.SlotId);
+                notification = SetupCredentialNotificationReport(
+                    NotificationAccessControlEvents.CredentialUnlockOpenOperation, credential.UserUniqeId, credential.Type, credential.SlotId);
             }
             else
             {
-                notification = SetupCredentialNotificationReport(NotificationAccessControlEvents.CredentialLockCloseOperation, credential.UserUniqeId, credential.Type, credential.SlotId);
+                notification = SetupCredentialNotificationReport(
+                    NotificationAccessControlEvents.CredentialLockCloseOperation, credential.UserUniqeId, credential.Type, credential.SlotId);
             }
 
 
@@ -1815,9 +2143,40 @@ namespace Zats.Services
 
         }
 
-        private bool CheckForUsersSchedule(ushort userUniqueId)
+        public bool CheckForTargetsSchedules(IActiveScheduleTarget userSlot)
         {
-            return UserCredentialSupportData.UserScheduleSupport == false || (ScheduleEntryLockSupportData?.CheckUsersScheduleForAccess(userUniqueId) ?? true);
+            if (userSlot == null)
+            {
+                return false;
+            }
+
+            if (UserCredentialSupportData.UserScheduleSupport && userSlot.ScheduleEnabled)
+            {
+                DateTime now = GetDeviceDateTime();
+
+                bool yearDaySchedulesCheck = userSlot.YearDaySchedules.IsAnyActive(now);
+                bool dailyRepeatingSchedulesCheck = userSlot.DailyRepeatingSchedules.IsAnyActive(now);
+                
+                if (userSlot.YearDaySchedules.Count > 0 && userSlot.DailyRepeatingSchedules.Count > 0)
+                {
+                    return yearDaySchedulesCheck && dailyRepeatingSchedulesCheck;
+                }
+                else if (userSlot.YearDaySchedules.Count > 0)
+                {
+                    return yearDaySchedulesCheck;
+
+                }
+                else if (userSlot.DailyRepeatingSchedules.Count > 0)
+                {
+                    return dailyRepeatingSchedulesCheck;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -1966,7 +2325,18 @@ namespace Zats.Services
         {
             if (data is UserCredentialSupportData newData)
             {
-                if(newData.CredentialLearningStatus != CredentialLearningStatus.NoCredentialLearnOpreation)
+                #region Enter Credential
+                if (newData.EnterCredential)
+                {
+                    EnterCredential(newData.EnteredDoorlockOperationMode, newData.EnteredCredentialType, newData.EnteredCredential);
+                    UserCredentialSupportData.EnterCredential = false;
+                    UserCredentialSupportData.EnteredCredential = newData.EnteredCredential;
+                    UserCredentialSupportData.EnteredCredentialType = newData.EnteredCredentialType;
+                }
+                #endregion // Enter Credential
+
+                #region Credential Learning Operation
+                if (newData.CredentialLearningStatus != CredentialLearningStatus.NoCredentialLearnOpreation)
                 {
                     if(newData.CredentialLearningStatus == CredentialLearningStatus.Success
                         && newData.CredentialLearningData != Array.Empty<byte>())
@@ -1977,6 +2347,206 @@ namespace Zats.Services
                     UserCredentialSupportData.CredentialLearningStatus = CredentialLearningStatus.NoCredentialLearnOpreation;
                     UserCredentialSupportData.CredentialLearningData = Array.Empty<byte>();
                 }
+                #endregion // Credential Learning Operation
+
+                #region Synchronize Users
+
+                List<UserSlot> usersAdded = new List<UserSlot>();
+                List<UserSlot> usersModified = new List<UserSlot>();
+                List<UserSlot> usersRemoved = new List<UserSlot>();
+
+                foreach (var user in newData.UserSlots)
+                {
+                    user.ModifierType = ModifierType.Locally;
+                    user.ModifierId = 0;
+
+                    var existingUser = UserCredentialSupportData.UserSlots.Find(x => x.UserUniqeId == user.UserUniqeId);
+                    if (existingUser == null)
+                    {
+                        // new user added
+                        UserCredentialSupportData.UserSlots.Add(user);
+                        usersAdded.Add(user);
+                    }
+                    else if (user.Equals(existingUser) == false)
+                    {
+                        // user modified
+                        UserCredentialSupportData.UserSlots.Remove(existingUser);
+                        UserCredentialSupportData.UserSlots.Add(user);
+                        usersModified.Add(user);
+                    }
+                }
+
+                foreach (var user in UserCredentialSupportData.UserSlots)
+                {
+                    var existingUser = newData.UserSlots.Find(x => x.UserUniqeId == user.UserUniqeId);
+                    if (existingUser == null)
+                    {
+                        user.ModifierType = ModifierType.Locally;
+                        user.ModifierId = 0;
+
+                        // user removed
+                        UserCredentialSupportData.UserSlots.Remove(user);
+                        usersRemoved.Add(user);
+                    }
+                }
+                #endregion // Synchronize Users
+
+                #region Synchronize Credentials
+                // remove credentials of removed users (just to minimize sync efforts and do not trigger credential reports)
+                foreach (var removedUser in usersRemoved)
+                {
+                    if (newData.UserCredentials.Any(x => x.UserUniqeId == removedUser.UserUniqeId))
+                    {
+                        $"Frontend Data contains credentials for removed user {removedUser.UserUniqeId:X4}"._DLOG();
+                    }
+
+                    UserCredentialSupportData.UserCredentials = UserCredentialSupportData.UserCredentials
+                        .Where(x => x.UserUniqeId != removedUser.UserUniqeId)
+                        .ToList();
+
+                    newData.UserCredentials = newData.UserCredentials
+                        .Where(x => x.UserUniqeId != removedUser.UserUniqeId)
+                        .ToList();
+                }
+
+                List<UserCredential> credentialsAdded = new List<UserCredential>();
+                List<UserCredential> credentialsModified = new List<UserCredential>();
+                List<UserCredential> credentialsRemoved = new List<UserCredential>();
+
+                foreach (var credential in newData.UserCredentials)
+                {
+                    var existingCredential = UserCredentialSupportData.UserCredentials.Find(x => x.UserUniqeId == credential.UserUniqeId
+                                                                                                && x.Type == credential.Type
+                                                                                                && x.SlotId == credential.SlotId);
+                    
+                    credential.ModifierType = ModifierType.Locally;
+                    credential.ModifierNodeId = 0;
+
+                    if (existingCredential == null)
+                    {
+                        // new credential added
+                        UserCredentialSupportData.UserCredentials.Add(credential);
+                        credentialsAdded.Add(credential);
+                    }
+                    else if (credential.Equals(existingCredential) == false)
+                    {
+                        // credential modified
+                        UserCredentialSupportData.UserCredentials.Remove(existingCredential);
+                        UserCredentialSupportData.UserCredentials.Add(credential);
+                        credentialsModified.Add(credential);
+                    }
+                }
+
+                foreach (var credential in UserCredentialSupportData.UserCredentials)
+                {
+                    var existingCredential = newData.UserCredentials.Find(x => x.UserUniqeId == credential.UserUniqeId
+                                                                                && x.Type == credential.Type
+                                                                                && x.SlotId == credential.SlotId);
+                    if (existingCredential == null)
+                    {
+                        // credential removed
+                        credential.ModifierType = ModifierType.Locally;
+                        credential.ModifierNodeId = 0;
+
+                        UserCredentialSupportData.UserCredentials.Remove(credential);
+                        credentialsRemoved.Add(credential);
+                    }
+                }
+                #endregion // Synchronize Credentials
+
+                #region Synchronize Admin Code
+                bool adminCodeSynced = false;
+
+                if (newData.AdminCode != UserCredentialSupportData.AdminCode)
+                {
+                    UserCredentialSupportData.AdminCode = newData.AdminCode;
+                    adminCodeSynced = true;
+                }
+
+
+                #endregion
+
+                #region Send Reports and Sync User Codes
+                bool userCodesNeedSync = false;
+
+                if (usersAdded.Count > 0)
+                {
+                    foreach (var user in usersAdded)
+                    {
+                        COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT userReport = user;
+                        userReport.userReportType = (byte)UserReportType.UserAdded;
+                        userReport.userModifierType = (byte)ModifierType.Locally;
+                        userReport.nextUserUniqueIdentifier = Tools.GetBytes(GetNextUserSlot(user.UserUniqeId));
+
+                        SendUnsolicitedReport(userReport, NodeTag.Empty);
+                    }
+                }
+
+                if (usersModified.Count > 0)
+                {
+                    foreach (var user in usersModified)
+                    {
+                        COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT userReport = user;
+                        userReport.userReportType = (byte)UserReportType.UserModified;
+                        userReport.userModifierType = (byte)ModifierType.Locally;
+                        userReport.nextUserUniqueIdentifier = Tools.GetBytes(GetNextUserSlot(user.UserUniqeId));
+
+                        SendUnsolicitedReport(userReport, NodeTag.Empty);
+                    }
+                }
+
+                if (usersRemoved.Count > 0)
+                {
+                    foreach (var user in usersRemoved)
+                    {
+                        COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT userReport = user;
+                        userReport.userReportType = (byte)UserReportType.UsersDeleted;
+                        userReport.userModifierType = (byte)ModifierType.Locally;
+                        userReport.nextUserUniqueIdentifier = Tools.GetBytes(GetNextUserSlot(user.UserUniqeId));
+
+                        SendUnsolicitedReport(userReport, NodeTag.Empty);
+                    }
+                    userCodesNeedSync = true;
+                }
+
+                if (credentialsAdded.Count > 0)
+                {
+                    foreach (var credential in credentialsAdded)
+                    {
+                        SendUnsolicitedReport(credential.CreateUserCredentialReport(CredentialReportType.CredentialAdded), NodeTag.Empty);
+                    }
+                    userCodesNeedSync |= credentialsAdded.Exists(x => x.Type == CredentialType.PinCode);
+                }
+
+                if (credentialsModified.Count > 0)
+                {
+                    foreach (var credential in credentialsModified)
+                    {
+                        SendUnsolicitedReport(credential.CreateUserCredentialReport(CredentialReportType.CredentialModified), NodeTag.Empty);
+                    }
+                    userCodesNeedSync |= credentialsModified.Exists(x => x.Type == CredentialType.PinCode);
+                }
+
+                if (credentialsRemoved.Count > 0)
+                {
+                    foreach (var credential in credentialsRemoved)
+                    {
+                        SendUnsolicitedReport(credential.CreateUserCredentialReport(CredentialReportType.CredentialDeleted), NodeTag.Empty);
+                    }
+                    userCodesNeedSync |= credentialsRemoved.Exists(x => x.Type == CredentialType.PinCode);
+                }
+
+                if (adminCodeSynced)
+                {
+                    SendUnsolicitedReport(PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Modified), NodeTag.Empty);
+                    userCodesNeedSync = true;
+                }
+
+                if (userCodesNeedSync)
+                {
+                    UserCodeSupport?.SyncUserCodes();    
+                }
+                #endregion
 
                 SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
             }
@@ -2016,8 +2586,31 @@ namespace Zats.Services
         }
     }
 
-    public class UserCredentialSupportData : CommandClassSupportData, INodeItem
+    public class UserCredentialSupportData : CommandClassSupportData, INodeItem, IActiveScheduleSupportData
     {
+        [JsonIgnore]
+        public ushort NumberOfSupportedTargets { get => NoOfSupportedUsers; }
+
+        [JsonIgnore]
+        public List<IActiveScheduleTarget> Targets
+        {
+            get
+            {
+                return UserSlots.Cast<IActiveScheduleTarget>().ToList();
+            }
+        }
+
+        [JsonIgnore]
+        public bool ActiveScheduleEnabled { get { return UserScheduleSupport; } set { UserScheduleSupport = value; } }
+
+        [JsonIgnore]
+        public byte MinimumVersionSupportingActiveSchedule { get { return MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT; } }
+        
+        [JsonIgnore]
+        // CC:0083.02.00.21.003: Users as Schedule Targets MUST NOT use metadata
+        public bool SchedulesMetadataAllowed { get { return false; } }
+
+
         private const int UserIndex = 2;
 
         public CredentialLearningStatus CredentialLearningStatus = CredentialLearningStatus.NoCredentialLearnOpreation;
@@ -2062,16 +2655,22 @@ namespace Zats.Services
         [CustomDataParameter(1, "User Name Encoding Support", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 35)]
         public List<UserNameEncoding> UserNameEncodingsAdvertisedAsSupported { get; set; } = new List<UserNameEncoding>();
 
-        [CustomDataParameter(1, "User Schedule Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 36)]
+        [CustomDataParameter(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "User Schedule Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 36)]
         public bool UserScheduleSupport { get; set; } = false;
 
-        [CustomDataParameter(1, "All Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 37)]
+        [CustomDataParameter(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "No. of Supp. Year Day Schedules", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_0_4095, EditType.Config, UserIndex + 38)]
+        public ushort NumberOfSupportedYearDaySchedules { get; set; }
+
+        [CustomDataParameter(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "No. of Supp. Daily Repeat. Schedules", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_0_4095, EditType.Config, UserIndex + 39)]
+        public ushort NumberOfSupportedDailyRepeatingSchedules { get; set; }
+
+        [CustomDataParameter(1, "All Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 40)]
         public bool AllUsersChecksumSupport { get; set; } = true;
 
-        [CustomDataParameter(1, "Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 38)]
+        [CustomDataParameter(1, "Users Checksum Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 41)]
         public bool UserChecksumSupport { get; set; } = true;
 
-        [CustomDataParameter(1, "Supported User Types", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 39)]
+        [CustomDataParameter(1, "Supported User Types", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config, UserIndex + 42)]
         public List<UserCredentialUserType> SupportedUserTypes { get; set; } = new List<UserCredentialUserType>();
 
         public List<SupportedCredentialType> SupportedCredentialTypes { get; set; } = new List<SupportedCredentialType>();
@@ -2086,6 +2685,22 @@ namespace Zats.Services
 
         [CustomDataParameter(1, "Admin Code Deactivation Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config, UserIndex + 54)]
         public bool AdminCodeDeactivationSupport { get; set; } = true;
+
+        [ParameterSeparator(1, "Enter Credential")]
+        [CustomDataParameter(1, "Credential Type", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.View | EditType.Edit, typeof(CredentialType))]
+        public CredentialType EnteredCredentialType { get; set; }
+
+        [CustomDataParameter(1, "Credential Data", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.HexByteArray, EditType.View | EditType.Edit)]
+        public byte[] EnteredCredential { get; set; }
+
+        [CustomDataParameter(1, "Door Lock Operation Mode", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.View | EditType.Edit, typeof(DoorLockModes))]
+        public DoorLockModes EnteredDoorlockOperationMode { get; set; }
+
+        [CustomDataParameter(1, "Enter", CommandClassesImpl.UiControl.Button, CommandClassesImpl.InputType.Boolean, EditType.View | EditType.Edit)]
+        public bool EnterCredential { get; set; }
+
+        [JsonIgnore]
+        public List<SupportedKeyLockerEntryType> KeyLockerEntryTypes { get; set; } = new List<SupportedKeyLockerEntryType>();
 
         public UserCredentialSupportData()
         {
@@ -2414,7 +3029,8 @@ namespace Zats.Services
 
                 List<UserSlotViewModel> realtedUserSlotViewModels = userSlotViewModels.FindAll(x => x.UserCredentials.Find(y => y.Type == supportedCredentialType.Type) != null);
 
-                userCredentialCCViewModels.Add(new UserCredentialCCViewModel(newId, supportedCredentialType.Type.ToString(), new List<SupportedCredentialType>() { supportedCredentialType }, realtedUserSlotViewModels));
+                userCredentialCCViewModels.Add(
+                    new UserCredentialCCViewModel(newId, supportedCredentialType.Type.ToString(), new List<SupportedCredentialType>() { supportedCredentialType }, realtedUserSlotViewModels));
             }
 
             return userCredentialCCViewModels;
@@ -2427,8 +3043,10 @@ namespace Zats.Services
             foreach (var userSlot in UserSlots)
             {
                 List<UserCredential> userCredentials = UserCredentials.FindAll(x => x.UserUniqeId == userSlot.UserUniqeId);
+                List<ActiveYearDaySchedule> yearDaySchedules = userSlot.YearDaySchedules;
+                List<ActiveDailyRepeatingSchedule> dailyRepeatingSchedules = userSlot.DailyRepeatingSchedules;
 
-                userSlotViewModels.Add(new UserSlotViewModel(userSlot, userCredentials));
+                userSlotViewModels.Add(new UserSlotViewModel(userSlot, userCredentials, yearDaySchedules, dailyRepeatingSchedules));
             }
 
             return userSlotViewModels;
@@ -2463,7 +3081,7 @@ namespace Zats.Services
 
     }
 
-    public class UserSlot
+    public class UserSlot : IActiveScheduleTarget
     {
         public UserSlot(
             ushort userUniqeId,
@@ -2516,15 +3134,24 @@ namespace Zats.Services
 
         public override bool Equals(object other)
         {
-            string jsonThis = JsonConvert.SerializeObject(this);
-            string jsonOther = JsonConvert.SerializeObject(other);
-            return jsonThis == jsonOther;
+            string thisXml = XmlUtility.Obj2XmlStr(this);
+            string otherXml = XmlUtility.Obj2XmlStr(other);
+            return thisXml == otherXml;
         }
 
         public override int GetHashCode()
         {
             return base.GetHashCode();
         }
+
+        [JsonIgnore]
+        public ushort TargetId { get => UserUniqeId; }
+
+        public bool ScheduleEnabled { get; set; }
+
+        public List<ActiveYearDaySchedule> YearDaySchedules { get; set; } = new List<ActiveYearDaySchedule>();
+
+        public List<ActiveDailyRepeatingSchedule> DailyRepeatingSchedules { get; set; } = new List<ActiveDailyRepeatingSchedule>();
 
         public static implicit operator COMMAND_CLASS_USER_CREDENTIAL.USER_REPORT(UserSlot userSlot)
         {
@@ -2549,7 +3176,7 @@ namespace Zats.Services
 
     }
 
-    public class UserSlotViewModel : INestedItem
+    public class UserSlotViewModel : INestedItem, IActiveScheduleTarget
     {
         public ushort UserId
         {
@@ -2684,6 +3311,54 @@ namespace Zats.Services
         }
 
         [JsonIgnore]
+        public ushort TargetId { get => UserSlot.UserUniqeId; }
+
+        [JsonIgnore]
+        [CustomDataParameter(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "Schedule Enabled", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config | EditType.Edit)]
+        public bool ScheduleEnabled
+        {
+            get
+            {
+                return UserSlot.ScheduleEnabled;
+            }
+
+            set
+            {
+                UserSlot.ScheduleEnabled = value;
+            }
+        }
+
+        [JsonIgnore]
+        [NestedControl(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "YearDaySchedules")]
+        public List<ActiveYearDaySchedule> YearDaySchedules
+        {
+            get
+            {
+                return UserSlot.YearDaySchedules;
+            }
+
+            set
+            {
+                UserSlot.YearDaySchedules = value;
+            }
+        }
+
+        [JsonIgnore]
+        [NestedControl(MIN_VERSION_FOR_ACTIVE_SCHEDULE_SUPPORT, "DailyRepeatingSchedules")]
+        public List<ActiveDailyRepeatingSchedule> DailyRepeatingSchedules
+        {
+            get
+            {
+                return UserSlot.DailyRepeatingSchedules;
+            }
+
+            set
+            {
+                UserSlot.DailyRepeatingSchedules = value;
+            }
+        }
+
+        [JsonIgnore]
         public UserSlot UserSlot { get; set; } = new UserSlot();
 
         [JsonIgnore]
@@ -2694,11 +3369,13 @@ namespace Zats.Services
 
         }
 
-        public UserSlotViewModel(UserSlot userSlot, List<UserCredential> userCredentials)
+        public UserSlotViewModel(UserSlot userSlot, List<UserCredential> userCredentials, List<ActiveYearDaySchedule> yearDaySchedules, List<ActiveDailyRepeatingSchedule> dailyRepeatingSchedules)
         {
             NestedId = userSlot.UserUniqeId;
             UserSlot = userSlot;
             UserCredentials = userCredentials;
+            YearDaySchedules = yearDaySchedules;
+            DailyRepeatingSchedules = dailyRepeatingSchedules;
         }
     }
 
@@ -2849,8 +3526,6 @@ namespace Zats.Services
             return credential;
         }
 
-        
-
         public static UserCredential CreatePasswordCredential(ushort uuid, ushort slotId, string password)
         {
             var credential = new UserCredential(uuid, CredentialType.Password, slotId)
@@ -2950,9 +3625,9 @@ namespace Zats.Services
 
         public override bool Equals(object other)
         {
-            string jsonThis = JsonConvert.SerializeObject(this);
-            string jsonOther = JsonConvert.SerializeObject(other);
-            return jsonThis == jsonOther;
+            string thisXml = XmlUtility.Obj2XmlStr(this);
+            string otherXml = XmlUtility.Obj2XmlStr(other);
+            return thisXml == otherXml;
         }
 
         public override int GetHashCode()
@@ -3059,6 +3734,12 @@ namespace Zats.Services
         HandBiometric = 0x0A,
         [Description("0x0B Unspecified Biometric")]
         UnspecBiometric = 0x0B,
+        [Description("0x0C DESFire EV2/3")]
+        [HideFromUI(true)]
+        // This credential type requires implementation of the cryptographic algorithms defined by DESFire, as well as the KeyLocker functionality and an additional nested control.
+        // Full support for this credential type is outside the scope of the current Support Implementation and is not intended for use with the EDE.
+        // However, for (CCR) test case creation, DESFire and KeyLocker can be addressed using Zats Tests. Note that applying this credential type will not function as expected in the current implementation.
+        DESFire = 0x0C
     }
 
     public enum CredentialSetOperationType
@@ -3101,6 +3782,25 @@ namespace Zats.Services
         DuplicateAdminCode = 0x0A,
     }
 
+    public class SupportedKeyLockerEntryType
+    {
+        public KeyLockerEntryType EntryType { get; set; }
+
+        public UInt16 SupportedNumberOfEntrySlots { get; set; }
+
+        public UInt16 MinLength { get; set; }
+
+        public UInt16 MaxLength { get; set; }
+
+        public List<KeyLockerEntry> Entries { get; set; } = new List<KeyLockerEntry>();
+    }
+
+    public class KeyLockerEntry
+    {
+        public UInt16 Slot { get; set; }
+        public byte[] Data { get; set; }
+    }
+
     public enum UserCredentialAssociationStatus
     {
         Success = 0x00,
@@ -3113,6 +3813,17 @@ namespace Zats.Services
         //DestinationCredentialSlotOccupied = 0x07 // OBSOLETED
     }
 
+    public enum KeyLockerEntryType
+    {
+        DESFire = 0x01
+    }
+
+    public enum KeyLockerEntrySetOperationType
+    {
+        Add = 0x00,
+        Modify = 0x01,
+        Delete = 0x02
+    }
     public static class UserCredentialExtensions
     {
         /// <summary>

@@ -234,31 +234,13 @@ namespace Zats.Services
     {
     }
 
-    //[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    //public sealed class CCSupportParameterSimpleAttribute : DataParameterAttribute
-    //{
-    //    public UiControl UiControl { get; set; }
-
-    //    public CCSupportParameterSimpleAttribute(string name, InputType inputType, UiControl uiControl)
-    //        :base(name, inputType)
-    //    {
-    //        UiControl = uiControl;
-    //    }
-
-    //}
-
-    //[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    //public sealed class CCSupportParameterMultipleAttribute : DataParameterAttribute
-    //{
-    //    public UiControl UiControl { get; set; }
-    //    public string[] Strings { get; set; }
-
-    //    public CCSupportParameterMultipleAttribute(string name, InputType inputType, UiControl uiControl)
-    //        : base(name, inputType)
-    //    {
-    //        //Strings = strings;
-    //        UiControl = uiControl;
-    //    }
-
-    //}
+    [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+    public sealed class HideFromUI : Attribute
+    {
+        public HideFromUI(bool isHidden)
+        {
+            IsHidden = isHidden;
+        }
+        public bool IsHidden { get; set; }
+    }
 }
