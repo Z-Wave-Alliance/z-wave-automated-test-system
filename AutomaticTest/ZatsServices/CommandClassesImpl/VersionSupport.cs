@@ -4,15 +4,14 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using Utils;
+using System.Threading;
 using Zats.Services.CommandClassesImpl.Definitions.Interfaces;
 using ZatsServices_netcore.CommandClassesImpl.Definitions.Interfaces;
 using ZWave;
 using ZWave.BasicApplication;
-using ZWave.BasicApplication.Devices;
 using ZWave.BasicApplication.Operations;
-using ZWave.CommandClasses;
 using ZWave.Devices;
 using ZWave.Enums;
 
@@ -23,7 +22,7 @@ namespace Zats.Services
     [CommandClassName("Version Command Class")]
     [CommandClassId(COMMAND_CLASS_VERSION.ID)]
     [MinVersion(1)]
-    [MaxVersion(3)]
+    [MaxVersion(4)]
     public class VersionSupport : CommandClassSupport
     {
         private VersionSupportData VersionSupportData { get; set; }
@@ -35,6 +34,10 @@ namespace Zats.Services
 
         public IEnumerable<ICommandClass> SupportedRootCCs { get; set; }
         public List<IndividualEndPointData> IndividualEndPoints { get; set; }
+        private readonly BackgroundWorker TimerSimulatingAVersionMigration = new BackgroundWorker();
+        private readonly AutoResetEvent _resetEvent = new AutoResetEvent(false);
+        public uint RemainingTransitionDurationTimeSec = 0;
+        private uint TimerSimulatingAVersionMigrationDurationSec = 0;
 
         public VersionSupport()
             : this (new VersionSupportData() { }, new List<CommandClassData>(), new List<IndividualEndPointData>())
@@ -72,6 +75,11 @@ namespace Zats.Services
             VersionSupportData = versionSupportData;
             SupportedRootCCs = supportedRootCCs;
             IndividualEndPoints = individualEndPoints;
+
+            TimerSimulatingAVersionMigration.DoWork += new DoWorkEventHandler(TimerSimulatingAVersionMigrationDoWork);
+            TimerSimulatingAVersionMigration.RunWorkerCompleted += new RunWorkerCompletedEventHandler(TransitionTimerRunWorkerCompleted);
+            TimerSimulatingAVersionMigration.WorkerSupportsCancellation = true;
+            TimerSimulatingAVersionMigration.WorkerReportsProgress = false;
         }
 
         private static List<IndividualEndPointData> GetEpData(List<IndividualEndPointEx> individualEndPoints)
@@ -121,6 +129,18 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_VERSION.VERSION_COMMAND_CLASS_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareCommandClassReportCmd(command);
+                    }
+                    else if (command[1] == COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_CAPABILITIES_GET.ID && !IsSupervised())
+                    {
+                        rpt = PrepareVersionMigrationCapabilitiesReport();
+                    }
+                    else if (command[1] == COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_GET.ID && !IsSupervised())
+                    {
+                        rpt = PrepareVersionMigrationReport();
+                    }
+                    else if ((command[1] == COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_SET.ID && !IsSupervised()))
+                    {
+                        HandleVersionMigrationSetCmd(command);
                     }
 
                     if (rpt != null && IsAnsweringAllowed())
@@ -183,12 +203,23 @@ namespace Zats.Services
         {
             if (Version >= 3)
             {
-                COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT rpt = new COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT() { };
+                COMMAND_CLASS_VERSION_V4.VERSION_CAPABILITIES_REPORT rpt = new COMMAND_CLASS_VERSION_V4.VERSION_CAPABILITIES_REPORT() { };
                 rpt.properties1.version = VersionSupportData.CapVersion;
                 rpt.properties1.commandClass = VersionSupportData.CapCommandClass;
                 rpt.properties1.zWaveSoftware = VersionSupportData.CapZWSoftware;
+
+                if(Version == 3)
+                {
+                    return rpt;
+                }
+                else
+                {
+                    rpt.properties1.migrationSupport = (byte)(VersionSupportData.IsMigrationSupported ? 0x01 : 0x00); // Migration supported
+                }
+
                 return rpt;
             }
+
             return null;
         }
 
@@ -274,6 +305,51 @@ namespace Zats.Services
             }
         }
 
+        public void HandleVersionMigrationSetCmd(byte[] command)
+        {
+            if (Version >= 4)
+            {
+                COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_SET versionMigrationSet = command;
+
+                TransitionTimerCancel();
+                VersionSupportData.CurrentMigrationOperationId = versionMigrationSet.migrationOperationId;
+                
+                TimerSimulatingAVersionMigrationStart();
+            }
+        }
+
+        private byte[] PrepareVersionMigrationCapabilitiesReport()
+        {
+            if (Version >= 4)
+            {
+                COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_CAPABILITIES_REPORT rpt = new COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_CAPABILITIES_REPORT()
+                {
+                    numberOfSupportedMigrationOperations = (byte)(VersionSupportData.MigrationOperations?.Count ?? 0),
+                    migrationOperationId = VersionSupportData.MigrationOperations?.Select(mo => (byte)mo).ToList()
+                };
+
+                return rpt;
+            }
+
+            return null;
+        }
+
+        private byte[] PrepareVersionMigrationReport()
+        {
+            if (Version >= 4)
+            {
+                COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_REPORT rpt = new COMMAND_CLASS_VERSION_V4.VERSION_MIGRATION_REPORT()
+                {
+                    migrationOperationId = VersionSupportData.CurrentMigrationOperationId,
+                    migrationStatus = VersionSupportData.CurrentMigrationStatus,
+                    estimatedTimeOfCompletionSeconds = Utils.Tools.GetBytes((ushort)RemainingTransitionDurationTimeSec)
+                };
+                return rpt;
+            }
+
+            return null;
+        }
+
         public override void SupervisionCallback(COMMAND_CLASS_SUPERVISION.SUPERVISION_GET supervisionGet, 
                                                  COMMAND_CLASS_SUPERVISION.SUPERVISION_REPORT supervisionReport)
         {
@@ -353,6 +429,97 @@ namespace Zats.Services
                 SupportDelegates?.DeviceDataUpdate?.Invoke(this); // always inform (EDE) about current state
             }
         }
+
+
+        #region Timer Simulating A Version Migration
+        private void TimerSimulatingAVersionMigrationStart()
+        {
+            VersionSupportData.CancelPendingTimerSimulatingAVersionMigration = TimerSimulatingAVersionMigrationReset;
+            TimerSimulatingAVersionMigration.RunWorkerAsync();
+        }
+
+        private void TimerSimulatingAVersionMigrationDoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker bw = sender as BackgroundWorker;
+            int numberOfSteps;
+            int sleepTimePerStepMs;
+            uint remainingDurationTimeMs;
+            uint timerSimulatingAVersionMigrationDurationMs;
+
+            numberOfSteps = Math.Abs(VersionSupportData.TargetValueOfTheTimerSimulatingAVersionMigration - VersionSupportData.CurrentValueOfTheTimerSimulatingAVersionMigration);
+            TimerSimulatingAVersionMigrationDurationSec = CommandClassSupportUtils.DurationToSeconds(VersionSupportData.DurationOfTheTimerSimulatingAVersionMigration);
+            timerSimulatingAVersionMigrationDurationMs = TimerSimulatingAVersionMigrationDurationSec * 1000;
+
+            if (numberOfSteps != 0)
+            {
+                VersionSupportData.CurrentMigrationStatus = 0x01;
+                sleepTimePerStepMs = Convert.ToInt32(timerSimulatingAVersionMigrationDurationMs / numberOfSteps);
+                remainingDurationTimeMs = timerSimulatingAVersionMigrationDurationMs;
+                RemainingTransitionDurationTimeSec = timerSimulatingAVersionMigrationDurationMs / 1000;
+
+                for (int i = numberOfSteps; i > 0; i--)
+                {
+                    if (Result.State == ActionStates.Cancelled)
+                    {
+                        TransitionTimerCancel();
+                    }
+
+                    Thread.Sleep(sleepTimePerStepMs);
+
+                    if (bw.CancellationPending)
+                    {
+                        VersionSupportData.TargetValueOfTheTimerSimulatingAVersionMigration = VersionSupportData.CurrentValueOfTheTimerSimulatingAVersionMigration;
+                        e.Cancel = true;
+                        break;
+                    }
+
+                    remainingDurationTimeMs -= (uint)sleepTimePerStepMs;
+                    RemainingTransitionDurationTimeSec = remainingDurationTimeMs / 1000;
+
+                    if (VersionSupportData.CurrentValueOfTheTimerSimulatingAVersionMigration < VersionSupportData.TargetValueOfTheTimerSimulatingAVersionMigration)
+                    {
+                        VersionSupportData.CurrentValueOfTheTimerSimulatingAVersionMigration++;
+                    }
+                }
+
+                if (!e.Cancel)
+                {
+                    VersionSupportData.CurrentMigrationStatus = 0x02;
+                }
+            }
+            else
+            {
+                VersionSupportData.CurrentMigrationStatus = 0x02;
+            }
+
+            RemainingTransitionDurationTimeSec = 0x00;
+            VersionSupportData.DurationOfTheTimerSimulatingAVersionMigration = 0x00;
+        }
+
+        private void TransitionTimerRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+            {
+                _resetEvent.Set();
+            }
+        }
+
+        private void TransitionTimerCancel()
+        {
+            VersionSupportData.CancelPendingTimerSimulatingAVersionMigration?.Invoke();
+            VersionSupportData.CancelPendingTimerSimulatingAVersionMigration = null;
+        }
+
+        // This method MUST only be called via <CommandClass>SupportData.CancelPending<CommandName>.Invoke();
+        private void TimerSimulatingAVersionMigrationReset()
+        {
+            if (TimerSimulatingAVersionMigration.IsBusy)
+            {
+                TimerSimulatingAVersionMigration.CancelAsync();
+                _resetEvent.WaitOne();
+            }
+        }
+        #endregion //  Timer Simulating A Version Migration
     }
 
     public class TargetFirmwareVersion : INestedItem
@@ -403,7 +570,7 @@ namespace Zats.Services
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT.ID, new byte[] { 0x00, 0x00 }, EditType.Config)]
         public byte CapVersion { get; set; } = 1;       // 1 = true
 
-        [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT.ID, new byte[] { 0x00, 0x01}, EditType.Config)]
+        [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT.ID, new byte[] { 0x00, 0x01 }, EditType.Config)]
         public byte CapCommandClass { get; set; } = 1;  // 1 = true
 
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_CAPABILITIES_REPORT.ID, new byte[] { 0x00, 0x02 }, EditType.Config)]
@@ -433,12 +600,39 @@ namespace Zats.Services
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x06 }, EditType.Config)]
         public byte[] ZWaveProtocolBuildNumber { get; set; } = { 0x00, 0x00 } /*GetRandomBytes(2)*/;
 
-    // ApplicationVersion : Byte1 = V1 ApplicationVersion resp. V2 Firmware0Version; Byte2: V1 ApplicationSubVersion resp. V2 Firmware0SubVersion
-    [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x07 }, EditType.Config)]
+        // ApplicationVersion : Byte1 = V1 ApplicationVersion resp. V2 Firmware0Version; Byte2: V1 ApplicationSubVersion resp. V2 Firmware0SubVersion
+        [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x07 }, EditType.Config)]
         public byte[] ApplicationVersion { get; set; } = GetDefaultApplicationVersion();
 
         [XmlDataParameter(3, COMMAND_CLASS_VERSION_V3.ID, COMMAND_CLASS_VERSION_V3.VERSION_ZWAVE_SOFTWARE_REPORT.ID, new byte[] { 0x08 }, EditType.Config)]
         public byte[] ApplicationBuildNumber { get; set; } = { 0x00, 0x00 } /*GetRandomBytes(2)*/;
+
+
+        // V4 Migrations
+        [ParameterSeparator(4, "Migration")]
+        [CustomDataParameter(4, "Migration Support", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config)]
+        public bool IsMigrationSupported { get; set; } = false;
+
+        [CustomDataParameter(4, "Migration Operations", CommandClassesImpl.UiControl.ListCheckBox, CommandClassesImpl.InputType.Enum, EditType.Config)]
+        public List<MigrationOperationId> MigrationOperations { get; set; } = new List<MigrationOperationId>();
+
+        [JsonIgnore]
+        public byte CurrentMigrationOperationId { get; set; } = 0x00; // The ID of the current migration operation
+
+        [JsonIgnore]
+        public byte CurrentMigrationStatus { get; set; } = 0x00; // The status of a current migration operation, 0x00 = Ready
+
+        [JsonIgnore]
+        public CancelPendingOperationDelegate CancelPendingTimerSimulatingAVersionMigration = null;
+
+        [JsonIgnore]
+        public byte CurrentValueOfTheTimerSimulatingAVersionMigration { get; set; } = 0x00;
+
+        [JsonIgnore]
+        public byte TargetValueOfTheTimerSimulatingAVersionMigration { get; set; } = 0x10;
+
+        [JsonIgnore]
+        public byte DurationOfTheTimerSimulatingAVersionMigration { get; set; } = 0x10;
 
         [JsonIgnore]
         public IEnumerable<INestedItem> ChildItems => FirmwareVersions;
@@ -468,5 +662,13 @@ namespace Zats.Services
             return defaultApplicationVersion;
         }
         #endregion
+
+        public enum MigrationOperationId : byte
+        {
+            [Description("0x01 User Code to User Credential migration")]
+            UserCodeToUserCredential = 0x01,
+            [Description("0x02 User Credential to User Code migration")]
+            UserCredentialToUserCode = 0x02
+        }
     }
 }
