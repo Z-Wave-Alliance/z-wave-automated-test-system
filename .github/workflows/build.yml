@@ -1,7 +1,6 @@
 # YAML -*- mode: yaml; tab-width: 2; indent-tabs-mode: nil; coding: utf-8 -*-
 # SPDX-License-Identifier: BSD-3-Clause
 # SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
-# Demo copied from https://docs.github.com/en/actions/quickstart
 ---
 name: Build Z-Wave Automated Test System (ZATS)
 
@@ -51,7 +50,6 @@ jobs:
       - name: Checkout z-wave-automated-test-system
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_ZWAVE_ACCESS_TOKEN }}
           path: 'z-wave-automated-test-system'
           submodules: "recursive"
 
