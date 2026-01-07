@@ -3518,7 +3518,7 @@ namespace Zats.Services
                 Data = Tools.GetAsciiBytes(pin)
             };
 
-            if (credential.ValidatePinCredentialData())
+            if (!credential.ValidatePinCredentialData())
             { 
                 throw new ArgumentException("PIN Code MUST contain numbers only");
             }
@@ -3533,7 +3533,7 @@ namespace Zats.Services
                 Data = Tools.GetUtf16BigEndianBytes(password)
             };
 
-            if (credential.ValidatePasswordCredentialData())
+            if (!credential.ValidatePasswordCredentialData())
             {
                 throw new ArgumentException("Passwords MUST be UTF-16 (Big Endian) encoded, which means an even data length.");
             }
