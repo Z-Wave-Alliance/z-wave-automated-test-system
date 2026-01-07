@@ -262,7 +262,9 @@ namespace Zats.Services
                     {
                         rpt = PrepareAdminPinCodeReport();
                     }
-                    #region V2
+
+                    #region V2 Commands
+                    
                     else if (command[1] == COMMAND_CLASS_USER_CREDENTIAL_V2.KEY_LOCKER_CAPABILITIES_GET.ID && !IsSupervised())
                     {
                         rpt = PrepareKeyLockerCapabilitiesReport();
@@ -275,7 +277,7 @@ namespace Zats.Services
                     {
                         rpt = PrepareKeyLockerEntryReport(command);
                     }
-                    #endregion // V2
+                    #endregion // V2 Commands
 
                     // Report due to Get command
                     if (rpt != null && IsAnsweringAllowed())
@@ -1611,7 +1613,7 @@ namespace Zats.Services
 
             if (opType == KeyLockerEntrySetOperationType.Delete)
             {
-                if (type == 0x00 && slot == 0x00) // Delete all key locker entries of any type
+                if (type == 0 && slot == 0) // Delete all key locker entries of any type
                 {
                     bool isAnyDeleted = false;
                     foreach (var entryType in UserCredentialSupportData.KeyLockerEntryTypes)
@@ -1626,7 +1628,7 @@ namespace Zats.Services
                     }
                     return SvResultNames.Successful;
                 } 
-                else if (type != 0x00 && slot == 0x00) // Delete all slots of the given type
+                else if (type != 0 && slot == 0) // Delete all slots of the given type
                 {
                     var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
 
@@ -1642,7 +1644,7 @@ namespace Zats.Services
                     }
                     return SvResultNames.Failed;
                 }
-                else if (type != 0x00 && slot != 0x00) // Delete given type and slot
+                else if (type != 0 && slot != 0) // Delete given type and slot
                 {
                     var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
 
@@ -1664,7 +1666,7 @@ namespace Zats.Services
                     return SvResultNames.Undefined;
                 }
             }
-            else if (slot != 0x00)
+            else if (slot != 0)
             {
                 var entryType = UserCredentialSupportData.KeyLockerEntryTypes.FirstOrDefault(x => x.EntryType == type);
 
@@ -3923,6 +3925,40 @@ namespace Zats.Services
             }
 
             return UserCodeUserIdStatusV1.StatusNotAvailable;
+        }
+
+        public static List<UserSlot> CloneAsDeepCopy(this List<UserSlot> source)
+        {
+            return source.Select(x => x.CloneAsDeepCopy()).ToList();
+        }
+
+        public static List<UserCredential> CloneAsDeepCopy(this List<UserCredential> source)
+        {
+            return source.Select(x => x.CloneAsDeepCopy()).ToList();
+        }
+
+        public static List<SupportedKeyLockerEntryType> CloneAsDeepCopy(this List<SupportedKeyLockerEntryType> source)
+        {
+            return source.Select(x => x.CloneAsDeepCopy()).ToList();
+        }
+
+        public static List<KeyLockerEntry> CloneAsDeepCopy(this List<KeyLockerEntry> source)
+        {
+            return source.Select(x => x.CloneAsDeepCopy()).ToList();
+        }
+
+        private static T CloneAsDeepCopy<T>(this T source)
+        {
+            if (source == null)
+            {
+                return default;
+            }
+
+            // Initialize inner objects individually.
+            // Without 'ObjectCreationHandling.Replace' default constructor values would be added to result.
+            var deserializeSettings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
+
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source), deserializeSettings);
         }
     }
 }
