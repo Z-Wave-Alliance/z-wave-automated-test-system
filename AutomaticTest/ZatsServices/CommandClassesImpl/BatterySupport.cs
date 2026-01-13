@@ -194,6 +194,7 @@ namespace Zats.Services
                 }
                 CommandClassSupportUtils.ReportAddLog(BatterySupportData.LogLevel, 
                             "{0} CC @ {1}: Battery Level: {2} = 0x{2:X2}", CommandClassShortName, EndPointName, BatterySupportData.BatteryLevel);
+
                 if (BatterySupportData.BatteryLevel <= BatterySupportData.WarningBatteryLevel 
                  && BatterySupportData.BatteryLevel > BatterySupportData.ReplaceBatteryLevel)
                 {
@@ -243,11 +244,13 @@ namespace Zats.Services
                         CommandClassSupportUtils.ReportAddLog(BatterySupportData.LogLevel, "{0} CC @ {1}: Battery replaced.", CommandClassShortName, EndPointName);
                     }
                 }
+
                 if (Result.State == ActionStates.Cancelled)
                 {
                     BatteryLevelTimerReset();
                 }
                 Thread.Sleep(1000);
+
                 if (bw.CancellationPending)
                 {
                     CommandClassSupportUtils.ReportAddLog(BatterySupportData.LogLevel, "{0} CC @ {1}: BatteryLevelTimer is stopping.", CommandClassShortName, EndPointName);

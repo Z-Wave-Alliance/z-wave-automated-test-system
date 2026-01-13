@@ -148,7 +148,7 @@ namespace Zats.Services
             if (requestedScaleData != null)
             {
                 COMMAND_CLASS_METER_V2.METER_REPORT rpt = new COMMAND_CLASS_METER_V2.METER_REPORT();
-                uint reportedDeltaTime, simulatedDeltaTime;
+                uint reportedDeltaTime;
                 byte reportedSize, reportedPrecision;
                 double reportedValue, reportedPreviousValue;
                 RateTypeNames reportedRateType = (MeterSupportData.SupportedRateTypes & RateTypeNames.Import) != 0 ? RateTypeNames.Import : RateTypeNames.Export;
@@ -158,7 +158,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionConsuming;
                     reportedValue = requestedScaleData.ValueConsuming;
                     reportedPreviousValue = requestedScaleData.PreviousValueConsuming;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueConsuming = requestedScaleData.ValueConsuming;
@@ -171,7 +171,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionProducing;
                     reportedValue = requestedScaleData.ValueProducing;
                     reportedPreviousValue = requestedScaleData.PreviousValueProducing;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueProducing = requestedScaleData.ValueProducing;
@@ -187,10 +187,11 @@ namespace Zats.Services
 
                 rpt.meterValue = CommandClassSupportUtils.ValueToByteField(reportedValue, reportedSize, reportedPrecision);
 
-                simulatedDeltaTime = CalculateSimulatedDeltaTime(requestedScaleData, reportedRateType);
-                if (simulatedDeltaTime > 0)
+                reportedDeltaTime = GetDeltaTime(requestedScaleData, reportedRateType);
+                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
+
+                if (reportedDeltaTime > 0)
                 {
-                    reportedDeltaTime = simulatedDeltaTime;
                     rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
                         reportedPreviousValue, reportedSize, reportedPrecision);
                 }
@@ -199,12 +200,11 @@ namespace Zats.Services
                     rpt.previousMeterValue = null;
                 }
 
-                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
-
                 return rpt;
             }
             return null;
         }
+
         private byte[] PrepareMeterReportV3(ScaleNames requestedScaleNumber, bool updatePreviousValueAndDeltaTime)
         {
             MeterValue requestedScaleData = MeterSupportData.MeterValues.Find(x => x.ScaleNumber == requestedScaleNumber);
@@ -217,7 +217,7 @@ namespace Zats.Services
             if (requestedScaleData != null)
             {
                 COMMAND_CLASS_METER_V3.METER_REPORT rpt = new COMMAND_CLASS_METER_V3.METER_REPORT();
-                uint reportedDeltaTime, simulatedDeltaTime;
+                uint reportedDeltaTime;
                 byte reportedSize, reportedPrecision;
                 double reportedValue, reportedPreviousValue;
                 RateTypeNames reportedRateType = (MeterSupportData.SupportedRateTypes & RateTypeNames.Import) != 0 ? RateTypeNames.Import : RateTypeNames.Export;
@@ -227,7 +227,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionConsuming;
                     reportedValue = requestedScaleData.ValueConsuming;
                     reportedPreviousValue = requestedScaleData.PreviousValueConsuming;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueConsuming = requestedScaleData.ValueConsuming;
@@ -240,7 +240,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionProducing;
                     reportedValue = requestedScaleData.ValueProducing;
                     reportedPreviousValue = requestedScaleData.PreviousValueProducing;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueProducing = requestedScaleData.ValueProducing;
@@ -257,10 +257,11 @@ namespace Zats.Services
 
                 rpt.meterValue = CommandClassSupportUtils.ValueToByteField(reportedValue, reportedSize, reportedPrecision);
 
-                simulatedDeltaTime = CalculateSimulatedDeltaTime(requestedScaleData, reportedRateType);
-                if (simulatedDeltaTime > 0)
+                reportedDeltaTime = GetDeltaTime(requestedScaleData, reportedRateType);
+                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
+
+                if (reportedDeltaTime > 0)
                 {
-                    reportedDeltaTime = simulatedDeltaTime;
                     rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
                         reportedPreviousValue, reportedSize, reportedPrecision);
                 }
@@ -268,8 +269,6 @@ namespace Zats.Services
                 {
                     rpt.previousMeterValue = null;
                 }
-
-                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
 
                 return rpt;
             }
@@ -289,10 +288,11 @@ namespace Zats.Services
              && ((requestedRateType & (byte) MeterSupportData.SupportedRateTypes) != 0 || requestedRateType == 0x00))
             {
                 COMMAND_CLASS_METER_V4.METER_REPORT rpt = new COMMAND_CLASS_METER_V4.METER_REPORT();
-                uint reportedDeltaTime, simulatedDeltaTime;
+                uint reportedDeltaTime;
                 byte reportedSize, reportedPrecision;
                 double reportedValue, reportedPreviousValue;
                 RateTypeNames reportedRateType = (RateTypeNames) requestedRateType;
+
                 if (requestedRateType == 0x00)
                 {
                     reportedRateType = (MeterSupportData.SupportedRateTypes & RateTypeNames.Import) != 0 ? RateTypeNames.Import : RateTypeNames.Export;
@@ -303,7 +303,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionConsuming;
                     reportedValue = requestedScaleData.ValueConsuming;
                     reportedPreviousValue = requestedScaleData.PreviousValueConsuming;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeConsuming;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueConsuming = requestedScaleData.ValueConsuming;
@@ -316,7 +316,7 @@ namespace Zats.Services
                     reportedPrecision = requestedScaleData.PrecisionProducing;
                     reportedValue = requestedScaleData.ValueProducing;
                     reportedPreviousValue = requestedScaleData.PreviousValueProducing;
-                    reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
+                    //reportedDeltaTime = requestedScaleData.DeltaTimeProducing;
                     if (updatePreviousValueAndDeltaTime)
                     {
                         requestedScaleData.PreviousValueProducing = requestedScaleData.ValueProducing;
@@ -336,10 +336,13 @@ namespace Zats.Services
 
                 rpt.meterValue = CommandClassSupportUtils.ValueToByteField(reportedValue, reportedSize, reportedPrecision);
 
-                simulatedDeltaTime = CalculateSimulatedDeltaTime(requestedScaleData, reportedRateType);
-                if (simulatedDeltaTime > 0)
+                reportedDeltaTime = GetDeltaTime(requestedScaleData, reportedRateType);
+                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
+                //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: MeterReport V4+. rateType: {2}, scale: {3}, value: {4}",
+                //            CommandClassShortName, EndPointName, reportedRateType, requestedScaleNumber, reportedValue);
+
+                if (reportedDeltaTime > 0)
                 {
-                    reportedDeltaTime = simulatedDeltaTime;
                     rpt.previousMeterValue = CommandClassSupportUtils.ValueToByteField(
                         reportedPreviousValue, reportedSize, reportedPrecision);
                 }
@@ -347,10 +350,7 @@ namespace Zats.Services
                 {
                     rpt.previousMeterValue = null;
                 }
-
-                rpt.deltaTime = CommandClassSupportUtils.UInt64ToByteField(reportedDeltaTime, 2);
-                //CommandClassSupportUtils.ReportAddLog(LogLevel, "{0} CC @ {1}: MeterReport V4+. rateType: {2}, scale: {3}, value: {4}",
-                //            CommandClassShortName, EndPointName, reportedRateType, requestedScaleNumber, reportedValue);
+                
                 return rpt;
             }
             return null;
@@ -498,21 +498,32 @@ namespace Zats.Services
             return null;
         }
 
-        private uint CalculateSimulatedDeltaTime(MeterValue requestedScale, RateTypeNames reportedRateType)
+        private uint GetDeltaTime(MeterValue requestedScaleData, RateTypeNames reportedRateType)
         {
-            uint simulatedDeltaTime = 0;
-            if (MeterSupportData.SimulateTime == 1)
+            uint ret = 0;
+            if (reportedRateType == RateTypeNames.Import)
             {
-                if (reportedRateType == RateTypeNames.Import && requestedScale.LastMeterReportTimeConsuming != 0)
+                if (MeterSupportData.SimulateConsuming && requestedScaleData.LastMeterReportTimeConsuming != 0)
                 {
-                    simulatedDeltaTime = RuntimeElapsed - requestedScale.LastMeterReportTimeConsuming;
+                    ret = RuntimeElapsed - requestedScaleData.LastMeterReportTimeConsuming;
                 }
-                if (reportedRateType == RateTypeNames.Export && requestedScale.LastMeterReportTimeProducing != 0)
+                else
                 {
-                    simulatedDeltaTime = RuntimeElapsed - requestedScale.LastMeterReportTimeProducing;
+                    ret = requestedScaleData.DeltaTimeConsuming;
                 }
             }
-            return simulatedDeltaTime;
+            else if (reportedRateType == RateTypeNames.Export)
+            {
+                if (MeterSupportData.SimulateProducing && requestedScaleData.LastMeterReportTimeProducing != 0)
+                {
+                    ret = RuntimeElapsed - requestedScaleData.LastMeterReportTimeProducing;
+                }
+                else
+                {
+                    ret = requestedScaleData.DeltaTimeProducing;
+                }
+            }
+            return ret;
         }
 
         #region Runtime Timer
@@ -534,7 +545,7 @@ namespace Zats.Services
                     Thread.Sleep(3000);
                 }
                 RuntimeElapsed += MeterSupportData.SimulationTickLengthSec;
-                if (MeterSupportData.SimulateConsuming == 1)
+                if (MeterSupportData.SimulateConsuming)
                 {
                     foreach (MeterValue scale in MeterSupportData.MeterValues)
                     {
@@ -551,7 +562,7 @@ namespace Zats.Services
                         }
                     }
                 }
-                if (MeterSupportData.SimulateProducing == 1)
+                if (MeterSupportData.SimulateProducing)
                 {
                     foreach (MeterValue scale in MeterSupportData.MeterValues)
                     {
@@ -740,13 +751,11 @@ namespace Zats.Services
                 bool supportedReportRequired = false;
                 RuntimeTimerName = string.Format("{0} CC @ {1}: Runtime Timer", CommandClassShortName, EndPointName);
 
-                if (MeterSupportData.SimulateTime != newData.SimulateTime
-                 || MeterSupportData.SimulateConsuming != newData.SimulateConsuming
+                if (MeterSupportData.SimulateConsuming != newData.SimulateConsuming
                  || MeterSupportData.SimulateProducing != newData.SimulateProducing
                  || MeterSupportData.SimulationTickLengthSec != newData.SimulationTickLengthSec
                  || MeterSupportData.SimulationTickLogSec != newData.SimulationTickLogSec)
                 {
-                    MeterSupportData.SimulateTime = newData.SimulateTime;
                     MeterSupportData.SimulateConsuming = newData.SimulateConsuming;
                     MeterSupportData.SimulateProducing = newData.SimulateProducing;
                     MeterSupportData.SimulationTickLengthSec = newData.SimulationTickLengthSec;
@@ -862,19 +871,22 @@ namespace Zats.Services
     public class MeterSupportData : CommandClassSupportData, INodeItem
     {
         // Internals accessible from TestCases or EDE
-        public int SimulateTime { get; set; } = 0;          // 0 = off (uses MeterSupportData time values), 1 = on
-        public int SimulateConsuming { get; set; } = 0;     // 0 = off; 1 = runs with consuming (same value for all scales)
-        public int SimulateProducing { get; set; } = 0;     // 0 = off; 1 = runs with producing (same value for all scales)
-        public uint SimulationTickLengthSec { get; set; } = 1;  // Length of a consuming/producing 'tick' in seconds
+        public bool SimulateConsuming { get; set; } = false;     // false = off (uses MeterSupportData time values)
+                                                                 // true = runs with consuming (same value for all scales)
+        public bool SimulateProducing { get; set; } = false;     // false = off (uses MeterSupportData time values)
+                                                                 // true = runs with producing (same value for all scales)
+        public uint SimulationTickLengthSec { get; set; } = 1;   // Length of a consuming/producing 'tick' in seconds
         public uint SimulationTickLogSec { get; set; } = 10;    // Logging each SimulationTickLogSec seconds
 
-        public MeterTypeNames MeterType { get; set; } = MeterTypeNames.Electric; // Set default to Electric Meter so EDE shows input fields right away, CTT TCs should set this explicitely
+        public MeterTypeNames MeterType { get; set; } = MeterTypeNames.Electric; // Set default to Electric Meter so EDE shows input fields right away,
+                                                                                 // CTT TCs should set this explicitely
 
         // V2+ Supported Report
         [CustomDataParameter(2, "Meter Reset Supported", UiControl.CheckBox, InputType.Boolean, EditType.Config)]
         public bool MeterResetSupported { get; set; } = false;
         // V4+ Supported Report
-        public RateTypeNames SupportedRateTypes { get; set; } = RateTypeNames.Import;   // 0x00 = Reserved; 0x01 = Import (consumed); 0x02 = Export (produced); 0x03 = Import and Export supported (V4+)
+        public RateTypeNames SupportedRateTypes { get; set; } = RateTypeNames.Import;   // 0x00 = Reserved; 0x01 = Import (consumed); 0x02 = Export (produced)
+                                                                                        // 0x03 = Import and Export supported (V4+)
 
         // V1+ Meter Report
         [NestedControl(1, "Meter Values")]
