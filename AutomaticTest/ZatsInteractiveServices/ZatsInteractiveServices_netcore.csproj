@@ -2,11 +2,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>ZatsInteractiveServices</AssemblyName>
-    <TargetFrameworks>net6.0;net48</TargetFrameworks>
+    <TargetFrameworks>net10.0;net48</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />
     <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
     <ProjectReference Include="..\..\z-wave-tools-core\ZWaveXml\ZWaveXml_netcore.csproj" />
@@ -15,10 +15,12 @@
     <ProjectReference Include="..\..\z-wave-tools-core\ZnifferApplication\ZnifferApplication_netcore.csproj" />
     <ProjectReference Include="..\ZatsServices\ZatsServices_netcore.csproj" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <!-- for .NET (Core) -->
     <Compile Remove="UIAutomation\**" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <!-- for .NET Framework 4.8 -->
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
