@@ -933,7 +933,7 @@ namespace Zats.Services
             }
 
             if (UserCredentialSupportData.AdminCodeSupport && newCredentialData.Type == CredentialType.PinCode &&
-                    Enumerable.SequenceEqual(DecodeString(UserCredentialSupportData.AdminCode, UserNameEncoding.ASCII), newCredentialData.Data))
+                    Enumerable.SequenceEqual(DecodeString(UserCredentialSupportData.AdminPinCode, UserNameEncoding.ASCII), newCredentialData.Data))
             {
                 var nextCredential = GetNextUsersCredential(newCredentialData);
 
@@ -1287,7 +1287,7 @@ namespace Zats.Services
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(UserCredentialSupportData.AdminCode) == false)
+                    if (string.IsNullOrEmpty(UserCredentialSupportData.AdminPinCode) == false)
                     {
                         rpt = PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Modified);
                         lifelineReport = rpt;
@@ -1297,7 +1297,7 @@ namespace Zats.Services
                         rpt = PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Unmodified);
                     }
 
-                    UserCredentialSupportData.AdminCode = string.Empty;
+                    UserCredentialSupportData.AdminPinCode = string.Empty;
                     UserCodeSupport?.SyncUserCodes();
                 }
             } 
@@ -1322,14 +1322,14 @@ namespace Zats.Services
                     return SvResultNames.Failed;
                 }
 
-                if (UserCredentialSupportData.AdminCode == adminPinCode)
+                if (UserCredentialSupportData.AdminPinCode == adminPinCode)
                 {
                     // CC:0083.01.1A.13.004
                     rpt = PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Unmodified, adminPinCode);
                     return SvResultNames.Successful;
                 }
 
-                UserCredentialSupportData.AdminCode = adminPinCode;
+                UserCredentialSupportData.AdminPinCode = adminPinCode;
                 UserCodeSupport?.SyncUserCodes();
                 rpt = PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Modified, adminPinCode);
                 lifelineReport = rpt;
@@ -1353,7 +1353,7 @@ namespace Zats.Services
 
         private byte[] PrepareAdminPinCodeReport()
         {
-            return PrepareAdminPinCodeReport(AdminPinCodeOperationResult.ResponseToGet, UserCredentialSupportData.AdminCode);
+            return PrepareAdminPinCodeReport(AdminPinCodeOperationResult.ResponseToGet, UserCredentialSupportData.AdminPinCode);
         }
 
         private byte[] PrepareAdminPinCodeReport(AdminPinCodeOperationResult operationResult, string adminPinCode = null)
@@ -2294,14 +2294,14 @@ namespace Zats.Services
                 {
                     if (userCodeSupportData.AdminCode.SequenceEqual(UserCodeSupport.EmptyCode))
                     {
-                        UserCredentialSupportData.AdminCode = string.Empty;
+                        UserCredentialSupportData.AdminPinCode = string.Empty;
                     } 
                     else
                     {
                         if (EncodeString(userCodeSupportData.AdminCode, UserNameEncoding.ASCII, 10, out string adminPinCode) && 
-                            UserCredentialSupportData.AdminCode != adminPinCode)
+                            UserCredentialSupportData.AdminPinCode != adminPinCode)
                         {
-                            UserCredentialSupportData.AdminCode = adminPinCode;
+                            UserCredentialSupportData.AdminPinCode = adminPinCode;
 
                             SendUnsolicitedReport(PrepareAdminPinCodeReport(AdminPinCodeOperationResult.Modified), NodeTag.Empty);
                         }
@@ -2459,9 +2459,9 @@ namespace Zats.Services
                 #region Synchronize Admin Code
                 bool adminCodeSynced = false;
 
-                if (newData.AdminCode != UserCredentialSupportData.AdminCode)
+                if (newData.AdminPinCode != UserCredentialSupportData.AdminPinCode)
                 {
-                    UserCredentialSupportData.AdminCode = newData.AdminCode;
+                    UserCredentialSupportData.AdminPinCode = newData.AdminPinCode;
                     adminCodeSynced = true;
                 }
 
@@ -2633,10 +2633,10 @@ namespace Zats.Services
 
         public List<UserCredential> UserCredentials { get; set; } = new List<UserCredential>();
 
-        [ParameterSeparator(1, "Admin Code", UserIndex + 11)]
+        [ParameterSeparator(1, "Admin PIN Code", UserIndex + 11)]
 
-        [CustomDataParameter(1, "Admin Code", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Text_127, EditType.Config | EditType.Edit, UserIndex + 12, withoutValidation: true)]
-        public string AdminCode { get; set; } = "";
+        [CustomDataParameter(1, "Admin PIN Code", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Text_127, EditType.Config | EditType.Edit, UserIndex + 12, false, ConditionalValidationProperty = nameof(AdminCodeSupport))]
+        public string AdminPinCode { get; set; } = "";
 
         [ParameterSeparator(1, "User Capabilities", UserIndex + 31)]
 

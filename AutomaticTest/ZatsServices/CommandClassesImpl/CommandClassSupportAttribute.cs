@@ -134,6 +134,12 @@ namespace Zats.Services
         public EditType EditType { get; set; }
         public object ItemsSource { get; set; }
         public bool WithoutValidation { get; set; }
+        /// <summary>
+        /// Name of a boolean property in the same class that must be true for validation to be required.
+        /// If this property is set and the referenced property is false, validation will be skipped (empty values are allowed).
+        /// Use nameof() to reference the property, e.g. nameof(AdminCodeSupport).
+        /// </summary>
+        public string ConditionalValidationProperty { get; set; }
 
         public CustomDataParameterAttribute(byte minVersion, byte maxVersion, string name, UiControl uiControl, InputType inputType, EditType editType, int orderNumber = 0, bool withoutValidation = false)
         {

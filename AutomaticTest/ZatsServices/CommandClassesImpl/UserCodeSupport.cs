@@ -836,13 +836,13 @@ namespace Zats.Services
 
                 if (UserCodeSupportData.AdminCodeSup && credentialSupportData.AdminCodeSupport)
                 {
-                    if (string.IsNullOrEmpty(credentialSupportData.AdminCode))
+                    if (string.IsNullOrEmpty(credentialSupportData.AdminPinCode))
                     {
                         UserCodeSupportData.AdminCode = EmptyCode;
                     }
                     else
                     {
-                        byte[] adminPinCode = UserCredentialSupport.DecodeString(credentialSupportData.AdminCode, UserNameEncoding.ASCII);
+                        byte[] adminPinCode = UserCredentialSupport.DecodeString(credentialSupportData.AdminPinCode, UserNameEncoding.ASCII);
                         if (UserCodeSupportData.AdminCode != adminPinCode)
                         {
                             UserCodeSupportData.AdminCode = adminPinCode;
