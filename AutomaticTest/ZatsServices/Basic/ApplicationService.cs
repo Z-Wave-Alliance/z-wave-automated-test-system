@@ -1854,7 +1854,7 @@ namespace Zats.Services
                     break;
                 case LibTypes.SensorPIR:
                     standardCC.Add(COMMAND_CLASS_MULTI_CMD.ID);
-                    specificCC.AddRange(new byte[] { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V9.ID });
+                    specificCC.AddRange(new byte[] { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V8.ID });
                     generic = GenericTypes.SENSOR_NOTIFICATION;
                     specific = 0x01; //SPECIFIC_TYPE_NOTIFICATION_SENSOR
                     devOpt = ZWave.Enums.DeviceOptions.NoneListening | ZWave.Enums.DeviceOptions.OptionalFunctionality;
@@ -1936,7 +1936,7 @@ namespace Zats.Services
                     break;
                 case LibTypes.MultiNotificationSensor:
                     standardCC.Add(COMMAND_CLASS_MULTI_CMD.ID);
-                    specificCC.AddRange(new byte[] { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V9.ID });
+                    specificCC.AddRange(new byte[] { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V8.ID });
                     generic = GenericTypes.SENSOR_NOTIFICATION;
                     specific = 0x01; //SPECIFIC_TYPE_NOTIFICATION_SENSOR
                     devOpt = ZWave.Enums.DeviceOptions.NoneListening | ZWave.Enums.DeviceOptions.OptionalFunctionality;
@@ -2109,7 +2109,7 @@ namespace Zats.Services
             #region Common Application responses
             var commonCCIds = new List<byte>
             {
-                COMMAND_CLASS_NOTIFICATION_V9.ID,
+                COMMAND_CLASS_NOTIFICATION_V8.ID,
                 COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID,
                 COMMAND_CLASS_ASSOCIATION.ID
             };
@@ -2243,7 +2243,7 @@ namespace Zats.Services
             #region Common Application responses
             var commonCCIds = new List<byte>
             {
-                COMMAND_CLASS_NOTIFICATION_V9.ID,
+                COMMAND_CLASS_NOTIFICATION_V8.ID,
                 COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID,
                 COMMAND_CLASS_ASSOCIATION.ID
             };

@@ -45,7 +45,7 @@ namespace ZatsTests
             Inconclusive(expDataToken.WaitCompletedSignal());
 
             ReportService.LogTitle("BTN3 toggle");
-            expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_NOTIFICATION_V9.NOTIFICATION_REPORT(), 33000);
+            expDataToken = AsyncService.ExpectData(Primary, powerStripId, new COMMAND_CLASS_NOTIFICATION_V8.NOTIFICATION_REPORT(), 33000);
             TestInterfaceService.HMIActions.PowerStrip_ToggleNotify(PowerStrip);
             Inconclusive(expDataToken.WaitCompletedSignal());
 

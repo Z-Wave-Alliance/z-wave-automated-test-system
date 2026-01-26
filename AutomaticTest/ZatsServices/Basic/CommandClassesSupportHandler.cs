@@ -56,7 +56,7 @@ namespace Zats.Services
                     break;
                 case LibTypes.MultilevelSensor:
                     #region
-                    ret.Add(COMMAND_CLASS_NOTIFICATION_V9.ID);
+                    ret.Add(COMMAND_CLASS_NOTIFICATION_V8.ID);
                     ret.Add(COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.ID);
                     ret.Add(COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID);
                     ret.Add(COMMAND_CLASS_WAKE_UP_V2.ID);
@@ -93,7 +93,7 @@ namespace Zats.Services
                     break;
                 case LibTypes.Thermostat:
                     #region
-                    ret.Add(COMMAND_CLASS_NOTIFICATION_V9.ID);
+                    ret.Add(COMMAND_CLASS_NOTIFICATION_V8.ID);
                     ret.Add(COMMAND_CLASS_SWITCH_BINARY.ID);
                     ret.Add(COMMAND_CLASS_MANUFACTURER_SPECIFIC_V2.ID);
                     ret.Add(COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ID);

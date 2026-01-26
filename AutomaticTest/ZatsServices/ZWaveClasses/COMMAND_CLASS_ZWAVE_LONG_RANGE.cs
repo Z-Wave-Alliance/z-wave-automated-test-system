@@ -62,20 +62,10 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties1 Empty { get { return new Tproperties1() { _value = 0, HasValue = false }; } }
-                public byte protocolVersion
+                public byte reserved
                 {
-                    get { return (byte)(_value >> 0 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x07; _value += (byte)(value << 0 & 0x07); }
-                }
-                public byte maxBaudRate
-                {
-                    get { return (byte)(_value >> 3 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x38; _value += (byte)(value << 3 & 0x38); }
-                }
-                public byte routing
-                {
-                    get { return (byte)(_value >> 6 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
+                    get { return (byte)(_value >> 0 & 0x7F); }
+                    set { HasValue = true; _value &= 0xFF - 0x7F; _value += (byte)(value << 0 & 0x7F); }
                 }
                 public byte listening
                 {
@@ -100,7 +90,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte rfu
+                public byte reserved2
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -110,32 +100,17 @@ namespace Zats.Services
                     get { return (byte)(_value >> 1 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x02; _value += (byte)(value << 1 & 0x02); }
                 }
-                public byte specificDevice
+                public byte reserved3
                 {
-                    get { return (byte)(_value >> 2 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x04; _value += (byte)(value << 2 & 0x04); }
-                }
-                public byte routingEndNode
-                {
-                    get { return (byte)(_value >> 3 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x08; _value += (byte)(value << 3 & 0x08); }
-                }
-                public byte beamCapability
-                {
-                    get { return (byte)(_value >> 4 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x10; _value += (byte)(value << 4 & 0x10); }
-                }
-                public byte sensor250ms
-                {
-                    get { return (byte)(_value >> 5 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x20; _value += (byte)(value << 5 & 0x20); }
+                    get { return (byte)(_value >> 2 & 0x0F); }
+                    set { HasValue = true; _value &= 0xFF - 0x3C; _value += (byte)(value << 2 & 0x3C); }
                 }
                 public byte sensor1000ms
                 {
                     get { return (byte)(_value >> 6 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
                 }
-                public byte optionalFunctionality
+                public byte reserved4
                 {
                     get { return (byte)(_value >> 7 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x80; _value += (byte)(value << 7 & 0x80); }
@@ -158,12 +133,22 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties3 Empty { get { return new Tproperties3() { _value = 0, HasValue = false }; } }
-                public byte speedExtension
+                public byte supportedSpeedReserved
                 {
-                    get { return (byte)(_value >> 0 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x07; _value += (byte)(value << 0 & 0x07); }
+                    get { return (byte)(_value >> 0 & 0x01); }
+                    set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
                 }
-                public byte reserved2
+                public byte supportedSpeed100Kbps
+                {
+                    get { return (byte)(_value >> 1 & 0x01); }
+                    set { HasValue = true; _value &= 0xFF - 0x02; _value += (byte)(value << 1 & 0x02); }
+                }
+                public byte supportedSpeedReserved2
+                {
+                    get { return (byte)(_value >> 2 & 0x01); }
+                    set { HasValue = true; _value &= 0xFF - 0x04; _value += (byte)(value << 2 & 0x04); }
+                }
+                public byte reserved5
                 {
                     get { return (byte)(_value >> 3 & 0x1F); }
                     set { HasValue = true; _value &= 0xFF - 0xF8; _value += (byte)(value << 3 & 0xF8); }
@@ -316,20 +301,10 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties1 Empty { get { return new Tproperties1() { _value = 0, HasValue = false }; } }
-                public byte protocolVersion
+                public byte reserved
                 {
-                    get { return (byte)(_value >> 0 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x07; _value += (byte)(value << 0 & 0x07); }
-                }
-                public byte maxBaudRate
-                {
-                    get { return (byte)(_value >> 3 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x38; _value += (byte)(value << 3 & 0x38); }
-                }
-                public byte routing
-                {
-                    get { return (byte)(_value >> 6 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
+                    get { return (byte)(_value >> 0 & 0x7F); }
+                    set { HasValue = true; _value &= 0xFF - 0x7F; _value += (byte)(value << 0 & 0x7F); }
                 }
                 public byte listening
                 {
@@ -354,7 +329,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte rfu
+                public byte reserved2
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -364,15 +339,10 @@ namespace Zats.Services
                     get { return (byte)(_value >> 1 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x02; _value += (byte)(value << 1 & 0x02); }
                 }
-                public byte specificDevice
+                public byte reserved3
                 {
-                    get { return (byte)(_value >> 2 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x04; _value += (byte)(value << 2 & 0x04); }
-                }
-                public byte routingEndNode
-                {
-                    get { return (byte)(_value >> 3 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x08; _value += (byte)(value << 3 & 0x08); }
+                    get { return (byte)(_value >> 2 & 0x03); }
+                    set { HasValue = true; _value &= 0xFF - 0x0C; _value += (byte)(value << 2 & 0x0C); }
                 }
                 public byte beamCapability
                 {
@@ -389,7 +359,7 @@ namespace Zats.Services
                     get { return (byte)(_value >> 6 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
                 }
-                public byte optionalFunctionality
+                public byte reserved4
                 {
                     get { return (byte)(_value >> 7 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x80; _value += (byte)(value << 7 & 0x80); }
@@ -461,20 +431,10 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties1 Empty { get { return new Tproperties1() { _value = 0, HasValue = false }; } }
-                public byte protocolVersion
+                public byte reserved
                 {
-                    get { return (byte)(_value >> 0 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x07; _value += (byte)(value << 0 & 0x07); }
-                }
-                public byte maxBaudRate
-                {
-                    get { return (byte)(_value >> 3 & 0x07); }
-                    set { HasValue = true; _value &= 0xFF - 0x38; _value += (byte)(value << 3 & 0x38); }
-                }
-                public byte routing
-                {
-                    get { return (byte)(_value >> 6 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
+                    get { return (byte)(_value >> 0 & 0x7F); }
+                    set { HasValue = true; _value &= 0xFF - 0x7F; _value += (byte)(value << 0 & 0x7F); }
                 }
                 public byte listening
                 {
@@ -499,7 +459,7 @@ namespace Zats.Services
                 private byte _value;
                 public bool HasValue { get; private set; }
                 public static Tproperties2 Empty { get { return new Tproperties2() { _value = 0, HasValue = false }; } }
-                public byte rfu
+                public byte reserved2
                 {
                     get { return (byte)(_value >> 0 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x01; _value += (byte)(value << 0 & 0x01); }
@@ -509,15 +469,10 @@ namespace Zats.Services
                     get { return (byte)(_value >> 1 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x02; _value += (byte)(value << 1 & 0x02); }
                 }
-                public byte specificDevice
+                public byte reserved3
                 {
-                    get { return (byte)(_value >> 2 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x04; _value += (byte)(value << 2 & 0x04); }
-                }
-                public byte routingEndNode
-                {
-                    get { return (byte)(_value >> 3 & 0x01); }
-                    set { HasValue = true; _value &= 0xFF - 0x08; _value += (byte)(value << 3 & 0x08); }
+                    get { return (byte)(_value >> 2 & 0x03); }
+                    set { HasValue = true; _value &= 0xFF - 0x0C; _value += (byte)(value << 2 & 0x0C); }
                 }
                 public byte beamCapability
                 {
@@ -534,7 +489,7 @@ namespace Zats.Services
                     get { return (byte)(_value >> 6 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x40; _value += (byte)(value << 6 & 0x40); }
                 }
-                public byte optionalFunctionality
+                public byte reserved4
                 {
                     get { return (byte)(_value >> 7 & 0x01); }
                     set { HasValue = true; _value &= 0xFF - 0x80; _value += (byte)(value << 7 & 0x80); }

@@ -33,7 +33,7 @@ namespace Zats.Services.PreconfiguredDevices
             SecuredCc = new List<byte> { COMMAND_CLASS_ASSOCIATION.ID, COMMAND_CLASS_ASSOCIATION_GRP_INFO_V3.ID, COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V3.ID,
                         COMMAND_CLASS_POWERLEVEL.ID, COMMAND_CLASS_DEVICE_RESET_LOCALLY.ID,
                         COMMAND_CLASS_VERSION.ID, COMMAND_CLASS_BASIC.ID };
-            SpecificCc = new List<byte> { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V9.ID };
+            SpecificCc = new List<byte> { COMMAND_CLASS_WAKE_UP_V2.ID, COMMAND_CLASS_BATTERY.ID, COMMAND_CLASS_NOTIFICATION_V8.ID };
             SecuredCc.AddRange(SpecificCc);
 
             var commandClassesSupportHandler = new CommandClassesSupportHandler();
