@@ -149,8 +149,8 @@
       <Link>Libraries\ZWaveDll\XmlFiles\FrameDefinition.xml</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\z-wave-tools-core\XmlFiles\ZWave_cmd_classes.xml">
-      <Link>Libraries\ZWaveDll\XmlFiles\ZWave_cmd_classes.xml</Link>
+    <Content Include="..\..\z-wave-tools-core\XmlFiles\zwave.xml">
+      <Link>Libraries\ZWaveDll\XmlFiles\zwave.xml</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\XmlFiles\FilePatternDefinition.xml">

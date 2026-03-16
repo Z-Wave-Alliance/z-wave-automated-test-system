@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +13,8 @@ namespace ZnifferApplicationIntegrationTests
 {
     public static class Utils
     {
-        private const string ZWAVE_DEFINITION_FILE = @"ZWave_cmd_classes.xml";
-        private const string FRAME_DEFINITION_FILE = @"FrameDefinition.xml";
+        private const string ZWAVE_DEFINITION_FILE = Utils.Tools.ZWAVE_DEFINITION_FILE_NAME;
+        private const string FRAME_DEFINITION_FILE = Utils.Tools.FRAME_DEFINITION_FILE_NAME;
 
         public static FrameDefinition FrameDefinition { get; set; }
 

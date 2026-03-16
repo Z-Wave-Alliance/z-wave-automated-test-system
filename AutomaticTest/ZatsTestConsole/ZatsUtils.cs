@@ -19,11 +19,14 @@ namespace ZatsTestConsole
 {
     public static class ZatsUtils
     {
-        private const string SETTINGS_FILE = @"ZatsDefinition.xml";
-        private const string PROFILE_FILE = @"ZatsProfile.xml";
-        private const string CACHE_FILE = @"ZatsCache.xml";
-        private const string ZWAVE_DEFINITION_FILE = @"ZWave_cmd_classes.xml";
-        private const string FRAME_DEFINITION_FILE = @"FrameDefinition.xml";
+        private const string SETTINGS_FILE_NAME = @"ZatsDefinition.xml";
+        private const string PROFILE_FILE_NAME = @"ZatsProfile.xml";
+        private const string CACHE_FILE_NAME = @"ZatsCache.xml";
+
+        // Z-Wave Tools Core file names
+        private const string FRAME_DEFINITION_FILE_NAME = Tools.FRAME_DEFINITION_FILE_NAME;
+        private const string ZWAVE_DEFINITION_FILE_NAME = Tools.ZWAVE_DEFINITION_FILE_NAME;
+        
 
         public static CmdLineSettings ParseArguments(string[] args)
         {
@@ -300,7 +303,7 @@ namespace ZatsTestConsole
             string zWaveXmlRoot = GetZWaveDllXmlFilesDirectory();
             if (zWaveXmlRoot != null)
             {
-                var zwaveSystemDefFilePath = Path.Combine(zWaveXmlRoot, ZWAVE_DEFINITION_FILE);
+                var zwaveSystemDefFilePath = Path.Combine(zWaveXmlRoot, ZWAVE_DEFINITION_FILE_NAME);
                 FileAccessMonitor.Read(zwaveSystemDefFilePath, () => ret = ZWaveDefinition.Load(zwaveSystemDefFilePath));
             }
             return ret;
@@ -312,7 +315,7 @@ namespace ZatsTestConsole
             string zWaveXmlRoot = GetZWaveDllXmlFilesDirectory();
             if (zWaveXmlRoot != null)
             {
-                var frameDefFilePath = Path.Combine(zWaveXmlRoot, FRAME_DEFINITION_FILE);
+                var frameDefFilePath = Path.Combine(zWaveXmlRoot, FRAME_DEFINITION_FILE_NAME);
                 FileAccessMonitor.Read(frameDefFilePath, () => ret = FrameDefinition.Load(frameDefFilePath));
             }
             return ret;
@@ -390,7 +393,7 @@ namespace ZatsTestConsole
             ZatsDefinition ret = null;
             if (zatsXmlRoot != null)
             {
-                string xmlZatsDefinitionFileName = Path.Combine(zatsXmlRoot, SETTINGS_FILE);
+                string xmlZatsDefinitionFileName = Path.Combine(zatsXmlRoot, SETTINGS_FILE_NAME);
                 FileAccessMonitor.Read(xmlZatsDefinitionFileName, () =>
                 {
                     XmlSerializer zwClassXmlSerializer = new XmlSerializer(typeof(ZatsDefinition));
@@ -430,7 +433,7 @@ namespace ZatsTestConsole
                 sett.OmitXmlDeclaration = true;
                 XmlSerializerNamespaces names = new XmlSerializerNamespaces();
                 names.Add(string.Empty, string.Empty);
-                string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, SETTINGS_FILE);
+                string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, SETTINGS_FILE_NAME);
                 XmlWriter writer = XmlWriter.Create(xmlZatsProfileFileName, sett);
                 try
                 {
@@ -457,7 +460,7 @@ namespace ZatsTestConsole
             ZatsProfile ret = null;
             if (zatsXmlRoot != null)
             {
-                string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, PROFILE_FILE);
+                string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, PROFILE_FILE_NAME);
                 FileAccessMonitor.Read(xmlZatsProfileFileName, () =>
                 {
                     XmlSerializer zwClassXmlSerializer = new XmlSerializer(typeof(ZatsProfile));
@@ -490,7 +493,7 @@ namespace ZatsTestConsole
             sett.OmitXmlDeclaration = true;
             XmlSerializerNamespaces names = new XmlSerializerNamespaces();
             names.Add(string.Empty, string.Empty);
-            string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, PROFILE_FILE);
+            string xmlZatsProfileFileName = Path.Combine(zatsXmlRoot, PROFILE_FILE_NAME);
             XmlWriter writer = XmlWriter.Create(xmlZatsProfileFileName, sett);
             try
             {
@@ -510,9 +513,9 @@ namespace ZatsTestConsole
 
         internal static void DeleteZatsCache(string zatsLogPath)
         {
-            if (zatsLogPath != null && File.Exists(Path.Combine(zatsLogPath, CACHE_FILE)))
+            if (zatsLogPath != null && File.Exists(Path.Combine(zatsLogPath, CACHE_FILE_NAME)))
             {
-                File.Delete(Path.Combine(zatsLogPath, CACHE_FILE));
+                File.Delete(Path.Combine(zatsLogPath, CACHE_FILE_NAME));
             }
         }
 
@@ -521,7 +524,7 @@ namespace ZatsTestConsole
             ZatsCache ret = null;
             if (zatsLogPath != null)
             {
-                string xmlZatsCacheFileName = Path.Combine(zatsLogPath, CACHE_FILE);
+                string xmlZatsCacheFileName = Path.Combine(zatsLogPath, CACHE_FILE_NAME);
                 FileAccessMonitor.Read(xmlZatsCacheFileName, () =>
                 {
                     XmlSerializer zwClassXmlSerializer = new XmlSerializer(typeof(ZatsCache));
@@ -589,7 +592,7 @@ namespace ZatsTestConsole
             sett.OmitXmlDeclaration = true;
             XmlSerializerNamespaces names = new XmlSerializerNamespaces();
             names.Add(string.Empty, string.Empty);
-            string xmlZatsCacheFileName = Path.Combine(zatsLogPath, CACHE_FILE);
+            string xmlZatsCacheFileName = Path.Combine(zatsLogPath, CACHE_FILE_NAME);
             XmlWriter writer = XmlWriter.Create(xmlZatsCacheFileName, sett);
             try
             {

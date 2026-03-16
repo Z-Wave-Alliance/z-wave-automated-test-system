@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
 using System.Net;
+using Utils;
 
 namespace Zats.Services
 {
@@ -23,7 +25,7 @@ namespace Zats.Services
         {
             if (GwIpv6Address != null)
             {
-                return new SshBasicCMD("sudo ./reference_client -s " + GwIpv6Address + " -x ZWave_cmd_classes.xml" + " 2> /tmp/liblog.txt");
+                return new SshBasicCMD("sudo ./reference_client -s " + GwIpv6Address + " -x " + Tools.ZWAVE_DEFINITION_FILE_NAME + " 2> /tmp/liblog.txt");
             }
             return null;
         }
