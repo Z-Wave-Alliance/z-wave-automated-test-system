@@ -24,8 +24,8 @@ namespace ZatsTestConsole
         private const string CACHE_FILE_NAME = @"ZatsCache.xml";
 
         // Z-Wave Tools Core file names
-        private const string FRAME_DEFINITION_FILE_NAME = Tools.FRAME_DEFINITION_FILE_NAME;
-        private const string ZWAVE_DEFINITION_FILE_NAME = Tools.ZWAVE_DEFINITION_FILE_NAME;
+        private const string FRAME_DEFINITION_FILE_NAME = Configuration.FRAME_DEFINITION_FILE_NAME;
+        private const string ZWAVE_DEFINITION_FILE_NAME = Configuration.ZWAVE_DEFINITION_FILE_NAME;
         
 
         public static CmdLineSettings ParseArguments(string[] args)
