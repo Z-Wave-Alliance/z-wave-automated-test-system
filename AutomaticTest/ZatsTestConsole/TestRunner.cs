@@ -48,6 +48,37 @@ namespace ZatsTestConsole
         private Profile ActiveProfile { get; set; }
         private StorageHeader StorageHeader { get; set; }
 
+        // TODO: proposal - Consider extracting this method into smaller focused methods:
+        //   1. ParseAndValidateCommandLine() - parse args, create ConsoleCustomOutput, handle help/error early exits
+        //   2. LoadDefinitions() - load ZWaveDefinition, FrameDefinition, ZatsDefinition from XML
+        //   3. InitializeProfile() - resolve ZatsProfile, ActiveProfile, ZatsSettings, ZatsInstruments, reports directory
+        //   4. InitializeProgrammers() - create alpha/gamma programming providers
+        //   5. DetectMeshRouters() - discover mesh network routers, validate profile
+        //   6. DetectDeviceHosts() - detect connected devices via serial/TCP/JLink
+        //   7. LoadTestAssemblies() - load test DLLs, discover test types, apply input filters
+        //   8. ExecuteTestRun() - orchestrates the main test execution loop:
+        //        - Creates ManagersContainer, ZatsEnvironment, ServicesContainer
+        //        - Iterates through: frequencies -> LR channels -> DUT names -> run counters -> extra runs
+        //        - For each test case: creates test suite XML, instantiates test class, runs setup/connect
+        //        - Handles timeout execution with CancellationToken or telemetry-enabled execution
+        //        - Records Pass/Fail/Skip results, manages device cleanup between tests
+        //        - Erases devices at end when RunMode is Clean
+        //
+        // Special behaviors and workarounds:
+        //   - Profile name fallback chain: cmdLine -> saved file -> MachineName -> DNS hostname -> "zatsserver"
+        //   - TestCases.dll workaround: IUserInteractive tests are skipped unless explicitly specified in input filter
+        //   - Chip series 7/8 optimization: when SaveInclusionState=false, reuses device setup between compatible TCs
+        //     by selecting next TC with matching device requirements (GetNextTcDefinition)
+        //   - Mesh router profile invalidation: if router serial doesn't match, all COM/TCP devices are removed from profile
+        //   - RunMode behaviors:
+        //       * Clean: EraseAllBoards before EACH test case + EraseAllBoards at end of DUT iteration
+        //       * Overwrite: EraseAllBoards only on FIRST test case per run
+        //       * Readonly: no erase, only ResetAllBoards (unless SaveInclusionState=true, then skip reset, too)
+        //   - IgnoreMode.Fail: continues executing remaining tests even after a failure (ret != 0)
+        //   - Failed TCs are collected in extraTCs list for retry when NumberOfRuns > 1 or NumberOfExtraRuns > 1
+        //   - PCControllerUI mode: enables debug_output.txt logging and disables NodeIdBase2 option
+        //   - Empty catch blocks silently suppress: ZatsDefinition load errors, DNS hostname resolution errors
+        //   - Thread.Sleep(300ms) delay after each TC cleanup for device stabilization
         public int RunCodeTest()
         {
             //ConsoleCtrlHandler.EnableCtrlEvents();
@@ -871,7 +902,11 @@ namespace ZatsTestConsole
                                     }
 
                                 }
-
+                                if (_cmdLineSettings.RunMode == RunModes.Clean)
+                                {
+                                    managersContainer.DeviceManager.EraseAllBoards(ActiveProfile);
+                                    ZatsUtils.SaveZatsCache(zatsCache, Directory.GetCurrentDirectory());
+                                }
                             }
                         }
                     }
