@@ -66,9 +66,35 @@ namespace Zats.Services
                  ChipSeries.ZGM230_BRD2603A
              };
 
-        internal int RunProgrammerWithArgs(DeviceHostClient deviceClientHost, string runArgs)
+        /// <summary>
+        /// Executes programmer application CLI command directly on the specified device.
+        /// </summary>
+        /// <remarks>
+        /// The programmer application is automatically detected based on device context:
+        /// <list type="bullet">
+        /// <item><description>Modern Series (700s and later) - Uses Commander (_gammaProgrammer)</description></item>
+        /// <item><description>Legacy Series (up to 500s) - Uses Z-Wave PC Programmer (_alphaProgrammer)</description></item>
+        /// </list>
+        /// </remarks>
+        /// <param name="deviceNumber"></param>
+        /// <param name="args">CLI arguments to pass to the programmer application. Should not include device-specific arguments.</param>
+        /// <param name="timeoutMs">Timeout in milliseconds for the programming operation. Default is 30000ms (30 seconds).</param>
+        /// <returns>
+        /// Exit code from the programmer application: 0 - Success.
+        /// </returns>
+        internal int RunProgrammerWithArgs(Alias deviceNumber, string args, int timeoutMs = 30000)
         {
-            return _alphaProgrammer.Run(deviceClientHost, runArgs);
+            Log("Wait for background programming process to complete...", LogLevels.Information);
+            var deviceClientHost = GetDeviceHostClient(deviceNumber);
+            if (deviceClientHost.HasJName)
+            {
+                return _gammaProgrammer?.Run(deviceClientHost, args, timeoutMs) ?? -1;
+            }
+            else if (deviceClientHost.HasPName)
+            {
+                return _alphaProgrammer?.Run(deviceClientHost, args, timeoutMs) ?? -1;
+            }
+            return -1;
         }
 
         internal int SetHomeId(DeviceHostClient deviceClientHost, byte[] homeId)

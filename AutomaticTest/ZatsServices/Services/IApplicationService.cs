@@ -137,7 +137,6 @@ namespace Zats.Services
         void OpenSecuritySettingsFromFile(Alias deviceNumber, string securitySettingsFilePath);
 
         IZWaveClassesConverter ZWaveClasses { get; }
-        void ModifyHomeId(Alias deviceNumber, byte[] homeId);
 
         void AddAssociationSupport(Alias deviceNumber);
         BasicToken.Void AddBasicSupport(Alias deviceNumber);

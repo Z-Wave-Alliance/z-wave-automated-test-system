@@ -18,7 +18,7 @@ namespace Zats.Services
         string GetPowerMeasure(DeviceHostClient deviceHostClient, int windowLenght);
         byte[] GetDsk(DeviceHostClient deviceHostClient);
         byte[] GetPrk(DeviceHostClient deviceHostClient);
-        int Run(DeviceHostClient deviceClientHost, string args);
+        int Run(DeviceHostClient deviceClientHost, string args, int timeoutMs = 30000);
         int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath, bool isSeries2 = false);
         string GetVersion();
         int RenewDsk(DeviceHostClient deviceHostClient);

@@ -527,9 +527,12 @@ namespace Zats.Services
             }.Contains(library);
         }
 
-        public int Run(DeviceHostClient deviceClientHost, string args)
+        public int Run(DeviceHostClient deviceHostClient, string args, int timeoutMs = 30000)
         {
-            throw new NotImplementedException();
+            var devicePort = GetHostClientPortWithArg(deviceHostClient);
+            var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
+            var fullArgs = $"{args} {deviceId} {devicePort}";
+            return ProgrammerAction(fullArgs, "Run Commander CLI", timeoutMs);
         }
 
         public int GblCreate(string hexFilePath, string gblFilePath, string signKeyFilePath, string encryptKeyFilePath, bool isSeries2 = false)

@@ -2526,12 +2526,6 @@ namespace Zats.Services
                      .Select(x => Convert.ToByte(hexString_fix.Substring(x, 2), 16))
                      .ToArray(); ;
         }
-        public void ModifyHomeId(Alias deviceNumber, byte[] homeId)
-        {
-            var dhc = DeviceManager.GetDeviceHostClient(deviceNumber);
-            string args = "-c " + dhc.PClient.DataSource.SourceId + " -ph " + homeId.ToHexString().Replace(" ", "");
-            DeviceManager.RunProgrammerWithArgs(dhc, args);
-        }
 
         public void SaveSecuritySettingsToFile(Alias deviceNumber, string settingsFilePath)
         {

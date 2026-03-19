@@ -288,14 +288,26 @@ namespace Zats.Services
             return ret;
         }
 
-        public int Run(DeviceHostClient deviceHostClient, string args)
+        public int ModifyHomeId(string port, byte[] homeId)
         {
-            int ret = 0;
+            var newHomeId = homeId.ToHexString().Replace(" ", "");
+            var args = $"-c {port} -ph {newHomeId}";
+
+            var ret = ProgrammerAction(args, "Modify Home ID", 30000);
+            return ret;
+        }
+
+        public int Run(DeviceHostClient deviceHostClient, string args, int timeoutMs = 30000)
+        {
+            int ret = -1;
             if (HasFirmware(deviceHostClient))
             {
+                var port = deviceHostClient.Host.PName;
+                var runArgs = $"-c {port} {args}";
+
                 deviceHostClient.SClient?.Disconnect();
                 deviceHostClient.PClient.Disconnect();
-                ret = ProgrammerAction(args, "Run", 300000);
+                ret = ProgrammerAction(runArgs, "Run Legacy Programmer CLI", timeoutMs);
                 Thread.Sleep(8000); // startup
                 deviceHostClient.SClient?.Connect();
                 deviceHostClient.PClient.Connect();

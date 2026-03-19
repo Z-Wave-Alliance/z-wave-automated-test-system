@@ -905,10 +905,6 @@ namespace Zats.Services
             throw new NotImplementedException();
         }
 
-        public void ModifyHomeId(Alias deviceNumber, byte[] homeId)
-        {
-            throw new NotImplementedException();
-        }
 
         public byte[] GetSupportedCommandClasses(Alias deviceNumber)
         {

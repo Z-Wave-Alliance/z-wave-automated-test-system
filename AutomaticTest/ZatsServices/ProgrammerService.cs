@@ -26,13 +26,18 @@ namespace Zats.Services
             return ret;
         }
 
-        public int RunProgrammerProcess(Alias deviceNumber, string args)
+        /// <summary>
+        /// Executes programmer application CLI command directly on the specified device.
+        /// </summary>
+        /// <param name="deviceNumber">Device</param>
+        /// <param name="args">CLI arguments to pass to the programmer application. Should not include device-specific arguments.</param>
+        /// <param name="timeoutMs">Timeout in milliseconds for the programming operation. Default is 30000ms (30 seconds).</param>
+        /// <returns>
+        /// Exit code from the programmer application: 0 - Success.
+        /// </returns>
+        public int RunProgrammerProcess(Alias deviceNumber, string args, int timeoutMs = 30000)
         {
-            int ret = 0;
-            var deviceClientHost = DeviceManager.GetDeviceHostClient(deviceNumber);
-            var runArgs = $"-c {deviceClientHost.Host.PName} {args}";
-            DeviceManager.Log("Wait for background programming process to complete...", LogLevels.Information);
-            ret = DeviceManager.RunProgrammerWithArgs(deviceClientHost, runArgs);
+            var ret = DeviceManager.RunProgrammerWithArgs(deviceNumber, args, timeoutMs);
             return ret;
         }
 
