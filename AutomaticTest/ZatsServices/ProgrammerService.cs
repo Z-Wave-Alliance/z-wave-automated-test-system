@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 using System.IO;
-using System.Linq;
+using System.Text.RegularExpressions;
 using Utils;
-using Utils.UI.Enums;
 using ZWave.Enums;
 
 namespace Zats.Services
@@ -302,27 +302,24 @@ namespace Zats.Services
             Completed = false;
             if (!string.IsNullOrEmpty(value))
             {
-                var rows = value.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                if (rows.Length == 5 && rows.Last().Contains("DONE"))
-                {
-                    System.IFormatProvider numform = new System.Globalization.CultureInfo("en-US");
-
-                    var s = rows[0].Replace("Averaged over", "").Replace("ms:", "").Trim();
-                    AveragedOver = int.TryParse(s, System.Globalization.NumberStyles.AllowDecimalPoint, numform, out int r) ? r : 0;
-
-                    s = rows[1].ToLower().Replace("current", "").Replace("[ma]", "").Replace(":", "").Trim();
-                    Current = float.TryParse(s, System.Globalization.NumberStyles.AllowDecimalPoint, numform, out float f) ? f : 0;
-
-                    s = rows[2].ToLower().Replace("power", "").Replace("[mw]", "").Replace(":", "").Trim();
-                    Power = float.TryParse(s, System.Globalization.NumberStyles.AllowDecimalPoint, numform, out f) ? f : 0;
-
-                    s = rows[3].ToLower().Replace("voltage", "").Replace("[v]", "").Replace(":", "").Trim();
-                    Voltage = float.TryParse(s, System.Globalization.NumberStyles.AllowDecimalPoint, numform, out f) ? f : 0;
-
-                    Completed = true;
-                }
+                Completed = true;
+                AveragedOver = ParseInt(value, @"Averaged over\s+(\d+)\s*ms");
+                Current = ParseFloat(value, @"Current\s*\[mA\]\s*:\s*([\d.]+)");
+                Power = ParseFloat(value, @"Power\s*\[mW\]\s*:\s*([\d.]+)");
+                Voltage = ParseFloat(value, @"Voltage\s*\[V\]\s*:\s*([\d.]+)");
             }
+        }
 
+        private static int ParseInt(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
+            return match.Success && int.TryParse(match.Groups[1].Value, out int result) ? result : 0;
+        }
+
+        private static float ParseFloat(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
+            return match.Success && float.TryParse(match.Groups[1].Value, out float result) ? result : 0;
         }
     }
 
