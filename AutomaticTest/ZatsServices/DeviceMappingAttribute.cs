@@ -64,6 +64,9 @@ namespace Zats.Services
         public DeviceMappingAttribute(ushort number, LibTypes library)
             : this(number, ChipSeries.Default, DevKits.Default, library) { }
 
+        public DeviceMappingAttribute(ushort number)
+            : this(number, ChipSeries.Default, DevKits.Default, LibTypes.NoLib) { }
+
         public DeviceMappingAttribute(ushort number, string alias, LibTypes library)
             : this(number, ChipSeries.Default, DevKits.Default, library)
         {

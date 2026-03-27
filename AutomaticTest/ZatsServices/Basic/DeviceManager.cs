@@ -885,21 +885,21 @@ namespace Zats.Services
             var tempRemovedRequiredList = new ConcurrentBag<UnknownDevice>();
             Parallel.ForEach(required, reqDevice =>
             {
-                if (!string.IsNullOrWhiteSpace(reqDevice.Alias))
+                DeviceHostClient matched = availableList.FirstOrDefault(x =>
+                    !string.IsNullOrEmpty(x.Host.Alias) &&
+                    (reqDevice.HasAlias == false || x.Host.Alias.Equals(reqDevice.Alias, StringComparison.InvariantCulture)));
+
+                if (matched != null)
                 {
-                    var matched = availableList.FirstOrDefault(x => !string.IsNullOrEmpty(x.Host.Alias) && x.Host.Alias.Equals(reqDevice.Alias, StringComparison.InvariantCulture));
-                    if (matched != null)
+                    FillDeviceHostClient(matched);
+                    if (matched.Library != Libraries.NoLib)
                     {
-                        FillDeviceHostClient(matched);
-                        if (matched.Library != Libraries.NoLib)
-                        {
-                            InitDeviceHostClient(matched);
-                            AddOrReplaceDevice(reqDevice.DeviceAlias, matched);
-                            tempRemovedRequiredList.Add(reqDevice);
-                            tempRemovedAvailableList.Add(matched);
-                            LoadConfigurationItem(matched, configPath);
-                            InitNodes(matched);
-                        }
+                        InitDeviceHostClient(matched);
+                        AddOrReplaceDevice(reqDevice.DeviceAlias, matched);
+                        tempRemovedRequiredList.Add(reqDevice);
+                        tempRemovedAvailableList.Add(matched);
+                        LoadConfigurationItem(matched, configPath);
+                        InitNodes(matched);
                     }
                 }
             });
