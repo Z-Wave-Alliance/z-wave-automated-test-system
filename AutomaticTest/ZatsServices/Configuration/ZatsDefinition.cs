@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 
 namespace Zats.Services {
     using System.Xml.Serialization;
@@ -323,12 +323,15 @@ namespace Zats.Services {
         
         private string hop;
         
+        private NodeNetworkState networkState;
+        
         public DeviceHost() {
             sPort = 0;
             sType = InterfaceTypes.COM;
             rApiType = RemoteApiTypes.None;
             isUZB = false;
             isVirtual = false;
+            networkState = NodeNetworkState.Undefined;
         }
         
         [XmlAttribute]
@@ -479,6 +482,18 @@ namespace Zats.Services {
             }
         }
         
+        [XmlAttribute]
+        [DefaultValue(NodeNetworkState.Undefined)]
+        public NodeNetworkState NetworkState {
+            get {
+                return networkState;
+            }
+            set {
+                networkState = value;
+                RaisePropertyChanged("NetworkState");
+            }
+        }
+        
         public event PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
@@ -517,5 +532,13 @@ namespace Zats.Services {
         WebAppliance,
         
         MeshRouter,
+    }
+    
+    [System.Serializable]
+    public enum NodeNetworkState {
+        
+        Undefined,
+        
+        NetworkIsPreConfigured,
     }
 }

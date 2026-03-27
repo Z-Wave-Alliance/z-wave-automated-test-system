@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+// SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -148,6 +148,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
+                        item.Value.NetworkState,
                         item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         null,
@@ -164,6 +165,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
+                        item.Value.NetworkState,
                         item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         item.Value.FileNameFilter,
@@ -221,6 +223,7 @@ namespace ZatsTestConsole
                         ZatsUtils.GetLibraries(item.Value.Libraries),
                         item.Value.ChipSeries,
                         item.Value.InterfaceType,
+                        item.Value.NetworkState,
                         item.Value.RfRegion == RfRegions.UNKNOWN ? _managers.Context.Frequency : item.Value.RfRegion.ToFrequency(),
                         item.Value.DevKit,
                         item.Value.FileNameFilter,
@@ -270,9 +273,17 @@ namespace ZatsTestConsole
                     if (!string.IsNullOrWhiteSpace(chipType) && Enum.TryParse(chipType, out ChipSeries chipSeries))
                     {
                         var hosts = new List<DeviceHost>() { host };
-                        var reqZnif = new UnknownDevice(new Alias(0xDEAD), null,
+                        var reqZnif = new UnknownDevice(
+                            new Alias(0xDEAD),
+                            null,
                             new ZWave.Enums.Libraries[] { ZWave.Enums.Libraries.ZnifferPTI },
-                            chipSeries, InterfaceTypes.TCP, rfRegion, DevKits.Default, null, null);
+                            chipSeries,
+                            InterfaceTypes.TCP,
+                            NodeNetworkState.Undefined,
+                            rfRegion,
+                            DevKits.Default,
+                            null,
+                            null);
                         var reqs = new List<UnknownDevice>() { reqZnif };
                         _managers.DeviceManager.InitDevices(hosts, reqs, settings.IsAppendMode, configurationMode, settings.ConfigPath);
                     }

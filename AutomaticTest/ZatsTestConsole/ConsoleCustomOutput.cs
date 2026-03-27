@@ -258,6 +258,15 @@ namespace ZatsTestConsole
                         ConsoleWriteDeviceHost(sdev);
                         ConsoleWrite($" ");
                         ConsoleWriteDeviceClientHost(sdev);
+
+                        NodeNetworkState nwState = sdev.Host.NetworkState;
+                        if (nwState != NodeNetworkState.Undefined)
+                        {
+                            ConsoleWrite($" [" +
+                                $"{(nwState == NodeNetworkState.NetworkIsPreConfigured ? "network is pre-configured" : nwState.ToString())}" +
+                                $"]", ConsoleColor.Gray);
+                        }
+
                         ConsoleWriteLine();
                     }
                     else if (managers.PCControllerDeviceManager.GetUIInstance(item.Key) != null)
@@ -481,6 +490,14 @@ namespace ZatsTestConsole
                         ConsoleWriteTotal($"Alias", ConsoleColor.DarkGray);
                         ConsoleWriteTotal($"=", ConsoleColor.DarkGray);
                         ConsoleWriteTotal($"{item.Alias}", ConsoleColor.Gray);
+                        ConsoleWriteTotal($" ");
+                    }
+
+                    if (item.NetworkState != NodeNetworkState.Undefined)
+                    {
+                        ConsoleWriteTotal($"NetworkState", ConsoleColor.DarkGray);
+                        ConsoleWriteTotal($"=", ConsoleColor.DarkGray);
+                        ConsoleWriteTotal($"{item.NetworkState.ToString()}", ConsoleColor.Gray);
                         ConsoleWriteTotal($" ");
                     }
 

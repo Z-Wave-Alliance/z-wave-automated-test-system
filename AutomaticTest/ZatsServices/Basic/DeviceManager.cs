@@ -1,6 +1,6 @@
 /// SPDX-License-Identifier: BSD-3-Clause
-/// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-/// SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+/// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -697,9 +697,9 @@ namespace Zats.Services
             if (IsAvailable(required, avail)
                 && IsCompatibleByChipTypeAndLibrary(required, avail))
             {
-                var table = GetCompatibilityByChipSeriesTable(required, avail);
+                List<Tuple<UnknownDevice, DeviceHost, int>> table = GetCompatibilityByChipSeriesTable(required, avail);
                 avail = avail.Where(x => table.Any(y => y.Item2 == x));
-                var rr = required.Where(x => !table.Any(y => y.Item1 == x));
+                IEnumerable<UnknownDevice> rr = required.Where(x => !table.Any(y => y.Item1 == x));
                 if (avail.Count() >= required.Count && rr.Count() == 0)
                 {
                     Parallel.ForEach(avail, host =>
@@ -879,33 +879,38 @@ namespace Zats.Services
             IncludeSettings.Clear(); // clear after starting smart start to be able set custom inclusion settings
         }
 
-        private void InitDevicesPassive(List<DeviceHostClient> availableList, List<UnknownDevice> required, string configPath)
+        private void InitDevicesPassive(List<DeviceHostClient> availableDevices, List<UnknownDevice> requiredDevices, string configPath)
         {
             var tempRemovedAvailableList = new ConcurrentBag<DeviceHostClient>();
             var tempRemovedRequiredList = new ConcurrentBag<UnknownDevice>();
-            Parallel.ForEach(required, reqDevice =>
+            Parallel.ForEach(requiredDevices, requiredDev =>
             {
-                DeviceHostClient matched = availableList.FirstOrDefault(x =>
-                    !string.IsNullOrEmpty(x.Host.Alias) &&
-                    (reqDevice.HasAlias == false || x.Host.Alias.Equals(reqDevice.Alias, StringComparison.InvariantCulture)));
+                DeviceHostClient matchedAvailableDevice = availableDevices.FirstOrDefault(availableDev =>
+                    // Alias of available device must be present.
+                    !string.IsNullOrEmpty(availableDev.Host.Alias) &&
+                    // Check required alias if specified, otherwise accept any.
+                    (requiredDev.HasAlias == false || 
+                    availableDev.Host.Alias.Equals(requiredDev.Alias, StringComparison.InvariantCulture)) &&
+                    // Check required network state if specified, otherwise accept any.
+                    (requiredDev.NetworkState == NodeNetworkState.Undefined || requiredDev.NetworkState == availableDev.Host.NetworkState));
 
-                if (matched != null)
+                if (matchedAvailableDevice != null)
                 {
-                    FillDeviceHostClient(matched);
-                    if (matched.Library != Libraries.NoLib)
+                    FillDeviceHostClient(matchedAvailableDevice);
+                    if (matchedAvailableDevice.Library != Libraries.NoLib)
                     {
-                        InitDeviceHostClient(matched);
-                        AddOrReplaceDevice(reqDevice.DeviceAlias, matched);
-                        tempRemovedRequiredList.Add(reqDevice);
-                        tempRemovedAvailableList.Add(matched);
-                        LoadConfigurationItem(matched, configPath);
-                        InitNodes(matched);
+                        InitDeviceHostClient(matchedAvailableDevice);
+                        AddOrReplaceDevice(requiredDev.DeviceAlias, matchedAvailableDevice);
+                        tempRemovedRequiredList.Add(requiredDev);
+                        tempRemovedAvailableList.Add(matchedAvailableDevice);
+                        LoadConfigurationItem(matchedAvailableDevice, configPath);
+                        InitNodes(matchedAvailableDevice);
                     }
                 }
             });
             // update input arrays
-            availableList.RemoveAll(x => tempRemovedAvailableList.Contains(x));
-            required.RemoveAll(x => tempRemovedRequiredList.Contains(x));
+            availableDevices.RemoveAll(x => tempRemovedAvailableList.Contains(x));
+            requiredDevices.RemoveAll(x => tempRemovedRequiredList.Contains(x));
         }
 
         internal bool Disconnect(DeviceHostClient deviceHostClient)
@@ -2528,6 +2533,7 @@ namespace Zats.Services
         public DevKits DevKit { get; set; }
         public ChipSeries ChipSeries { get; set; }
         public InterfaceTypes InterfaceType { get; set; }
+        public NodeNetworkState NetworkState { get; set; }
         public string Frequency { get; set; }
         public bool HasDoorLockLibrary { get; set; }
         public bool IsEmulated { get; set; }
@@ -2540,7 +2546,7 @@ namespace Zats.Services
         public string Hop { get; set; }
         public bool HasHop => !string.IsNullOrEmpty(Hop);
 
-        public UnknownDevice(Alias deviceAlias, string alias, Libraries[] libraries, ChipSeries chipSeries, InterfaceTypes interfaceType, string rfRegion, DevKits devKit, string fileNameFilter, string hop)
+        public UnknownDevice(Alias deviceAlias, string alias, Libraries[] libraries, ChipSeries chipSeries, InterfaceTypes interfaceType, NodeNetworkState networkState, string rfRegion, DevKits devKit, string fileNameFilter, string hop)
         {
             DeviceAlias = deviceAlias;
             Alias = alias;
@@ -2549,6 +2555,7 @@ namespace Zats.Services
             FileNameFilter = fileNameFilter;
             ChipSeries = chipSeries;
             InterfaceType = interfaceType;
+            NetworkState = networkState;
             Frequency = rfRegion;
             HasDoorLockLibrary = false;
             if (Libraries != null && Libraries.Length > 0)

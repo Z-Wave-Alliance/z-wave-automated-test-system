@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: BSD-3-Clause
-// SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+/// SPDX-License-Identifier: BSD-3-Clause
+/// SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+/// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 
 namespace Zats.Services
@@ -16,10 +17,11 @@ namespace Zats.Services
         public bool IsTestInterface { get; protected set; }
         public RfRegions RfRegion { get; set; } = RfRegions.UNKNOWN;
         public InterfaceTypes InterfaceType { get; set; }
+        public NodeNetworkState NetworkState { get; set; } = NodeNetworkState.Undefined;
         public string Hop { get; set; }
 
         //public bool CommLink { get; protected set; }
-        public DeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library) : base(number)
+        public DeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library, NodeNetworkState networkState) : base(number)
         {
             if (library == LibTypes.Controller)
             {
@@ -39,7 +41,11 @@ namespace Zats.Services
             }
             ChipSeries = chipSeries;
             DevKit = devKit;
+            NetworkState = networkState;
         }
+
+        public DeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library)
+            : this(number, chipSeries, devKit, library, NodeNetworkState.Undefined) { }
 
         public DeviceMappingAttribute(ushort number, DevKits devKit, LibTypes library)
             : this(number, ChipSeries.Default, devKit, library)
@@ -64,14 +70,17 @@ namespace Zats.Services
         public DeviceMappingAttribute(ushort number, LibTypes library)
             : this(number, ChipSeries.Default, DevKits.Default, library) { }
 
-        public DeviceMappingAttribute(ushort number)
-            : this(number, ChipSeries.Default, DevKits.Default, LibTypes.NoLib) { }
-
         public DeviceMappingAttribute(ushort number, string alias, LibTypes library)
             : this(number, ChipSeries.Default, DevKits.Default, library)
         {
             Alias = alias;
         }
+
+        public DeviceMappingAttribute(ushort number, LibTypes library, NodeNetworkState networkState)
+            : this(number, ChipSeries.Default, DevKits.Default, library, networkState) { }
+
+        public DeviceMappingAttribute(ushort number, NodeNetworkState networkState)
+            : this(number, ChipSeries.Default, DevKits.Default, LibTypes.NoLib, networkState) { }
 
         public LibTypes GetLibrary(int generation)
         {
@@ -109,10 +118,11 @@ namespace Zats.Services
         public bool IsTestInterface { get; protected set; }
         public RfRegions RfRegion { get; set; } = RfRegions.UNKNOWN;
         public InterfaceTypes InterfaceType { get; set; }
+        public NodeNetworkState NetworkState { get; set; } = NodeNetworkState.Undefined;
         public string Hop { get; set; }
 
         //public bool CommLink { get; protected set; }
-        public MultiDeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library) : base(number)
+        public MultiDeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library, NodeNetworkState networkState) : base(number)
         {
             if (library == LibTypes.Controller)
             {
@@ -132,7 +142,11 @@ namespace Zats.Services
             }
             ChipSeries = chipSeries;
             DevKit = devKit;
+            NetworkState = networkState;
         }
+
+        public MultiDeviceMappingAttribute(ushort number, ChipSeries chipSeries, DevKits devKit, LibTypes library)
+            : this(number, chipSeries, devKit, library, NodeNetworkState.Undefined) { }
 
         public MultiDeviceMappingAttribute(ushort number, ChipSeries chipSeries, LibTypes library)
             : this(number, chipSeries, DevKits.Default, library) { }

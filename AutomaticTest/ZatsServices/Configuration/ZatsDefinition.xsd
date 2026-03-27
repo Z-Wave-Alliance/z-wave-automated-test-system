@@ -2,8 +2,8 @@
 
 <!--
 SPDX-License-Identifier: BSD-3-Clause
-SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 -->
 
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -69,6 +69,7 @@ SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
       <xs:attribute name="ChipSeries" type="xs:string" use="required" />
       <xs:attribute name="Dsk" type="xs:hexBinary" use="optional" />
       <xs:attribute name="Hop" type="xs:string" use="optional" />
+      <xs:attribute name="NetworkState" type="NodeNetworkState" use="optional" default="Undefined" />
     </xs:complexType>
   </xs:element>
     
@@ -94,4 +95,13 @@ SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
       <xs:enumeration value="MeshRouter" />
     </xs:restriction>
   </xs:simpleType>
+
+<!-- **** NodeNetworkState ******************************************************************* -->
+  <xs:simpleType name="NodeNetworkState">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="Undefined" />
+      <xs:enumeration value="NetworkIsPreConfigured" />
+    </xs:restriction>
+  </xs:simpleType>
+
 </xs:schema>
