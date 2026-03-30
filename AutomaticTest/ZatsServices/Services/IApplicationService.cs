@@ -30,8 +30,8 @@ namespace Zats.Services
             bool supervision, SecurityVersions securityVersions, IEnumerable<CommandClassSupport> commandClassSupportList, AssociationSupportData rootAssociationSupportData = null);
         TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber, bool multiChannel, bool supervision, bool crc16, SecurityVersions securityVersions, bool transportService, bool overwriteConfig = false);
         TasksAccessPoint SetupControllerDeviceConfigured(Alias deviceNumber);
-        TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNodeId, RoleTypes roleType);
-        TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNodeId, RoleTypes roleType, byte? initS2SequenceNumber);
+        TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes dutRoleType);
+        TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes dutRoleType, byte? initS2SequenceNumber);
         void EnableCommandClassSupportForCallbacks(Alias deviceNumber, byte endPointId, CommandClassSupport commandClassSupport);
         void AddCommandCallbacks(byte commandClass, Dictionary<byte, CommandCallback> callbacks);
         void RemoveCommandCallbacks(byte commandClass);

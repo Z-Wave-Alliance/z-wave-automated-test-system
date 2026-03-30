@@ -954,38 +954,47 @@ namespace Zats.Services
 
         private readonly TransmitOptions TX_OPTIONS = TransmitOptions.Ack | TransmitOptions.AutoRoute | TransmitOptions.Explore;
 
-        public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes roleType)
+        public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes dutRoleType)
         {
-            return SetupControllerDeviceConfiguredAndWaitForDut(deviceNumber, dutNode, roleType, null);
+            return SetupControllerDeviceConfiguredAndWaitForDut(deviceNumber, dutNode, dutRoleType, null);
         }
 
-        public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes roleType, byte? initS2SequenceNumber)
+        public TasksAccessPoint SetupControllerDeviceConfiguredAndWaitForDut(Alias deviceNumber, Node dutNode, RoleTypes dutRoleType, byte? initS2SequenceNumber)
         {
             SendDataResult resNop = null;
             Device sender = DeviceManager.GetDevice(deviceNumber);
-            bool sleepingDevice = roleType == RoleTypes.CONTROLLER_PORTABLE ||
-                                    roleType == RoleTypes.CONTROLLER_PORTABLE_REPORTING ||
-                                    roleType == RoleTypes.END_NODE_PORTABLE ||
-                                    roleType == RoleTypes.END_NODE_SLEEPING_REPORTING ||
-                                    roleType == RoleTypes.END_NODE_WAKE_ON_EVENT;
+            bool dutHasSleepingRoleType =
+                dutRoleType == RoleTypes.CONTROLLER_PORTABLE ||
+                dutRoleType == RoleTypes.CONTROLLER_PORTABLE_REPORTING ||
+                dutRoleType == RoleTypes.END_NODE_PORTABLE ||
+                dutRoleType == RoleTypes.END_NODE_SLEEPING_REPORTING ||
+                dutRoleType == RoleTypes.END_NODE_WAKE_ON_EVENT;
 
-            if (sleepingDevice)
+            byte[] nop;
+            if (dutNode.Id < 256)
+            {
+                nop = new byte[] { COMMAND_CLASS_NO_OPERATION.ID };
+            }
+            else
+            {
+                nop = new byte[] { COMMAND_CLASS_ZWAVE_LONG_RANGE.ID, COMMAND_CLASS_ZWAVE_LONG_RANGE.ZWAVE_LR_CMD_NO_OPERATION.ID };
+            }
+
+            if (dutHasSleepingRoleType)
             {
                 // Sending the NOP before SetupControllerDeviceConfigured() keeps sleeping devices awake most of the times
-                resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS,
-                    ZWave.Enums.SecuritySchemes.NONE);
+                resNop = sender.SendDataEx(dutNode, nop, (ZWave.Enums.TransmitOptions)TX_OPTIONS, ZWave.Enums.SecuritySchemes.NONE);
             }
 
             var ret = SetupControllerDeviceConfigured(deviceNumber, true, true, true, SecurityVersions.S0 | SecurityVersions.S2, true);
             SecurityTestSettings.SetInitialS2SequenceNumber(deviceNumber, initS2SequenceNumber);
 
-            if (sleepingDevice)
+            if (dutHasSleepingRoleType)
             {
                 if (resNop.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteOk)
                 {
                     // Final check if the DUT still awake before asking for a Wake Up Notification
-                    resNop = sender.SendDataEx(dutNode, new byte[] { COMMAND_CLASS_NO_OPERATION.ID }, (ZWave.Enums.TransmitOptions)TX_OPTIONS,
-                        ZWave.Enums.SecuritySchemes.NONE);
+                    resNop = sender.SendDataEx(dutNode, nop, (ZWave.Enums.TransmitOptions)TX_OPTIONS, ZWave.Enums.SecuritySchemes.NONE);
                 }
 
                 if (resNop.TransmitStatus == (ZWave.Enums.TransmitStatuses)TransmitStatuses.CompleteNoAcknowledge)
