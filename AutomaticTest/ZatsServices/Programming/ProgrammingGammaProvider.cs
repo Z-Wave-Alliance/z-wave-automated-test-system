@@ -400,13 +400,13 @@ namespace Zats.Services
 
             if (ret == 0 && samplePath != null)
             {
-                Thread.Sleep(500);
+                Thread.Sleep(1500);
                 var sclient = deviceHostClient.SClient;
-                int delay = 2000;
+                int expTimeoutMs = 5000; //Avg boot time ~3.5s
                 args = string.Format($"device reset {devicePort} {deviceId}");
                 if (sclient != null && sclient.TransportClient.IsOpen && IsSerialApi(deviceHostClient.Library))
                 {
-                    var serialApiExpectToken = deviceHostClient.SClient.Expect(new ByteIndex[] { 0x00, 0x0A }, delay, null);
+                    var serialApiExpectToken = deviceHostClient.SClient.Expect(new ByteIndex[] { 0x00, 0x0A }, expTimeoutMs, null);
                     ProgrammerAction(args, "Reset", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                     var serialApiExpectRes = serialApiExpectToken.WaitCompletedSignal();
                     if (serialApiExpectRes)
@@ -415,7 +415,7 @@ namespace Zats.Services
                     }
                     else
                     {
-                        LogProgrammerAction(true, $"No Serial Api Started after {delay} at {deviceHostClient.Host.SName} ({deviceHostClient.Host.JName})");
+                        LogProgrammerAction(true, $"No Serial Api Started after {expTimeoutMs} at {deviceHostClient.Host.SName} ({deviceHostClient.Host.JName})");
                     }
                 }
                 else
