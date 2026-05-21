@@ -56,18 +56,25 @@ namespace Zats.Services
             SupportDelegates?.DeviceDataUpdate?.Invoke(this);
         }
 
-        public void AddOrModifyYearDaySchedule(ushort targetId, ushort scheduleSlot, ActiveYearDaySchedule yearDaySchedule)
+        public bool AddOrModifyYearDaySchedule(ushort targetId, ushort scheduleSlot, ActiveYearDaySchedule yearDaySchedule)
         {
             UserSlot target = UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId);
 
-            if (target != null)
+            if (target == null)
             {
-                if (target.YearDaySchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveYearDaySchedule existingSchedule)
-                {
-                    target.YearDaySchedules.Remove(existingSchedule);
-                }
-                target.YearDaySchedules.Add(yearDaySchedule);
+                return false;
             }
+
+            // CC:0083.02.00.11.024: Year Day schedules with zeroed stop parameters are supported;
+            // perpetual activation after start is applied in ActiveYearDaySchedule.IsActive.
+
+            if (target.YearDaySchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveYearDaySchedule existingSchedule)
+            {
+                target.YearDaySchedules.Remove(existingSchedule);
+            }
+            target.YearDaySchedules.Add(yearDaySchedule);
+
+            return true;
         }
 
         public void EraseYearDaySchedule(ushort targetId, ushort scheduleSlot)
@@ -89,18 +96,28 @@ namespace Zats.Services
         }
 
 
-        public void AddOrModifyDailyRepeatingSchedule(ushort targetId, ushort scheduleSlot, ActiveDailyRepeatingSchedule dailyRepeatingSchedule)
+        public bool AddOrModifyDailyRepeatingSchedule(ushort targetId, ushort scheduleSlot, ActiveDailyRepeatingSchedule dailyRepeatingSchedule)
         {
             UserSlot target = UserCredentialSupportData?.UserSlots.FirstOrDefault(x => x.UserUniqeId == targetId);
 
-            if (target != null)
+            if (target == null)
             {
-                if (target.DailyRepeatingSchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveDailyRepeatingSchedule existingSchedule)
-                {
-                    target.DailyRepeatingSchedules.Remove(existingSchedule);
-                }
-                target.DailyRepeatingSchedules.Add(dailyRepeatingSchedule);
+                return false;
             }
+
+            // CC:0083.02.00.11.023: Zero Duration is not valid for User Credential schedules
+            if (dailyRepeatingSchedule.DurationHour == 0 && dailyRepeatingSchedule.DurationMinute == 0)
+            {
+                return false;
+            }
+            
+            if (target.DailyRepeatingSchedules.FirstOrDefault(x => x.Slot == scheduleSlot) is ActiveDailyRepeatingSchedule existingSchedule)
+            {
+                target.DailyRepeatingSchedules.Remove(existingSchedule);
+            }
+            target.DailyRepeatingSchedules.Add(dailyRepeatingSchedule);
+
+            return true;
         }
 
         public void EraseDailyRepeatingSchedule(ushort targetId, ushort scheduleSlot)

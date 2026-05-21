@@ -245,18 +245,48 @@ namespace Zats.Services
 
                 if (correspondingCC != null && correspondingCC.GetTarget(targetId) is IActiveScheduleTarget target)
                 {
-                    try
+                    UInt16 startYear = Tools.ByteArrayToUInt16(command.startYear);
+                    UInt16 stopYear = Tools.ByteArrayToUInt16(command.stopYear);
+
+                    // CC:00A4.01.06.11.008 / CC:00A4.01.06.11.013: start MUST be a valid timestamp
+                    if (!ActiveScheduleExtensions.TryParseYearDayScheduleTimestamp(
+                            startYear, command.startMonth, command.startDay, command.startHour, command.startMinute,
+                            out DateTime startDate))
                     {
-                        var schedule = new ActiveYearDaySchedule()
+                        return SvResultNames.Failed;
+                    }
+
+                    DateTime? endDate = null;
+
+                    if (ActiveScheduleExtensions.AreAllYearDayStopParametersZero(
+                            stopYear, command.stopMonth, command.stopDay, command.stopHour, command.stopMinute))
+                    {
+                        // CC:00A4.01.06.11.014: zeroed stop — interpretation is defined by the Target CC
+                        endDate = null;
+                    }
+                    else if (ActiveScheduleExtensions.TryParseYearDayScheduleTimestamp(
+                                 stopYear, command.stopMonth, command.stopDay, command.stopHour, command.stopMinute,
+                                 out DateTime stopDate))
+                    {
+                        // CC:00A4.01.06.11.002: stop MUST occur after start
+                        if (stopDate <= startDate)
                         {
-                            Slot = scheduleSlot,
-                            StartDate = new DateTime(
-                                Tools.ByteArrayToUInt16(command.startYear),
-                                command.startMonth, command.startDay, command.startHour, command.startMinute, 0),
-                            EndDate = new DateTime(
-                                Tools.ByteArrayToUInt16(command.stopYear),
-                                command.stopMonth, command.stopDay, command.stopHour, command.stopMinute, 0),
-                        };
+                            return SvResultNames.Failed;
+                        }
+
+                        endDate = stopDate;
+                    }
+                    else
+                    {
+                        return SvResultNames.Failed;
+                    }
+
+                    var schedule = new ActiveYearDaySchedule()
+                    {
+                        Slot = scheduleSlot,
+                        StartDate = startDate,
+                        EndDate = endDate
+                    };
 
                         var svResult = SvResultNames.Successful;
 
@@ -281,12 +311,18 @@ namespace Zats.Services
                             // schedule slot exists, check if modification is needed
                             if (existingSchedule.Equals(schedule) == false)
                             {
-                                correspondingCC.AddOrModifyYearDaySchedule(targetId, scheduleSlot, schedule);
-                                correspondingCC.UpdateTarget(targetId);
+                                if (correspondingCC.AddOrModifyYearDaySchedule(targetId, scheduleSlot, schedule))
+                                {
+                                    correspondingCC.UpdateTarget(targetId);
 
-                                SendUnsolicitedReport(
-                                    PrepareYearDayScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
-                                    srcNode);
+                                    SendUnsolicitedReport(
+                                        PrepareYearDayScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
+                                        srcNode);
+                                }
+                                else
+                                {
+                                    svResult = SvResultNames.Failed;
+                                }
                             }
                             return svResult;
                         }
@@ -295,19 +331,22 @@ namespace Zats.Services
                             // add new schedule
                             if (scheduleSlot <= correspondingCC.ScheduleSupportData.NumberOfSupportedYearDaySchedules)
                             {
-                                correspondingCC.AddOrModifyYearDaySchedule(targetId, scheduleSlot, schedule);
-                                correspondingCC.UpdateTarget(targetId);
+                                if (correspondingCC.AddOrModifyYearDaySchedule(targetId, scheduleSlot, schedule))
+                                {
+                                    correspondingCC.UpdateTarget(targetId);
 
-                                SendUnsolicitedReport(
-                                    PrepareYearDayScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
-                                    srcNode);
+                                    SendUnsolicitedReport(
+                                        PrepareYearDayScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
+                                        srcNode);
+                                }
+                                else
+                                {
+                                    svResult = SvResultNames.Failed;
+                                }
+
                                 return svResult;
                             }
                         }
-                    }
-                    catch (Exception)
-                    {
-                    }
                 }
             }
 
@@ -360,11 +399,11 @@ namespace Zats.Services
             rpt.startHour = (byte)(schedule?.StartDate.Hour ?? 0);
             rpt.startMinute = (byte)(schedule?.StartDate.Minute ?? 0);
 
-            rpt.stopYear = Tools.GetBytes((UInt16)(schedule?.EndDate.Year ?? 0));
-            rpt.stopMonth = (byte)(schedule?.EndDate.Month ?? 0);
-            rpt.stopDay = (byte)(schedule?.EndDate.Day ?? 0);
-            rpt.stopHour = (byte)(schedule?.EndDate.Hour ?? 0);
-            rpt.stopMinute = (byte)(schedule?.EndDate.Minute ?? 0);
+            rpt.stopYear = Tools.GetBytes((UInt16)(schedule?.EndDate?.Year ?? 0));
+            rpt.stopMonth = (byte)(schedule?.EndDate?.Month ?? 0);
+            rpt.stopDay = (byte)(schedule?.EndDate?.Day ?? 0);
+            rpt.stopHour = (byte)(schedule?.EndDate?.Hour ?? 0);
+            rpt.stopMinute = (byte)(schedule?.EndDate?.Minute ?? 0);
 
             if (correspondingCC?.ScheduleSupportData?.SchedulesMetadataAllowed ?? false)
             {
@@ -431,7 +470,9 @@ namespace Zats.Services
 
                 if (correspondingCC != null && correspondingCC.GetTarget(targetId) is IActiveScheduleTarget target)
                 {
-                    if (command.startHour > 23 || command.startMinute > 59 || command.durationHour > 23 || command.durationMinute > 59)
+                    if (command.startHour > 23 || command.startMinute > 59 ||
+                        command.durationHour > 23 || command.durationMinute > 59 ||
+                        (command.weekDayBitmask.Value & 0x7F) == 0) // CC:00A4.01.09.11.013
                     {
                         return SvResultNames.Failed;
                     }
@@ -468,12 +509,18 @@ namespace Zats.Services
                         // schedule slot exists, check if modification is needed
                         if (existingSchedule.Equals(schedule) == false)
                         {
-                            correspondingCC.AddOrModifyDailyRepeatingSchedule(targetId, scheduleSlot, schedule);
-                            correspondingCC.UpdateTarget(targetId);
+                            if (correspondingCC.AddOrModifyDailyRepeatingSchedule(targetId, scheduleSlot, schedule))
+                            {
+                                correspondingCC.UpdateTarget(targetId);
 
-                            SendUnsolicitedReport(
-                                PrepareDailyRepeatingScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
-                                srcNode);
+                                SendUnsolicitedReport(
+                                    PrepareDailyRepeatingScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
+                                    srcNode);
+                            }
+                            else
+                            {
+                                svResult = SvResultNames.Failed;
+                            }
                         }
                         return svResult;
 
@@ -483,12 +530,18 @@ namespace Zats.Services
                         // add new schedule
                         if (scheduleSlot <= correspondingCC.ScheduleSupportData.NumberOfSupportedDailyRepeatingSchedules)
                         {
-                            correspondingCC.AddOrModifyDailyRepeatingSchedule(targetId, scheduleSlot, schedule);
-                            correspondingCC.UpdateTarget(targetId);
+                            if (correspondingCC.AddOrModifyDailyRepeatingSchedule(targetId, scheduleSlot, schedule))
+                            {
+                                correspondingCC.UpdateTarget(targetId);
 
-                            SendUnsolicitedReport(
-                                PrepareDailyRepeatingScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
-                                srcNode);
+                                SendUnsolicitedReport(
+                                    PrepareDailyRepeatingScheduleReport(targetCc, targetId, scheduleSlot, ActiveScheduleReportCode.ScheduleModifiedZWave),
+                                    srcNode);
+                            }
+                            else
+                            {
+                                svResult = SvResultNames.Failed;
+                            }
                             return svResult;
                         }
                     }
@@ -633,11 +686,14 @@ namespace Zats.Services
         public DateTime StartDate { get; set; }
 
         [CustomDataParameter(1, "End Date", CommandClassesImpl.UiControl.DateTimePicker, CommandClassesImpl.InputType.none, EditType.Config | EditType.Edit)]
-        public DateTime EndDate { get; set; }
+        public DateTime? EndDate { get; set; }
 
         public override bool IsActive(DateTime now)
         {
-            return StartDate <= now && EndDate >= now;
+            // CC:0083.02.00.11.024: zeroed stop parameters — active in perpetuity after start.
+            // Currently only User Credential is supported as a Target CC; additional targets
+            // may define a different interpretation of a null EndDate.
+            return StartDate <= now && (EndDate == null || EndDate >= now);
         }
 
         public override string ToString()
@@ -773,6 +829,33 @@ namespace Zats.Services
 
     public static class ActiveScheduleExtensions
     {
+        public static bool AreAllYearDayStopParametersZero(
+            UInt16 stopYear, byte stopMonth, byte stopDay, byte stopHour, byte stopMinute)
+        {
+            return stopYear == 0 && stopMonth == 0 && stopDay == 0 && stopHour == 0 && stopMinute == 0;
+        }
+
+        public static bool TryParseYearDayScheduleTimestamp(
+            UInt16 year, byte month, byte day, byte hour, byte minute, out DateTime result)
+        {
+            result = default;
+
+            if (year == 0 || month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59)
+            {
+                return false;
+            }
+
+            try
+            {
+                result = new DateTime(year, month, day, hour, minute, 0);
+                return true;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+        }
+
         public static IActiveScheduleTarget GetTarget(this IEnumerable<IActiveScheduleSupport> scheduleSupportingCCs, byte targetCc, UInt16 targetId)
         {
             var correspondingCC = scheduleSupportingCCs.FirstOrDefault(x => x.TargetCC == targetCc);

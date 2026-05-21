@@ -17,7 +17,7 @@ namespace Zats.Services.CommandClassesImpl.Definitions.Interfaces.ActiveSchedule
         bool CheckForTargetsSchedules(IActiveScheduleTarget target);
 
 
-        void AddOrModifyYearDaySchedule(UInt16 targetId, UInt16 scheduleSlot, ActiveYearDaySchedule yearDaySchedule);
+        bool AddOrModifyYearDaySchedule(UInt16 targetId, UInt16 scheduleSlot, ActiveYearDaySchedule yearDaySchedule);
 
         void EraseYearDaySchedule(UInt16 targetId, UInt16 scheduleSlot);
 
@@ -26,7 +26,7 @@ namespace Zats.Services.CommandClassesImpl.Definitions.Interfaces.ActiveSchedule
         void EraseYearDaySchedules();
 
 
-        void AddOrModifyDailyRepeatingSchedule(UInt16 targetId, UInt16 scheduleSlot, ActiveDailyRepeatingSchedule dailyRepeatingSchedule);
+        bool AddOrModifyDailyRepeatingSchedule(UInt16 targetId, UInt16 scheduleSlot, ActiveDailyRepeatingSchedule dailyRepeatingSchedule);
 
         void EraseDailyRepeatingSchedule(UInt16 targetId, UInt16 scheduleSlot);
 
