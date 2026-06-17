@@ -1008,6 +1008,14 @@ namespace Zats.Services
         InsufficientMemory = 0x07,      // V4+
         [Description("0x08 Invalid hardware version")]
         InvalidHardwareVersion = 0x08,  // V5+
+        [Description("0x09 Invalid signature")]
+        InvalidSignature = 0x09,          // V8+
+        [Description("0x0A Decryption failed")]
+        DecryptionFailed = 0x0A,          // V8+
+        [Description("0x0B Decompression failed")]
+        DecompressionFailed = 0x0B,       // V8+
+        [Description("0x0C Downgrade unsupported")]
+        DowngradeUnsupported = 0x0C,      // V8+
         [Description("0xFD Waiting for activation")]
         WaitingForActivation = 0xFD,    // V4+
         [Description("0xFE Waiting for restart")]
