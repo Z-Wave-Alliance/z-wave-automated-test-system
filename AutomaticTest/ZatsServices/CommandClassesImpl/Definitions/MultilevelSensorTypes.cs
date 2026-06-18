@@ -14,6 +14,7 @@ namespace Zats.Services
             Path.Combine("CommandClassesImpl\\Definitions", "MultilevelSensorTypes.json"));
 
         public string Name { get; set; }
+        [JsonProperty("Id")]
         public int NestedId { get; set; }
         public int MinVersion;
 
@@ -50,6 +51,7 @@ namespace Zats.Services
     public class MultilevelSensorScale : INestedItem
     {
         public string Name { get; set; }
+        [JsonProperty("Id")]
         public int NestedId { get; set; }
         public int MinVersion;
         public double Value { get; set; }
