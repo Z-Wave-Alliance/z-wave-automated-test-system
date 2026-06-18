@@ -5,12 +5,12 @@
         "MinVersion": 1,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 1
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 1
             }
@@ -44,7 +44,7 @@
                 "MinVersion": 1
             },
             {
-                "Name": "Lux",
+                "Name": "Lux (lux)",
                 "Id": 1,
                 "MinVersion": 1
             }
@@ -61,7 +61,7 @@
                 "MinVersion": 2
             },
             {
-                "Name": "Btu/h",
+                "Name": "Btu/h (btu/h)",
                 "Id": 1,
                 "MinVersion": 2
             }
@@ -78,7 +78,7 @@
                 "MinVersion": 2
             },
             {
-                "Name": "Absolute humidity (g/m3)",
+                "Name": "Absolute humidity (g/m³)",
                 "Id": 1,
                 "MinVersion": 5
             }
@@ -90,12 +90,12 @@
         "MinVersion": 2,
         "Scales": [
             {
-                "Name": "m/s",
+                "Name": "Meter per second (m/s)",
                 "Id": 0,
                 "MinVersion": 2
             },
             {
-                "Name": "Mph",
+                "Name": "Miles per hour (mph)",
                 "Id": 1,
                 "MinVersion": 2
             }
@@ -107,9 +107,9 @@
         "MinVersion": 2,
         "Scales": [
             {
-                "Name": "0 to 360 degrees",
-                "Id": 2,
-                "MinVersion": 0
+                "Name": "Degrees (°)",
+                "Id": 0,
+                "MinVersion": 2
             }
         ]
     },
@@ -124,7 +124,7 @@
                 "MinVersion": 2
             },
             {
-                "Name": "Inches of Mercury",
+                "Name": "Inches of Mercury (inHg)",
                 "Id": 1,
                 "MinVersion": 2
             }
@@ -141,7 +141,7 @@
                 "MinVersion": 2
             },
             {
-                "Name": "Inches of Mercury",
+                "Name": "Inches of Mercury (inHg)",
                 "Id": 1,
                 "MinVersion": 2
             }
@@ -153,7 +153,7 @@
         "MinVersion": 2,
         "Scales": [
             {
-                "Name": "Watt per square meter (W/m2)",
+                "Name": "Watt per square meter (W/m²)",
                 "Id": 0,
                 "MinVersion": 2
             }
@@ -165,12 +165,12 @@
         "MinVersion": 1,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 1
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 1
             }
@@ -182,7 +182,7 @@
         "MinVersion": 2,
         "Scales": [
             {
-                "Name": "Millimeter/hour (mm/h)",
+                "Name": "Millimeter per hour (mm/h)",
                 "Id": 0,
                 "MinVersion": 2
             },
@@ -262,12 +262,12 @@
         ]
     },
     {
-        "Name": "Carbon dioxide CO2-level",
+        "Name": "Carbon dioxide (CO2-level)",
         "Id": 17,
         "MinVersion": 3,
         "Scales": [
             {
-                "Name": "Parts/million (ppm)",
+                "Name": "Parts per million (ppm)",
                 "Id": 0,
                 "MinVersion": 3
             }
@@ -279,7 +279,7 @@
         "MinVersion": 3,
         "Scales": [
             {
-                "Name": "Cubic meter per hour (m3/h)",
+                "Name": "Cubic meter per hour (m³/h)",
                 "Id": 0,
                 "MinVersion": 3
             },
@@ -301,12 +301,12 @@
                 "MinVersion": 3
             },
             {
-                "Name": "Cubic meter (m3)",
+                "Name": "Cubic meter (m³)",
                 "Id": 1,
                 "MinVersion": 3
             },
             {
-                "Name": "Gallons",
+                "Name": "Gallons (gal)",
                 "Id": 2,
                 "MinVersion": 3
             }
@@ -345,12 +345,12 @@
                 "MinVersion": 4
             },
             {
-                "Name": "Degrees relative to north pole of standing eye view",
+                "Name": "Degrees relative to north pole (°)",
                 "Id": 1,
                 "MinVersion": 4
             },
             {
-                "Name": "Degrees relative to north pole of standing eye view",
+                "Name": "Degrees relative to north pole (°)",
                 "Id": 2,
                 "MinVersion": 4
             }
@@ -379,12 +379,12 @@
         "MinVersion": 5,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 5
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 5
             }
@@ -396,12 +396,12 @@
         "MinVersion": 5,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 5
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 5
             }
@@ -479,7 +479,7 @@
         "MinVersion": 5,
         "Scales": [
             {
-                "Name": "Ohm meter (\u03A9m)",
+                "Name": "Ohm meter (Ωm)",
                 "Id": 0,
                 "MinVersion": 5
             }
@@ -525,12 +525,12 @@
                 "MinVersion": 5
             },
             {
-                "Name": "Volume water content (m3/m3)",
+                "Name": "Volume water content (m³/m³)",
                 "Id": 1,
                 "MinVersion": 5
             },
             {
-                "Name": "Impedance (k\u03A9)",
+                "Name": "Impedance (kΩ)",
                 "Id": 2,
                 "MinVersion": 5
             },
@@ -573,44 +573,44 @@
     {
         "Name": "Target temperature",
         "Id": 34,
-        "MinVersion": 0,
+        "MinVersion": 6,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
-                "MinVersion": 0
+                "MinVersion": 6
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
-                "MinVersion": 0
+                "MinVersion": 6
             }
         ]
     },
     {
         "Name": "Particulate Matter 2.5",
         "Id": 35,
-        "MinVersion": 6,
+        "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
-                "MinVersion": 6
+                "MinVersion": 7
             },
             {
-                "Name": "Microgram per cubic meter (\u00B5g/m3)",
+                "Name": "Microgram per cubic meter (µg/m³)",
                 "Id": 1,
-                "MinVersion": 6
+                "MinVersion": 7
             }
         ]
     },
     {
-        "Name": "Formaldehyde CH2O-level",
+        "Name": "Formaldehyde (CH2O-level)",
         "Id": 36,
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 7
             }
@@ -622,7 +622,7 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Becquerel per cubic meter (bq/m3)",
+                "Name": "Becquerel per cubic meter (Bq/m³)",
                 "Id": 0,
                 "MinVersion": 7
             },
@@ -639,7 +639,7 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 7
             }
@@ -651,12 +651,12 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 7
             },
             {
-                "Name": "Parts/million (ppm)",
+                "Name": "Parts per million (ppm)",
                 "Id": 1,
                 "MinVersion": 10
             }
@@ -668,12 +668,12 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 7
             },
             {
-                "Name": "Parts/million (ppm)",
+                "Name": "Parts per million (ppm)",
                 "Id": 1,
                 "MinVersion": 10
             }
@@ -709,7 +709,7 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 7
             }
@@ -733,12 +733,12 @@
         "MinVersion": 7,
         "Scales": [
             {
-                "Name": "Systolic (mmHg) (upper #)",
+                "Name": "Systolic (mmHg)",
                 "Id": 0,
                 "MinVersion": 7
             },
             {
-                "Name": "Diastolic (mmHg) (lower #)",
+                "Name": "Diastolic (mmHg)",
                 "Id": 1,
                 "MinVersion": 7
             }
@@ -822,7 +822,7 @@
         "MinVersion": 8,
         "Scales": [
             {
-                "Name": "Meter per square second (m/s2)",
+                "Name": "Meter per square second (m/s²)",
                 "Id": 0,
                 "MinVersion": 8
             }
@@ -834,7 +834,7 @@
         "MinVersion": 8,
         "Scales": [
             {
-                "Name": "Meter per square second (m/s2)",
+                "Name": "Meter per square second (m/s²)",
                 "Id": 0,
                 "MinVersion": 8
             }
@@ -846,7 +846,7 @@
         "MinVersion": 8,
         "Scales": [
             {
-                "Name": "Meter per square second (m/s2)",
+                "Name": "Meter per square second (m/s²)",
                 "Id": 0,
                 "MinVersion": 8
             }
@@ -867,12 +867,12 @@
     {
         "Name": "Water flow",
         "Id": 56,
-        "MinVersion": 0,
+        "MinVersion": 9,
         "Scales": [
             {
                 "Name": "Liter per hour (l/h)",
                 "Id": 0,
-                "MinVersion": 0
+                "MinVersion": 9
             }
         ]
     },
@@ -894,12 +894,12 @@
         "MinVersion": 9,
         "Scales": [
             {
-                "Name": "RSSI (percentage value)",
+                "Name": "RSSI (%)",
                 "Id": 0,
                 "MinVersion": 9
             },
             {
-                "Name": "dBm",
+                "Name": "dBm (dBm)",
                 "Id": 1,
                 "MinVersion": 9
             }
@@ -911,12 +911,12 @@
         "MinVersion": 10,
         "Scales": [
             {
-                "Name": "Mole per cubic meter (mol/m3)",
+                "Name": "Mole per cubic meter (mol/m³)",
                 "Id": 0,
                 "MinVersion": 10
             },
             {
-                "Name": "Microgram per cubic meter (\u00B5g/m3)",
+                "Name": "Microgram per cubic meter (µg/m³)",
                 "Id": 1,
                 "MinVersion": 10
             }
@@ -952,12 +952,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -969,12 +969,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -986,12 +986,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1003,12 +1003,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1017,12 +1017,12 @@
     {
         "Name": "Water Chlorine level",
         "Id": 66,
-        "MinVersion": 0,
+        "MinVersion": 11,
         "Scales": [
             {
                 "Name": "Milligram per liter (mg/l)",
                 "Id": 0,
-                "MinVersion": 0
+                "MinVersion": 11
             }
         ]
     },
@@ -1068,7 +1068,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "0 to 360 degrees",
+                "Name": "Degrees (°)",
                 "Id": 0,
                 "MinVersion": 11
             }
@@ -1092,12 +1092,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1109,12 +1109,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1126,12 +1126,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1143,12 +1143,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1160,12 +1160,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1177,12 +1177,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1228,12 +1228,12 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Celcius (C)",
+                "Name": "Celsius (°C)",
                 "Id": 0,
                 "MinVersion": 11
             },
             {
-                "Name": "Fahrenheit (F)",
+                "Name": "Fahrenheit (°F)",
                 "Id": 1,
                 "MinVersion": 11
             }
@@ -1245,7 +1245,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
                 "MinVersion": 11
             }
@@ -1257,7 +1257,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
                 "MinVersion": 11
             }
@@ -1269,7 +1269,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
                 "MinVersion": 11
             }
@@ -1281,7 +1281,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
                 "MinVersion": 11
             }
@@ -1290,12 +1290,12 @@
     {
         "Name": "Lead (Pb)",
         "Id": 85,
-        "MinVersion": 0,
+        "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
-                "MinVersion": 0
+                "MinVersion": 11
             }
         ]
     },
@@ -1305,7 +1305,7 @@
         "MinVersion": 11,
         "Scales": [
             {
-                "Name": "Micro gram per cubic meter (ug/m3)",
+                "Name": "Micro gram per cubic meter (μg/m³)",
                 "Id": 0,
                 "MinVersion": 11
             }
