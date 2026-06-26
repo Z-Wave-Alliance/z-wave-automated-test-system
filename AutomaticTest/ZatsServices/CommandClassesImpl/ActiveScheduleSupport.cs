@@ -347,8 +347,10 @@ namespace Zats.Services
             {
                 targetCc = targetCc,
                 targetId = Tools.GetBytes(targetId),
-                scheduleSlotId = Tools.GetBytes(schedule?.Slot ?? 0),
-                nextScheduleSlotId = Tools.GetBytes(target?.YearDaySchedules.GetNextScheduleSlot(schedule?.Slot ?? 0) ?? 0)
+                // CC:00A4.01.08.11.004: an empty/erased slot still echoes the requested Schedule Slot ID
+                // (with zeroed time fields). Only the slotId = 0 "first occupied" request stays 0 when empty.
+                scheduleSlotId = Tools.GetBytes(schedule?.Slot ?? scheduleSlot),
+                nextScheduleSlotId = Tools.GetBytes(target?.YearDaySchedules.GetNextScheduleSlot(schedule?.Slot ?? scheduleSlot) ?? 0)
             };
             rpt.properties1.reportCode = (byte)reportCode;
 
@@ -529,8 +531,10 @@ namespace Zats.Services
             {
                 targetCc = targetCc,
                 targetId = Tools.GetBytes(targetId),
-                scheduleSlotId = Tools.GetBytes(schedule?.Slot ?? 0),
-                nextScheduleSlotId = Tools.GetBytes(target?.DailyRepeatingSchedules.GetNextScheduleSlot(schedule?.Slot ?? 0) ?? 0)
+                // CC:00A4.01.0B.11.x: an empty/erased slot still echoes the requested Schedule Slot ID
+                // (with zeroed schedule fields). Only the slotId = 0 "first occupied" request stays 0 when empty.
+                scheduleSlotId = Tools.GetBytes(schedule?.Slot ?? scheduleSlot),
+                nextScheduleSlotId = Tools.GetBytes(target?.DailyRepeatingSchedules.GetNextScheduleSlot(schedule?.Slot ?? scheduleSlot) ?? 0)
             };
             rpt.properties1.reportCode = (byte)reportCode;
 
