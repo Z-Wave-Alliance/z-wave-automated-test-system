@@ -33,17 +33,26 @@ jobs:
         run: find . -iname "*.yml" -exec yamllint "{}" \;
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
-  build_zats:
+  build-and-test-with-dotnet-framework:
+    name: Build and test based on .NET Framework
     runs-on: windows-latest
     needs: legal-check
+    # The ZipTransport tests open real DTLS sockets and wait on them, so give the
+    # job a bound rather than the six hour default.
+    timeout-minutes: 60
     defaults:
       run:
         shell: powershell
     env:
       Configuration: Release
       TargetPlatform: "Any CPU"
-      Solution_Path: ${{github.workspace}}\z-wave-automated-test-system\ZatsBuild.sln
       # MSBuild does not support relative paths
+      Repository_Path: ${{github.workspace}}\z-wave-automated-test-system
+      Solution_Path: ${{github.workspace}}\z-wave-automated-test-system\ZatsBuild.sln
+      # Only ZATS-owned test projects live under this folder; Tools Core unit tests
+      # live under z-wave-tools-core\Tests and are covered by the Tools Core CI.
+      Tests_Dir: ${{github.workspace}}\z-wave-automated-test-system\Tests
+      Results_Path: ${{github.workspace}}\test-results-net-framework
       Artifact_Path: ${{github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts
 
     steps:
@@ -63,18 +72,71 @@ jobs:
       - name: Add MSBuild.exe to Path
         uses: microsoft/setup-msbuild@v1.1
 
+      - name: Add VSTest.Console.exe to Path
+        uses: darenm/Setup-VSTest@v1.2
+
       - name: Restore NuGet Packages for Z-Wave Tools Core Solution
         run: |
           MSBuild.exe ${{env.Solution_Path}} -restore -verbosity:minimal
 
+      # No -p:OutputPath: every project builds into its own bin\Debug, which is
+      # where the test assemblies are picked up and what the artifact is
+      # assembled from. A shared output folder would mix the two together.
       - name: Build z-wave-automated-test-system
         env:
           Configuration: Debug
         run: >
           MSBuild.exe ${{env.Solution_Path}} -property:Platform="${{env.TargetPlatform}}"
           -property:Configuration=${{env.Configuration}} -verbosity:minimal
-          -p:OutputPath=${{env.Artifact_Path}} -p:DebugType=None
-          -p:DebugSymbols=false
+          -p:DebugType=None -p:DebugSymbols=false
+
+      # One vstest.console.exe call for all assemblies: it runs them one after
+      # another, so the DtlsClient tests never have two hosts on the same fixed
+      # DTLS port. Tests that need real or emulated Z-Wave devices are skipped via
+      # the "DevicesNeeded" category, and tests needing IPv6 via "RequiresIPv6".
+      - name: Run ZATS unit tests
+        timeout-minutes: 15
+        run: |
+          $assemblies = Get-ChildItem -Path "${{env.Tests_Dir}}" -Directory |
+            ForEach-Object { Join-Path $_.FullName "bin\Debug\$($_.Name).dll" } |
+            Where-Object { Test-Path $_ }
+          if (-not $assemblies) { throw "No ZATS test assemblies found under ${{env.Tests_Dir}}" }
+          vstest.console.exe $assemblies `
+            /TestCaseFilter:"TestCategory!=DevicesNeeded&TestCategory!=RequiresIPv6" `
+            /Logger:$env:LOGGER_ARGS `
+            /Logger:trx `
+            /ResultsDirectory:"${{env.Results_Path}}"
+          if ($LASTEXITCODE -ne 0) { throw "One or more ZATS unit test assemblies failed." }
+        env:
+          LOGGER_ARGS: "console;verbosity=minimal"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zats-test-results-net-framework
+          path: ${{env.Results_Path}}/*.trx
+          retention-days: 5
+          # Only warn: this step also runs when the build failed before a single
+          # trx was written, and an upload error would then bury the real failure.
+          if-no-files-found: warn
+
+      # The tool ships the applications and their dependencies. Collect them from
+      # the projects that are not tests, so no test assembly can reach the
+      # artifact in the first place.
+      - name: Assemble the artifacts
+        run: |
+          New-Item -ItemType Directory -Force "${{env.Artifact_Path}}" | Out-Null
+          $projects = Select-String -Path "${{env.Solution_Path}}" -Pattern '^Project\("\{FAE04EC0' |
+            ForEach-Object { ($_.Line -split '", "')[1] } |
+            Where-Object { $_ -notmatch '(^|\\)Tests\\' }
+          if (-not $projects) { throw "No projects found in ${{env.Solution_Path}}" }
+          foreach ($project in $projects) {
+            $output = Join-Path "${{env.Repository_Path}}" (Join-Path (Split-Path $project) "bin\Debug")
+            if (-not (Test-Path $output)) { throw "No build output for $project" }
+            Write-Host "Collecting $project"
+            Copy-Item -Path "$output\*" -Destination "${{env.Artifact_Path}}" -Recurse -Force
+          }
 
       - name: Upload published artifacts
         uses: actions/upload-artifact@v4
@@ -86,3 +148,84 @@ jobs:
           path: ${{ env.Artifact_Path }}/*
           retention-days: 5
           if-no-files-found: error
+
+  build-and-test-with-dotnet-netcore:
+    name: Build and test based on .NET ("netcore")
+    runs-on: windows-latest
+    needs: legal-check
+    # Backstop for a wedged checkout, restore or build. The guard against a
+    # hanging test sits on the test step itself.
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      # MSBuild/dotnet do not support relative paths
+      Solution_Path: ${{github.workspace}}\z-wave-automated-test-system\ZatsBuild_netcore.sln
+      # Only ZATS-owned test projects live under this folder; Tools Core unit tests
+      # live under z-wave-tools-core\Tests and are covered by the Tools Core CI.
+      Tests_Dir: ${{github.workspace}}\z-wave-automated-test-system\Tests
+      Results_Path: ${{github.workspace}}\test-results-netcore
+    steps:
+      - name: Checkout z-wave-automated-test-system
+        uses: actions/checkout@v4
+        with:
+          path: 'z-wave-automated-test-system'
+          submodules: "recursive"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ${{env.Solution_Path}}
+
+      # Both target frameworks (net10.0 and net48) are built and tested, matching the
+      # Z-Wave Tools Core CI; windows-latest provides the .NET Framework 4.8 tooling.
+      - name: Build (all target frameworks)
+        run: dotnet build ${{env.Solution_Path}} -c Debug --no-restore
+
+      # Run every ZATS-owned netcore test project (auto-discovered under Tests, so new
+      # ZATS test projects are picked up without editing this workflow). Tools Core unit
+      # tests are not under this folder, so they are never run here. Tests that need
+      # real or emulated Z-Wave devices are skipped via the "DevicesNeeded" category,
+      # and tests needing IPv6 on the runner via "RequiresIPv6".
+      - name: Run ZATS unit tests
+        # The ZipTransport tests open real DTLS sockets and wait on them. The
+        # whole sweep takes well under a minute, so this only fires on a hang.
+        timeout-minutes: 15
+        run: |
+          $projects = Get-ChildItem -Path "${{env.Tests_Dir}}" -Recurse -Filter *_netcore.csproj
+          if (-not $projects) { throw "No ZATS test projects found under ${{env.Tests_Dir}}" }
+          $failed = $false
+          foreach ($p in $projects) {
+            # Every target framework of the project is exercised, but one at a
+            # time: without -f the frameworks run concurrently, and the DtlsClient
+            # tests then have two test hosts binding the same fixed DTLS port. The
+            # logger appends the framework, so the runs keep separate trx files.
+            $frameworks = ((([xml](Get-Content -Raw $p.FullName)).Project.PropertyGroup.TargetFrameworks |
+              Where-Object { $_ }) -split ';' | Where-Object { $_ })
+            if (-not $frameworks) { throw "No TargetFrameworks in $($p.Name)" }
+            foreach ($framework in $frameworks) {
+              Write-Host "::group::dotnet test $($p.Name) [$framework]"
+              dotnet test $p.FullName -c Debug --no-build -f $framework `
+                --filter "TestCategory!=DevicesNeeded&TestCategory!=RequiresIPv6" `
+                --logger "trx" `
+                --results-directory "${{env.Results_Path}}"
+              if ($LASTEXITCODE -ne 0) { $failed = $true }
+              Write-Host "::endgroup::"
+            }
+          }
+          if ($failed) { throw "One or more ZATS unit test projects failed." }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zats-test-results-netcore
+          path: ${{env.Results_Path}}/*.trx
+          retention-days: 5
+          # Only warn: this step also runs when the build failed before a single
+          # trx was written, and an upload error would then bury the real failure.
+          if-no-files-found: warn
