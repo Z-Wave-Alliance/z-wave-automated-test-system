@@ -16,6 +16,7 @@ using ZWave.BasicApplication.Enums;
 using ZWave.Enums;
 using ZWave.Layers.Transport;
 using System.Threading;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -31,11 +32,11 @@ namespace BasicApplicationIntegrationTests
             {
                 using (Controller ctrl2 = al.CreateController())
                 {
-                    using (Slave slave1 = al.CreateSlave())
+                    using (EndDevice slave1 = al.CreateEndDevice())
                     {
-                        using (Slave slave2 = al.CreateSlave())
+                        using (EndDevice slave2 = al.CreateEndDevice())
                         {
-                            using (Slave slave3 = al.CreateSlave())
+                            using (EndDevice slave3 = al.CreateEndDevice())
                             {
                                 ctrl1.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                                 ctrl2.Connect(new SerialPortDataSource(COM_CTRL_STATIC_2, BaudRates.Rate_115200));
@@ -50,13 +51,13 @@ namespace BasicApplicationIntegrationTests
                                 Assert.AreEqual(Libraries.ControllerStaticLib, verRes.Library);
                                 verRes = slave1.GetVersion();
                                 Assert.AreEqual(ActionStates.Completed, verRes.State);
-                                Assert.AreEqual(Libraries.SlaveEnhancedLib, verRes.Library);
+                                Assert.AreEqual(Libraries.EndDeviceLegacyLib, verRes.Library);
                                 verRes = slave2.GetVersion();
                                 Assert.AreEqual(ActionStates.Completed, verRes.State);
-                                Assert.AreEqual(Libraries.SlaveEnhancedLib, verRes.Library);
+                                Assert.AreEqual(Libraries.EndDeviceLegacyLib, verRes.Library);
                                 verRes = slave3.GetVersion();
                                 Assert.AreEqual(ActionStates.Completed, verRes.State);
-                                Assert.AreEqual(Libraries.SlaveEnhancedLib, verRes.Library);
+                                Assert.AreEqual(Libraries.EndDeviceLegacyLib, verRes.Library);
 
                                 ActionResult ares = ctrl1.SetDefault();
                                 Assert.AreEqual(ActionStates.Completed, ares.State);
@@ -89,11 +90,11 @@ namespace BasicApplicationIntegrationTests
             {
                 using (Controller ctrl2 = al.CreateController())
                 {
-                    using (Slave slave1 = al.CreateSlave())
+                    using (EndDevice slave1 = al.CreateEndDevice())
                     {
-                        using (Slave slave2 = al.CreateSlave())
+                        using (EndDevice slave2 = al.CreateEndDevice())
                         {
-                            using (Slave slave3 = al.CreateSlave())
+                            using (EndDevice slave3 = al.CreateEndDevice())
                             {
                                 ctrl1.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                                 ctrl2.Connect(new SerialPortDataSource(COM_CTRL_STATIC_2, BaudRates.Rate_115200));
@@ -108,9 +109,9 @@ namespace BasicApplicationIntegrationTests
                                 Assert.IsTrue(addResult);
                                 Assert.IsTrue(learnResult);
                                 Assert.AreEqual(2, ((AddRemoveNodeResult)addResult).Id);
-                                Assert.AreEqual(2, ((SetLearnModeResult)learnResult).NodeId);
+                                Assert.AreEqual(2, ((SetLearnModeResult)learnResult).Node.Id);
 
-                                ctrl1.SetSucNodeID(ctrl2.Id, true, TransmitOptions.TransmitOptionAcknowledge | TransmitOptions.TransmitOptionAutoRoute | TransmitOptions.TransmitOptionExplore, 0x01);
+                                ctrl1.SetSucNodeID(new NodeTag(ctrl2.Id), true, false, 0x01);
 
                                 for (int i = 0; i < POW; i++)
                                 {
@@ -121,7 +122,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 3, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(3 * i + 3, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(3 * i + 3, ((SetLearnModeResult)learnResult).Node.Id);
 
                                     ctrl1.SetRFReceiveMode(0);
 
@@ -132,7 +133,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 4, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(3 * i + 4, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(3 * i + 4, ((SetLearnModeResult)learnResult).Node.Id);
 
                                     addToken = ctrl2.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                                     learnToken = slave3.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -141,7 +142,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 5, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(3 * i + 5, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(3 * i + 5, ((SetLearnModeResult)learnResult).Node.Id);
 
                                     ctrl1.SetRFReceiveMode(1);
 
@@ -153,7 +154,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 3, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).Node.Id);
 
                                     addToken = ctrl2.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                                     learnToken = slave2.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -162,7 +163,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 4, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).Node.Id);
 
                                     addToken = ctrl2.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                                     learnToken = slave3.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -171,7 +172,7 @@ namespace BasicApplicationIntegrationTests
                                     Assert.IsTrue(addResult);
                                     Assert.IsTrue(learnResult);
                                     Assert.AreEqual(3 * i + 5, ((AddRemoveNodeResult)addResult).Id);
-                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).NodeId);
+                                    Assert.AreEqual(0, ((SetLearnModeResult)learnResult).Node.Id);
                                 }
                             }
                         }

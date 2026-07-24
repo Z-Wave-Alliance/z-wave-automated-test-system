@@ -13,6 +13,7 @@ using ZWave.Enums;
 using ZWave.Layers;
 using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -26,11 +27,11 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl1 = al.CreateController())
             {
-                using (Slave slave1 = al.CreateSlave())
+                using (EndDevice slave1 = al.CreateEndDevice())
                 {
                     using (Controller ctrl2 = al.CreateController())
                     {
-                        using (Slave slave2 = al.CreateSlave())
+                        using (EndDevice slave2 = al.CreateEndDevice())
                         {
                             ctrl1.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                             slave1.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -43,7 +44,7 @@ namespace BasicApplicationIntegrationTests
 
                             res = slave1.GetVersion();
                             Assert.IsTrue(res.State == ActionStates.Completed);
-                            Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                            Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
 
                             res = ctrl2.GetVersion();
                             Assert.IsTrue(res.State == ActionStates.Completed);
@@ -51,7 +52,7 @@ namespace BasicApplicationIntegrationTests
 
                             res = slave2.GetVersion();
                             Assert.IsTrue(res.State == ActionStates.Completed);
-                            Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                            Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
 
                             ActionResult ares = ctrl1.SetDefault();
                             Assert.IsTrue(ares.State == ActionStates.Completed);
@@ -76,7 +77,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     int errors = 0;
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
@@ -98,16 +99,16 @@ namespace BasicApplicationIntegrationTests
                     }
 
                     MemoryGetIdResult memres = ctrl.MemoryGetId();
-                    Assert.AreEqual(1, memres.NodeId);
+                    Assert.AreEqual(1, memres.Node.Id);
                     memres = slave.MemoryGetId();
-                    Assert.AreEqual(2, memres.NodeId);
+                    Assert.AreEqual(2, memres.Node.Id);
 
                     Assert.AreEqual(0, errors);
 
                     slave.ResponseData(new COMMAND_CLASS_BASIC.BASIC_REPORT(), TXO, new COMMAND_CLASS_BASIC.BASIC_GET());
                     for (int i = 0; i < POW; i++)
                     {
-                        ActionResult res = ctrl.RequestData(0x02, new COMMAND_CLASS_BASIC.BASIC_GET(), TXO, new COMMAND_CLASS_BASIC.BASIC_REPORT(), INCLUSION_TIMEOUT);
+                        ActionResult res = ctrl.RequestData(new NodeTag(0x02), new COMMAND_CLASS_BASIC.BASIC_GET(), TXO, new COMMAND_CLASS_BASIC.BASIC_REPORT(), INCLUSION_TIMEOUT);
                         Assert.AreEqual(ActionStates.Completed, res.State);
                     }
                 }
@@ -121,11 +122,11 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl1 = al.CreateController())
             {
-                using (Slave slave1 = al.CreateSlave())
+                using (EndDevice slave1 = al.CreateEndDevice())
                 {
                     using (Controller ctrl2 = al.CreateController())
                     {
-                        using (Slave slave2 = al.CreateSlave())
+                        using (EndDevice slave2 = al.CreateEndDevice())
                         {
                             int errors = 0;
                             ctrl1.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
@@ -151,9 +152,9 @@ namespace BasicApplicationIntegrationTests
                             }
 
                             MemoryGetIdResult memres = ctrl1.MemoryGetId();
-                            Assert.AreEqual(1, memres.NodeId);
+                            Assert.AreEqual(1, memres.Node.Id);
                             memres = slave1.MemoryGetId();
-                            Assert.AreEqual(2, memres.NodeId);
+                            Assert.AreEqual(2, memres.Node.Id);
 
                             Assert.AreEqual(0, errors);
 
@@ -171,9 +172,9 @@ namespace BasicApplicationIntegrationTests
                             }
 
                             memres = ctrl2.MemoryGetId();
-                            Assert.AreEqual(1, memres.NodeId);
+                            Assert.AreEqual(1, memres.Node.Id);
                             memres = slave2.MemoryGetId();
-                            Assert.AreEqual(2, memres.NodeId);
+                            Assert.AreEqual(2, memres.Node.Id);
 
                             Assert.AreEqual(0, errors);
 
@@ -181,7 +182,7 @@ namespace BasicApplicationIntegrationTests
                             {
                                 for (int i = 0; i < POW && errors == 0; i++)
                                 {
-                                    ActionResult res = ctrl1.SendData(0x02, new COMMAND_CLASS_BASIC.BASIC_GET(), TXO);
+                                    ActionResult res = ctrl1.SendData(new NodeTag(0x02), new COMMAND_CLASS_BASIC.BASIC_GET(), TXO);
                                     if (res.State != ActionStates.Completed)
                                     {
                                         Interlocked.Increment(ref errors);
@@ -192,7 +193,7 @@ namespace BasicApplicationIntegrationTests
                             {
                                 for (int i = 0; i < POW && errors == 0; i++)
                                 {
-                                    ActionResult res = ctrl2.SendData(0x02, new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET(), TXO);
+                                    ActionResult res = ctrl2.SendData(new NodeTag(0x02), new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET(), TXO);
                                     if (res.State != ActionStates.Completed)
                                     {
                                         Interlocked.Increment(ref errors);
@@ -216,11 +217,11 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl1 = al.CreateController())
             {
-                using (Slave slave1 = al.CreateSlave())
+                using (EndDevice slave1 = al.CreateEndDevice())
                 {
                     using (Controller ctrl2 = al.CreateController())
                     {
-                        using (Slave slave2 = al.CreateSlave())
+                        using (EndDevice slave2 = al.CreateEndDevice())
                         {
                             int errors = 0;
                             ctrl1.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
@@ -246,9 +247,9 @@ namespace BasicApplicationIntegrationTests
                             }
 
                             MemoryGetIdResult memres = ctrl1.MemoryGetId();
-                            Assert.AreEqual(1, memres.NodeId);
+                            Assert.AreEqual(1, memres.Node.Id);
                             memres = slave1.MemoryGetId();
-                            Assert.AreEqual(2, memres.NodeId);
+                            Assert.AreEqual(2, memres.Node.Id);
 
                             Assert.AreEqual(0, errors);
 
@@ -266,9 +267,9 @@ namespace BasicApplicationIntegrationTests
                             }
 
                             memres = ctrl2.MemoryGetId();
-                            Assert.AreEqual(1, memres.NodeId);
+                            Assert.AreEqual(1, memres.Node.Id);
                             memres = slave2.MemoryGetId();
-                            Assert.AreEqual(2, memres.NodeId);
+                            Assert.AreEqual(2, memres.Node.Id);
 
                             Assert.AreEqual(0, errors);
 
@@ -277,7 +278,7 @@ namespace BasicApplicationIntegrationTests
                                 slave1.ResponseData(new COMMAND_CLASS_BASIC.BASIC_REPORT(), TXO, new COMMAND_CLASS_BASIC.BASIC_GET());
                                 for (int i = 0; i < POW && errors == 0; i++)
                                 {
-                                    ActionResult res = ctrl1.RequestData(0x02, new COMMAND_CLASS_BASIC.BASIC_GET(), TXO, new COMMAND_CLASS_BASIC.BASIC_REPORT(), INCLUSION_TIMEOUT);
+                                    ActionResult res = ctrl1.RequestData(new NodeTag(0x02), new COMMAND_CLASS_BASIC.BASIC_GET(), TXO, new COMMAND_CLASS_BASIC.BASIC_REPORT(), INCLUSION_TIMEOUT);
                                     if (res.State != ActionStates.Completed)
                                     {
                                         Interlocked.Increment(ref errors);
@@ -289,7 +290,7 @@ namespace BasicApplicationIntegrationTests
                                 slave2.ResponseData(new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_REPORT(), TXO, new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET());
                                 for (int i = 0; i < POW && errors == 0; i++)
                                 {
-                                    ActionResult res = ctrl2.RequestData(0x02, new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET(), TXO, new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_REPORT(), INCLUSION_TIMEOUT);
+                                    ActionResult res = ctrl2.RequestData(new NodeTag(0x02), new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_GET(), TXO, new COMMAND_CLASS_DOOR_LOCK.DOOR_LOCK_OPERATION_REPORT(), INCLUSION_TIMEOUT);
                                     if (res.State != ActionStates.Completed)
                                     {
                                         Interlocked.Increment(ref errors);

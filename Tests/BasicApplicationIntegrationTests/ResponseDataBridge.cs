@@ -15,6 +15,7 @@ using ZWave.Layers.Session;
 using System.Threading;
 using ZWave.BasicApplication.Operations;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -25,6 +26,25 @@ namespace BasicApplicationIntegrationTests
         byte[] cmd_report = new byte[] { 0x20, 0x03, 0x55 };
         int POW = 10;
         int REQUEST_DATA_TIMEOUT = 3000;
+
+        /// <summary>
+        /// Builds a responder that only answers a cmd_get addressed to <paramref name="dstNode"/>.
+        /// </summary>
+        /// <remarks>
+        /// Device.ResponseData has no overload taking both a callback and a node, so the
+        /// operation is built here to reach DstNode. That is the node the Bridge Application
+        /// Command Handler reports as the destination, so it selects which of the bridge's
+        /// virtual nodes the request was addressed to. The reply is issued from that same
+        /// node, because ResponseDataOperation answers with a Bridge Controller Node Send
+        /// Data whose source is the destination of the request.
+        /// </remarks>
+        private ResponseDataOperation CreateResponder(Device device, NodeTag dstNode, ResponseDataDelegate receiveCallback)
+        {
+            return new ResponseDataOperation(device.Network, receiveCallback, TXO, NodeTag.Empty, cmd_get[0], cmd_get[1])
+            {
+                DstNode = dstNode
+            };
+        }
 
         [SetUp]
         public void SetUp()
@@ -53,7 +73,7 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
 
                     addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                    learnToken = bridge.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                    learnToken = bridge.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                     Assert.IsTrue(addToken.WaitCompletedSignal().IsStateCompleted);
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
 
@@ -75,7 +95,7 @@ namespace BasicApplicationIntegrationTests
 
                     for (int i = 0; i < POW; i++)
                     {
-                        RequestDataResult res = ctrl.RequestData(0x02, cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
+                        RequestDataResult res = ctrl.RequestData(new NodeTag(0x02), cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
                         Assert.AreEqual(ActionStates.Completed, res.State);
                     }
                 }
@@ -92,11 +112,11 @@ namespace BasicApplicationIntegrationTests
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     bridge.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
-                    bridge.ResponseData(cmd_report, TXO, 0x03, cmd_get);
+                    bridge.ResponseData(new NodeTag(0x03), cmd_report, TXO, cmd_get);
 
                     for (int i = 0; i < POW; i++)
                     {
-                        RequestDataResult res = ctrl.RequestData(0x03, cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
+                        RequestDataResult res = ctrl.RequestData(new NodeTag(0x03), cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
                         Assert.AreEqual(ActionStates.Completed, res.State);
                     }
                 }
@@ -123,7 +143,7 @@ namespace BasicApplicationIntegrationTests
 
                     for (int i = 0; i < POW; i++)
                     {
-                        RequestDataResult res = ctrl.RequestData(0x02, cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
+                        RequestDataResult res = ctrl.RequestData(new NodeTag(0x02), cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
                         Assert.AreEqual(ActionStates.Completed, res.State);
                         Assert.AreEqual(counter, res.Command[2]);
                         counter++;
@@ -144,15 +164,15 @@ namespace BasicApplicationIntegrationTests
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
 
-                    slave.ResponseData((x, a, b, c) =>
+                    slave.ExecuteAsync(CreateResponder(slave, new NodeTag(0x03), (x, a, b, c) =>
                     {
                         cmd_report[2] = counter;
                         return cmd_report;
-                    }, TXO, 0x03, cmd_get);
+                    }), null);
 
                     for (int i = 0; i < POW; i++)
                     {
-                        RequestDataResult res = ctrl.RequestData(0x03, cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
+                        RequestDataResult res = ctrl.RequestData(new NodeTag(0x03), cmd_get, TXO, cmd_report, REQUEST_DATA_TIMEOUT);
                         Assert.AreEqual(ActionStates.Completed, res.State);
                         Assert.AreEqual(counter, res.Command[2]);
                         counter++;

@@ -15,6 +15,7 @@ using ZWave.BasicApplication.Enums;
 using ZWave.BasicApplication.Operations;
 using ZWave.Layers.Transport;
 using System.Threading;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -52,7 +53,7 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
 
                     addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                    learnToken = slave.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                    learnToken = slave.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                     Assert.IsTrue(addToken.WaitCompletedSignal().IsStateCompleted);
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
                 }
@@ -72,7 +73,7 @@ namespace BasicApplicationIntegrationTests
                     ActionToken sendToken = null;
                     for (int i = 0; i < POW; i++)
                     {
-                        sendToken = slave.SendDataBridge(0x03, 0x01, cmd_get, TXO, null);
+                        sendToken = slave.SendDataBridge(new NodeTag(0x03), new NodeTag(0x01), cmd_get, TXO, null);
                         ActionResult res = sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
                     }
@@ -89,7 +90,7 @@ namespace BasicApplicationIntegrationTests
                 slave.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
                 for (int i = 0; i < POW; i++)
                 {
-                    SendDataResult res = slave.SendDataBridge(0x03, 0x04, cmd_get, TXO);
+                    SendDataResult res = slave.SendDataBridge(new NodeTag(0x03), new NodeTag(0x04), cmd_get, TXO);
                     Assert.AreEqual(TransmitStatuses.CompleteNoAcknowledge, res.TransmitStatus);
                 }
             }
@@ -111,7 +112,7 @@ namespace BasicApplicationIntegrationTests
                     {
                         for (int i = 0; i < POW; i++)
                         {
-                            res = slave.SendDataBridge(0x03, 0x01, cmd_get, TXO);
+                            res = slave.SendDataBridge(new NodeTag(0x03), new NodeTag(0x01), cmd_get, TXO);
                             if (res.State != ActionStates.Completed)
                                 Interlocked.Increment(ref errors);
                         }
@@ -120,7 +121,7 @@ namespace BasicApplicationIntegrationTests
                     {
                         for (int i = 0; i < POW; i++)
                         {
-                            res = slave.SendDataBridge(0x03, 0x01, cmd_report, TXO);
+                            res = slave.SendDataBridge(new NodeTag(0x03), new NodeTag(0x01), cmd_report, TXO);
                             if (res.State != ActionStates.Completed)
                                 Interlocked.Increment(ref errors);
                         }
