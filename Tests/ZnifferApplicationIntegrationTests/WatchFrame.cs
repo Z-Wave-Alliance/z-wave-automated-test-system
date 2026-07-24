@@ -13,6 +13,7 @@ using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
 using ZWave.ZnifferApplication;
 using ZWave.ZnifferApplication.Devices;
+using ZWave.Devices;
 
 namespace ZnifferApplicationIntegrationTests
 {
@@ -25,7 +26,7 @@ namespace ZnifferApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM2, BaudRates.Rate_115200));
@@ -34,7 +35,7 @@ namespace ZnifferApplicationIntegrationTests
                     Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                     res = slave.GetVersion();
                     Assert.IsTrue(res.State == ActionStates.Completed);
-                    Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                    Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                     ActionResult ares = ctrl.SetDefault();
                     Assert.IsTrue(ares.State == ActionStates.Completed);
                     ares = slave.SetDefault();
@@ -57,7 +58,7 @@ namespace ZnifferApplicationIntegrationTests
             ZnifferApplicationLayer zl = new ZnifferApplicationLayer(new SessionLayer(), new ZnifferFrameLayer(Utils.InitFrameDefinition()), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     using (Zniffer znf = zl.CreateZniffer())
                     {
@@ -80,7 +81,7 @@ namespace ZnifferApplicationIntegrationTests
                                     isReceived = true;
                             }
                         };
-                        slave.SendData(0x01, data, TXO);
+                        slave.SendData(new NodeTag(0x01), data, TXO);
 
                         Thread.Sleep(2000);
                         Assert.IsTrue(isReceived);

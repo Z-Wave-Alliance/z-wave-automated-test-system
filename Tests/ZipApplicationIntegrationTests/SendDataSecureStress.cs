@@ -17,6 +17,7 @@ using ZWave.Layers.Transport;
 using ZWave.ZipApplication;
 using ZWave.ZipApplication.Devices;
 using ZWave.ZipApplication.Operations;
+using ZWave.Devices;
 
 namespace ZipApplicationIntegrationTests
 {
@@ -35,7 +36,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (Controller ctrl = bal.CreateController())
             {
-                using (Slave slave = bal.CreateSlave())
+                using (EndDevice slave = bal.CreateEndDevice())
                 {
                     using (ZipController zip = zal.CreateZipController())
                     {
@@ -47,7 +48,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                         res = slave.GetVersion();
                         Assert.IsTrue(res.State == ActionStates.Completed);
-                        Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                        Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                         GetIdResult gres = zip.GetId();
                         Assert.AreEqual(ActionStates.Completed, gres.State);
 
@@ -75,7 +76,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(addToken.WaitCompletedSignal());
                         Assert.IsTrue(learnToken.WaitCompletedSignal());
 
-                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0);
+                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0, false)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0, false);
 
                         addToken = zip.AddNodeToNetwork(Modes.NodeAny, TXO, 10000, null);
                         learnToken = slave.SetLearnMode(LearnModes.LearnModeClassic, 10000, null);
@@ -83,7 +84,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(addToken.WaitCompletedSignal());
                         Assert.IsTrue(learnToken.WaitCompletedSignal());
 
-                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0);
+                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0, false)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0, false);
                     }
                 }
             }
@@ -100,7 +101,7 @@ namespace ZipApplicationIntegrationTests
             {
                 using (Controller ctrl = al.CreateController())
                 {
-                    using (Slave slave = al.CreateSlave())
+                    using (EndDevice slave = al.CreateEndDevice())
                     {
                         zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
                         ctrl.Connect(new SerialPortDataSource(COM1, BaudRates.Rate_115200));
@@ -114,8 +115,8 @@ namespace ZipApplicationIntegrationTests
                         slave.SessionClient.AddSubstituteManager(sm2);
                         slave.SessionClient.ExecuteAsync(sm2.CreateSecurityReportTask());
 
-                        GetIpAddressResult ipctrl = zip.GetIpAddress(0x02);
-                        GetIpAddressResult ipslave = zip.GetIpAddress(0x03);
+                        GetIpAddressResult ipctrl = zip.GetIpAddress(new NodeTag(0x02));
+                        GetIpAddressResult ipslave = zip.GetIpAddress(new NodeTag(0x03));
                         using (ZipDevice zctrl = zal.CreateZipDevice())
                         {
                             using (ZipDevice zslave = zal.CreateZipDevice())
@@ -145,7 +146,7 @@ namespace ZipApplicationIntegrationTests
             {
                 using (Controller ctrl = al.CreateController())
                 {
-                    using (Slave slave = al.CreateSlave())
+                    using (EndDevice slave = al.CreateEndDevice())
                     {
                         int errors = 0;
                         zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
@@ -160,8 +161,8 @@ namespace ZipApplicationIntegrationTests
                         slave.SessionClient.AddSubstituteManager(sm2);
                         slave.SessionClient.ExecuteAsync(sm2.CreateSecurityReportTask());
 
-                        GetIpAddressResult ipctrl = zip.GetIpAddress(0x02);
-                        GetIpAddressResult ipslave = zip.GetIpAddress(0x03);
+                        GetIpAddressResult ipctrl = zip.GetIpAddress(new NodeTag(0x02));
+                        GetIpAddressResult ipslave = zip.GetIpAddress(new NodeTag(0x03));
                         using (ZipDevice zctrl = zal.CreateZipDevice())
                         {
                             using (ZipDevice zslave = zal.CreateZipDevice())

@@ -16,6 +16,7 @@ using ZWave;
 using ZWave.BasicApplication.Enums;
 using System.Threading;
 using ZWave.CommandClasses;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -29,7 +30,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -38,7 +39,7 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                     res = slave.GetVersion();
                     Assert.IsTrue(res.State == ActionStates.Completed);
-                    Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                    Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                     ActionResult ares = ctrl.SetDefault();
                     Assert.IsTrue(ares.State == ActionStates.Completed);
                     ares = slave.SetDefault();
@@ -48,13 +49,13 @@ namespace BasicApplicationIntegrationTests
         }
 
         [Test]
-        [Ignore]
+        [Ignore("Disabled test.")]
         public void TestAsync232()
         {
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     using (Controller exclude = al.CreateController())
                     {
@@ -72,7 +73,7 @@ namespace BasicApplicationIntegrationTests
                             Assert.AreEqual(ActionStates.Completed, addRemoveResult.State);
                             Assert.AreEqual(i + 2, addRemoveResult.Id);
                             Assert.AreEqual(ActionStates.Completed, learnResult.State);
-                            Assert.AreEqual(i + 2, learnResult.NodeId);
+                            Assert.AreEqual(i + 2, learnResult.Node.Id);
 
                             addRemoveToken = exclude.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                             learnToken = slave.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -82,10 +83,10 @@ namespace BasicApplicationIntegrationTests
                             Assert.AreEqual(ActionStates.Completed, addRemoveResult.State);
                             Assert.AreEqual(0, addRemoveResult.Id);
                             Assert.AreEqual(ActionStates.Completed, learnResult.State);
-                            Assert.AreEqual(0, learnResult.NodeId);
+                            Assert.AreEqual(0, learnResult.Node.Id);
 
                             MemoryGetIdResult memRes = slave.MemoryGetId();
-                            Assert.AreEqual(0, memRes.NodeId);
+                            Assert.AreEqual(0, memRes.Node.Id);
                         }
                     }
                 }
@@ -98,7 +99,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -108,7 +109,7 @@ namespace BasicApplicationIntegrationTests
 
                     Assert.IsTrue(addToken.WaitCompletedSignal());
                     Thread.Sleep(2000);
-                    ctrl.SendData(0x02, new COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_GET(), TXO);
+                    ctrl.SendData(new NodeTag(0x02), new COMMAND_CLASS_ZWAVEPLUS_INFO_V2.ZWAVEPLUS_INFO_GET(), TXO);
                     Assert.IsTrue(learnToken.WaitCompletedSignal());
                 }
             }
@@ -120,7 +121,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     int errors = 0;
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
@@ -144,12 +145,12 @@ namespace BasicApplicationIntegrationTests
                         }
 
                         memres = ctrl.MemoryGetId();
-                        Assert.AreEqual(1, memres.NodeId);
+                        Assert.AreEqual(1, memres.Node.Id);
                         memres = slave.MemoryGetId();
                         int newNodeId = (i + 2);
                         if (newNodeId > 232)
                             newNodeId -= 231;
-                        Assert.AreEqual(newNodeId, memres.NodeId);
+                        Assert.AreEqual(newNodeId, memres.Node.Id);
                         addRemoveToken = ctrl.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                         learnToken = slave.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
 
@@ -163,9 +164,9 @@ namespace BasicApplicationIntegrationTests
                         }
 
                         memres = ctrl.MemoryGetId();
-                        Assert.AreEqual(1, memres.NodeId);
+                        Assert.AreEqual(1, memres.Node.Id);
                         memres = slave.MemoryGetId();
-                        Assert.AreEqual(0, memres.NodeId);
+                        Assert.AreEqual(0, memres.Node.Id);
 
 
                         Assert.AreEqual(0, errors);

@@ -26,7 +26,7 @@ namespace BasicApplicationIntegrationTests
             {
                 using (BridgeController bridge = al.CreateBridgeController())
                 {
-                    using (Slave slave = al.CreateSlave())
+                    using (EndDevice slave = al.CreateEndDevice())
                     {
                         ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                         bridge.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
@@ -39,7 +39,7 @@ namespace BasicApplicationIntegrationTests
                         Assert.IsTrue(res.Library == Libraries.ControllerBridgeLib);
                         res = slave.GetVersion();
                         Assert.IsTrue(res.State == ActionStates.Completed);
-                        Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                        Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                         ActionResult ares = ctrl.SetDefault();
                         Assert.IsTrue(ares.State == ActionStates.Completed);
                         ares = bridge.SetDefault();
@@ -57,7 +57,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (BridgeController ctrl = al.CreateBridgeController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -77,7 +77,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (BridgeController ctrl = al.CreateBridgeController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     int errors = 0;
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
@@ -101,12 +101,12 @@ namespace BasicApplicationIntegrationTests
                         }
 
                         memres = ctrl.MemoryGetId();
-                        Assert.AreEqual(1, memres.NodeId);
+                        Assert.AreEqual(1, memres.Node.Id);
                         memres = slave.MemoryGetId();
                         int newNodeId = (i + 2);
                         if (newNodeId > 232)
                             newNodeId -= 231;
-                        Assert.AreEqual(newNodeId, memres.NodeId);
+                        Assert.AreEqual(newNodeId, memres.Node.Id);
 
                         addRemoveToken = ctrl.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                         learnToken = slave.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -121,9 +121,9 @@ namespace BasicApplicationIntegrationTests
                         }
 
                         memres = ctrl.MemoryGetId();
-                        Assert.AreEqual(1, memres.NodeId);
+                        Assert.AreEqual(1, memres.Node.Id);
                         memres = slave.MemoryGetId();
-                        Assert.AreEqual(0, memres.NodeId);
+                        Assert.AreEqual(0, memres.Node.Id);
 
                         Assert.AreEqual(0, errors);
                     }

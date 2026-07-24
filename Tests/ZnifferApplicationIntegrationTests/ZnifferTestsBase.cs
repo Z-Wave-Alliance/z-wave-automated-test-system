@@ -10,7 +10,7 @@ namespace ZnifferApplicationIntegrationTests
     public class ZnifferTestsBase
     {
         protected string COM1; // Controller
-        protected string COM2; // Slave
+        protected string COM2; // EndDevice
         protected string COMZ; // Zniffer
 
         protected const int POW = 10;
@@ -26,7 +26,7 @@ namespace ZnifferApplicationIntegrationTests
             var staticControllers = devicesConfig.SerialSources.Where(source => source is StaticControllerSource).ToArray();
             Assert.NotNull(staticControllers);
             Assert.GreaterOrEqual(staticControllers.Length, 1);
-            var slaves = devicesConfig.SerialSources.Where(source => source is SlaveSource).ToArray();
+            var slaves = devicesConfig.SerialSources.Where(source => source is EndDeviceSource).ToArray();
             Assert.NotNull(slaves);
             Assert.GreaterOrEqual(slaves.Length, 1);
             COM1 = staticControllers[0].PortAlias;

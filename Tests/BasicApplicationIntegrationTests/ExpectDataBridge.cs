@@ -12,6 +12,7 @@ using ZWave.Enums;
 using ZWave.Layers;
 using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -50,7 +51,7 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
 
                     addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                    learnToken = bridge.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                    learnToken = bridge.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                     Assert.IsTrue(addToken.WaitCompletedSignal().IsStateCompleted);
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
                 }
@@ -74,7 +75,7 @@ namespace BasicApplicationIntegrationTests
                     for (int i = 0; i < POW; i++)
                     {
                         expectToken = bridge.ExpectData(cmd_get, TIMEOUT, null);
-                        sendToken = ctrl.SendData(0x02, cmd_get, TXO, (action) =>
+                        sendToken = ctrl.SendData(new NodeTag(0x02), cmd_get, TXO, (action) =>
                         {
                         });
                         if (!expectToken.WaitCompletedSignal())
@@ -86,9 +87,9 @@ namespace BasicApplicationIntegrationTests
                             errors++;
                         }
 
-                        expectToken = bridge.ExpectData(0x03, cmd_get, TIMEOUT, null);
+                        expectToken = bridge.ExpectData(new NodeTag(0x03), cmd_get, TIMEOUT, null);
 
-                        sendToken = ctrl.SendData(0x03, cmd_get, TXO, (action) =>
+                        sendToken = ctrl.SendData(new NodeTag(0x03), cmd_get, TXO, (action) =>
                         {
                         });
                         if (!expectToken.WaitCompletedSignal())
@@ -101,7 +102,7 @@ namespace BasicApplicationIntegrationTests
                         }
 
                     }
-                    bridge.SendDataBridge(0x02, 0x01, new COMMAND_CLASS_BASIC.BASIC_REPORT(), TXO);
+                    bridge.SendDataBridge(new NodeTag(0x02), new NodeTag(0x01), new COMMAND_CLASS_BASIC.BASIC_REPORT(), TXO);
 
                     Assert.AreEqual(0, errors);
                 }
@@ -124,7 +125,7 @@ namespace BasicApplicationIntegrationTests
                         for (int i = 0; i < POW; i++)
                         {
                             res = ctrl.ExpectData(cmd_report, TIMEOUT);
-                            res = ctrl.SendData(0x02, cmd_get, TXO);
+                            res = ctrl.SendData(new NodeTag(0x02), cmd_get, TXO);
                         }
                     }) { Name = "TestConcurrentAsync - Thread1" };
                     Thread thread2 = new Thread(() =>
@@ -132,12 +133,12 @@ namespace BasicApplicationIntegrationTests
                         for (int i = 0; i < POW; i++)
                         {
                             res = bridge.ExpectData(cmd_get, TIMEOUT);
-                            res = bridge.SendData(0x01, cmd_report, TXO);
+                            res = bridge.SendData(new NodeTag(0x01), cmd_report, TXO);
                         }
                     }) { Name = "TestConcurrentAsync - Thread2" };
                     thread1.Start();
                     thread2.Start();
-                    res = ctrl.SendData(0x02, cmd_get, TXO); //initiate
+                    res = ctrl.SendData(new NodeTag(0x02), cmd_get, TXO); //initiate
                     thread1.Join();
                     thread2.Join();
                 }

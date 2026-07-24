@@ -12,6 +12,7 @@ using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
 using ZWave.ZnifferApplication;
 using ZWave.ZnifferApplication.Devices;
+using ZWave.Devices;
 
 namespace ZnifferApplicationIntegrationTests
 {
@@ -24,7 +25,7 @@ namespace ZnifferApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM2, BaudRates.Rate_115200));
@@ -33,7 +34,7 @@ namespace ZnifferApplicationIntegrationTests
                     Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                     res = slave.GetVersion();
                     Assert.IsTrue(res.State == ActionStates.Completed);
-                    Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                    Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                     ActionResult ares = ctrl.SetDefault();
                     Assert.IsTrue(ares.State == ActionStates.Completed);
                     ares = slave.SetDefault();
@@ -58,7 +59,7 @@ namespace ZnifferApplicationIntegrationTests
 
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     using (Zniffer znf = zl.CreateZniffer())
                     {
@@ -74,26 +75,26 @@ namespace ZnifferApplicationIntegrationTests
                         znf.Start();
                         znf.SetFrequency(0x00);
 
-                        ActionToken expectToken = znf.ExpectData(memRes.HomeId, memRes.NodeId, null, TIMEOUT, null);
-                        ActionToken sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        ActionToken expectToken = znf.ExpectData(memRes.HomeId, (byte)memRes.Node.Id, null, TIMEOUT, null);
+                        ActionToken sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         ActionResult res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
 
-                        expectToken = znf.ExpectData(null, memRes.NodeId, null, TIMEOUT, null);
-                        sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        expectToken = znf.ExpectData(null, (byte)memRes.Node.Id, null, TIMEOUT, null);
+                        sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
 
                         expectToken = znf.ExpectData(memRes.HomeId, null, null, TIMEOUT, null);
-                        sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
 
                         expectToken = znf.ExpectData(null, null, null, TIMEOUT, null);
-                        sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
@@ -111,7 +112,7 @@ namespace ZnifferApplicationIntegrationTests
 
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     using (Zniffer znf = zl.CreateZniffer())
                     {
@@ -127,14 +128,14 @@ namespace ZnifferApplicationIntegrationTests
                         znf.Start();
                         znf.SetFrequency(0x00);
 
-                        ActionToken expectToken = znf.ExpectData(_memoryGetIdResult.HomeId, _memoryGetIdResult.NodeId, DataItemPredicateMethod, TIMEOUT, null);
-                        ActionToken sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        ActionToken expectToken = znf.ExpectData(_memoryGetIdResult.HomeId, (byte)_memoryGetIdResult.Node.Id, DataItemPredicateMethod, TIMEOUT, null);
+                        ActionToken sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         ActionResult res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
 
                         expectToken = znf.ExpectData(null, null, DataItemPredicateMethodWithHomeId, TIMEOUT, null);
-                        sendToken = slave.SendData(0x01, data, TXO, null, null);
+                        sendToken = slave.SendData(new NodeTag(0x01), data, TXO, null, null);
                         res = expectToken.WaitCompletedSignal();
                         sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
@@ -159,7 +160,7 @@ namespace ZnifferApplicationIntegrationTests
                 dataIem.HomeId[1] == _memoryGetIdResult.HomeId[1] &&
                 dataIem.HomeId[2] == _memoryGetIdResult.HomeId[2] &&
                 dataIem.HomeId[3] == _memoryGetIdResult.HomeId[3] &&
-                dataIem.Source == _memoryGetIdResult.NodeId;
+                dataIem.Source == _memoryGetIdResult.Node.Id;
         }
     }
 }

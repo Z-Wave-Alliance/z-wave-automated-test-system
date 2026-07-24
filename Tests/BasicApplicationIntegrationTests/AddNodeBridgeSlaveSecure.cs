@@ -10,6 +10,7 @@ using ZWave.BasicApplication;
 using ZWave.BasicApplication.Enums;
 using ZWave.BasicApplication.Devices;
 using ZWave.BasicApplication.Operations;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -66,7 +67,7 @@ namespace BasicApplicationIntegrationTests
                     SetupSecurity(slave, true);
 
                     ActionToken addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                    ActionToken learnToken = slave.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                    ActionToken learnToken = slave.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                     Assert.IsTrue(addToken.WaitCompletedSignal().IsStateCompleted);
                     Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
                 }
@@ -93,13 +94,13 @@ namespace BasicApplicationIntegrationTests
                     for (int i = 0; i < POW; i++)
                     {
                         addRemoveToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                        learnToken = slave.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                        learnToken = slave.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                         Assert.IsTrue(addRemoveToken.WaitCompletedSignal().IsStateCompleted);
                         SetLearnModeResult res = (SetLearnModeResult)learnToken.WaitCompletedSignal();
                         Assert.IsTrue(res.IsStateCompleted);
 
                         addRemoveToken = ctrl.RemoveNodeFromNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                        learnToken = slave.SetSlaveLearnMode(res.NodeId, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                        learnToken = slave.SetVirtualDeviceLearnMode(new NodeTag(res.Node.Id), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                         Assert.IsTrue(addRemoveToken.WaitCompletedSignal().IsStateCompleted);
                         Assert.IsTrue(learnToken.WaitCompletedSignal().IsStateCompleted);
                     }

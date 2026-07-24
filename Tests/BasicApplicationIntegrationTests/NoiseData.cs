@@ -15,6 +15,7 @@ using ZWave.Layers.Session;
 using System.Threading;
 using ZWave.BasicApplication.Operations;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -28,7 +29,7 @@ namespace BasicApplicationIntegrationTests
         private const int NOISE_DURATION = 3000;
         private const int EXPECTED_NOISE = NOISE_DURATION / SEND_INTERVAL - 5;
 
-        private void SetupNetwork(Controller ctrl, Slave slave, bool secure)
+        private void SetupNetwork(Controller ctrl, EndDevice slave, bool secure)
         {
             ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
             slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -40,9 +41,9 @@ namespace BasicApplicationIntegrationTests
                 res.Library == Libraries.ControllerBridgeLib);
             res = slave.GetVersion();
             Assert.IsTrue(res.State == ActionStates.Completed);
-            Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib ||
-                res.Library == Libraries.SlaveLib ||
-                res.Library == Libraries.SlaveRoutingLib);
+            Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib ||
+                res.Library == Libraries.EndDeviceLib ||
+                res.Library == Libraries.EndDeviceLegacyRoutingLib);
             ActionResult ares = ctrl.SetDefault();
             Assert.IsTrue(ares.State == ActionStates.Completed);
             ares = slave.SetDefault();
@@ -65,10 +66,10 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     SetupNetwork(ctrl, slave, false);
-                    ActionToken noiseToken = ctrl.NoiseData(0x02, cmd_get, TXO, null, SEND_INTERVAL, 0);
+                    ActionToken noiseToken = ctrl.NoiseData(new NodeTag[] { new NodeTag(0x02) }, cmd_get, TXO, null, null, SEND_INTERVAL, 0);
                     Thread.Sleep(NOISE_DURATION);
                     ctrl.Cancel(noiseToken);
                     NoiseDataResult noiseRes = (NoiseDataResult)noiseToken.WaitCompletedSignal();
@@ -83,11 +84,11 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     SetupNetwork(ctrl, slave, false);
                     ActionToken responseToken = slave.ResponseData(cmd_report, TXO, cmd_get);
-                    ActionToken noiseToken = ctrl.NoiseData(0x02, cmd_get, TXO, cmd_report, SEND_INTERVAL, 2000);
+                    ActionToken noiseToken = ctrl.NoiseData(new NodeTag[] { new NodeTag(0x02) }, cmd_get, TXO, cmd_report, null, SEND_INTERVAL, 2000);
                     Thread.Sleep(NOISE_DURATION);
                     ctrl.Cancel(noiseToken);
                     NoiseDataResult noiseRes = (NoiseDataResult)noiseToken.WaitCompletedSignal();
@@ -104,10 +105,10 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     SetupNetwork(ctrl, slave, true);
-                    ActionToken noiseToken = ctrl.NoiseDataEx(0x02, cmd_get, TXO, null, SEND_INTERVAL, 2000, 
+                    ActionToken noiseToken = ctrl.NoiseDataEx(new NodeTag[] { new NodeTag(0x02) }, cmd_get, TXO, null, SEND_INTERVAL, 2000,
                         SecuritySchemes.S2_AUTHENTICATED, TransmitSecurityOptions.S2_TXOPTION_VERIFY_DELIVERY, TransmitOptions2.NONE);
                     Thread.Sleep(NOISE_DURATION);
                     ctrl.Cancel(noiseToken);
@@ -123,11 +124,11 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     SetupNetwork(ctrl, slave, true);
                     ActionToken responseToken = slave.ResponseDataEx(cmd_report, TXO, cmd_get);
-                    ActionToken noiseToken = ctrl.NoiseDataEx(0x02, cmd_get, TXO, cmd_report, SEND_INTERVAL, 2000,
+                    ActionToken noiseToken = ctrl.NoiseDataEx(new NodeTag[] { new NodeTag(0x02) }, cmd_get, TXO, cmd_report, SEND_INTERVAL, 2000,
                         SecuritySchemes.S2_AUTHENTICATED, TransmitSecurityOptions.S2_TXOPTION_VERIFY_DELIVERY, TransmitOptions2.NONE);
                     Thread.Sleep(NOISE_DURATION);
                     ctrl.Cancel(noiseToken);

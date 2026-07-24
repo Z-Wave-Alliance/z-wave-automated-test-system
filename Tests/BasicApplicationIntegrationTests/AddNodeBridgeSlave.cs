@@ -11,6 +11,7 @@ using ZWave.BasicApplication.Enums;
 using ZWave.BasicApplication.Devices;
 using ZWave.BasicApplication.Operations;
 using System.Threading;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -61,7 +62,7 @@ namespace BasicApplicationIntegrationTests
                     slave.Connect(new SerialPortDataSource(COM_CTRL_BRIDGE_1, BaudRates.Rate_115200));
 
                     ActionToken addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
-                    ActionToken learnToken = slave.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                    ActionToken learnToken = slave.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
 
                     Assert.IsTrue(addToken.WaitCompletedSignal());
                     Assert.IsTrue(learnToken.WaitCompletedSignal());

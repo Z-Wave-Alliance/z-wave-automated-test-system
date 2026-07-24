@@ -10,6 +10,7 @@ using ZWave.Layers;
 using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
 using ZWave.BasicApplication.Enums;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -70,7 +71,7 @@ namespace BasicApplicationIntegrationTests
                     ctrl.MemoryGetId();
                     SetupSecurity(ctrl, securityUnderTest, isEnableDSK);
 
-                    bridge.SetSucNodeID(bridge.Id, true, TransmitOptions.TransmitOptionAcknowledge | TransmitOptions.TransmitOptionAutoRoute | TransmitOptions.TransmitOptionExplore, 0x01);
+                    bridge.SetSucNodeID(new NodeTag(bridge.Id), true, false, 0x01);
                     var addToken = bridge.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                     var learnToken = ctrl.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
                     var addResult = addToken.WaitCompletedSignal();
@@ -79,20 +80,20 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(addResult);
                     Assert.IsTrue(learnResult);
                     Assert.AreEqual(2, ((AddRemoveNodeResult)addResult).Id);
-                    Assert.AreEqual(2, ((SetLearnModeResult)learnResult).NodeId);
+                    Assert.AreEqual(2, ((SetLearnModeResult)learnResult).Node.Id);
 
                     for (int i = 0; i < POW; i++)
                     {
                         addToken = ctrl.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                         System.Threading.Thread.Sleep(3000);//check delay for NIF
-                        learnToken = bridge.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                        learnToken = bridge.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                         addResult = addToken.WaitCompletedSignal();
                         learnResult = learnToken.WaitCompletedSignal();
 
                         Assert.IsTrue(addResult);
                         Assert.IsTrue(learnResult);
                         Assert.AreEqual(i + 3, ((AddRemoveNodeResult)addResult).Id);
-                        Assert.AreEqual(i + 3, ((SetLearnModeResult)learnResult).NodeId);
+                        Assert.AreEqual(i + 3, ((SetLearnModeResult)learnResult).Node.Id);
 
                         System.Threading.Thread.Sleep(1500);
                     }
@@ -130,9 +131,9 @@ namespace BasicApplicationIntegrationTests
                         Assert.IsTrue(addResult);
                         Assert.IsTrue(learnResult);
                         Assert.AreEqual(2, ((AddRemoveNodeResult)addResult).Id);
-                        Assert.AreEqual(2, ((SetLearnModeResult)learnResult).NodeId);
+                        Assert.AreEqual(2, ((SetLearnModeResult)learnResult).Node.Id);
                         
-                        ctrl1Inclusion.SetSucNodeID(ctrl2SIS.Id, true, TransmitOptions.TransmitOptionAcknowledge | TransmitOptions.TransmitOptionAutoRoute | TransmitOptions.TransmitOptionExplore, 0x01);
+                        ctrl1Inclusion.SetSucNodeID(new NodeTag(ctrl2SIS.Id), true, false, 0x01);
 
                         addToken = ctrl1Inclusion.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                         learnToken = bridge.SetLearnMode(LearnModes.LearnModeClassic, INCLUSION_TIMEOUT, null);
@@ -141,7 +142,7 @@ namespace BasicApplicationIntegrationTests
                         Assert.IsTrue(addResult);
                         Assert.IsTrue(learnResult);
                         Assert.AreEqual(3, ((AddRemoveNodeResult)addResult).Id);
-                        Assert.AreEqual(3, ((SetLearnModeResult)learnResult).NodeId);
+                        Assert.AreEqual(3, ((SetLearnModeResult)learnResult).Node.Id);
                         
                         for (int i = 0; i < POW; i++)
                         {
@@ -149,14 +150,14 @@ namespace BasicApplicationIntegrationTests
                          
                             addToken = ctrl1Inclusion.AddNodeToNetwork(Modes.NodeAny, INCLUSION_TIMEOUT, null);
                             System.Threading.Thread.Sleep(3000);//check delay for NIF
-                            learnToken = bridge.SetSlaveLearnMode(0, SlaveLearnModes.VirtualSlaveLearnModeEnable, INCLUSION_TIMEOUT, null);
+                            learnToken = bridge.SetVirtualDeviceLearnMode(new NodeTag(0), VirtualDeviceLearnModes.Enable, INCLUSION_TIMEOUT, null);
                             addResult = addToken.WaitCompletedSignal();
                             learnResult = learnToken.WaitCompletedSignal();
 
                             Assert.IsTrue(addResult);
                             Assert.IsTrue(learnResult);
                             Assert.AreEqual(i + 4, ((AddRemoveNodeResult)addResult).Id);
-                            Assert.AreEqual(i + 4, ((SetLearnModeResult)learnResult).NodeId);
+                            Assert.AreEqual(i + 4, ((SetLearnModeResult)learnResult).Node.Id);
                         }
                     }
                 }

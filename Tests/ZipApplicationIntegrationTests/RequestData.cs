@@ -20,6 +20,7 @@ using ZWave.ZipApplication.Operations;
 using ZWave.CommandClasses;
 using System.Net;
 using ZWave.BasicApplication.Enums;
+using ZWave.Devices;
 
 namespace ZipApplicationIntegrationTests
 {
@@ -36,7 +37,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (Controller ctrl = bal.CreateController())
             {
-                using (Slave slave = bal.CreateSlave())
+                using (EndDevice slave = bal.CreateEndDevice())
                 {
                     using (ZipController zip = zal.CreateZipController())
                     {
@@ -48,7 +49,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                         res = slave.GetVersion();
                         Assert.IsTrue(res.State == ActionStates.Completed);
-                        Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                        Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                         GetIdResult gres = zip.GetId();
                         Assert.AreEqual(ActionStates.Completed, gres.State);
 
@@ -79,12 +80,12 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (ZipController zip = zal.CreateZipController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
                     slave.Connect(new SerialPortDataSource(COM2, BaudRates.Rate_115200));
                     slave.ResponseData(new COMMAND_CLASS_BASIC.BASIC_REPORT(), TXO, new COMMAND_CLASS_BASIC.BASIC_GET());
-                    GetIpAddressResult ipres = zip.GetIpAddress(0x02);
+                    GetIpAddressResult ipres = zip.GetIpAddress(new NodeTag(0x02));
                     using (ZipDevice zslave = zal.CreateZipDevice())
                     {
                         zslave.Connect(new SocketDataSource(ipres.IpAddress.ToString(), ZIP_UDP_PORT));

@@ -12,6 +12,7 @@ using ZWave.Enums;
 using ZWave.Layers;
 using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -24,7 +25,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -36,9 +37,9 @@ namespace BasicApplicationIntegrationTests
                         res.Library == Libraries.ControllerBridgeLib);
                     res = slave.GetVersion();
                     Assert.IsTrue(res.State == ActionStates.Completed);
-                    Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || 
-                        res.Library == Libraries.SlaveLib ||
-                        res.Library == Libraries.SlaveRoutingLib);
+                    Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || 
+                        res.Library == Libraries.EndDeviceLib ||
+                        res.Library == Libraries.EndDeviceLegacyRoutingLib);
                     ActionResult ares = ctrl.SetDefault();
                     Assert.IsTrue(ares.State == ActionStates.Completed);
                     ares = slave.SetDefault();
@@ -59,7 +60,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -67,7 +68,7 @@ namespace BasicApplicationIntegrationTests
                     COMMAND_CLASS_SENSOR_MULTILEVEL_V6.SENSOR_MULTILEVEL_SUPPORTED_SENSOR_REPORT report = new COMMAND_CLASS_SENSOR_MULTILEVEL_V6.SENSOR_MULTILEVEL_SUPPORTED_SENSOR_REPORT();
                     report.bitMask = new List<byte>(new byte[] { 0x05, 0x03 });
 
-                    slave.SendData(0x01, report, TXO);
+                    slave.SendData(new NodeTag(0x01), report, TXO);
                 }
             }
         }
@@ -78,7 +79,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -91,7 +92,7 @@ namespace BasicApplicationIntegrationTests
                     cmd.vg.Add(new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG() { command = new byte[] { 0x03, 0x04 } });
                     cmd.vg.Add(new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG() { command = new byte[] { 0x05, 0x06 } });
                     cmd.vg.Add(new COMMAND_CLASS_SIMPLE_AV_CONTROL.SIMPLE_AV_CONTROL_SET.TVG() { command = new byte[] { 0x07, 0x08 } });
-                    slave.SendData(0x01, cmd, TXO);
+                    slave.SendData(new NodeTag(0x01), cmd, TXO);
                 }
             }
         }
@@ -102,13 +103,13 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
 
                     byte[] cmd = new byte[] { 0x8F, 0x01, 0x05, 0x03, 0x80, 0x03, 0x64, 0x02, 0x46, 0x04, 0x02, 0x46, 0x07, 0x02, 0x81, 0x05, 0x02, 0x84, 0x07 };
-                    slave.SendData(0x01, cmd, TXO);
+                    slave.SendData(new NodeTag(0x01), cmd, TXO);
 
                     COMMAND_CLASS_MULTI_CMD.MULTI_CMD_ENCAP cmd2 = new COMMAND_CLASS_MULTI_CMD.MULTI_CMD_ENCAP();
                     cmd2.numberOfCommands = 2;
@@ -139,7 +140,7 @@ namespace BasicApplicationIntegrationTests
                     cmd2.encapsulatedCommand[1].data = new List<byte>(cb1.Skip(2));
 
 
-                    slave.SendData(0x01, cmd2, TXO);
+                    slave.SendData(new NodeTag(0x01), cmd2, TXO);
                 }
             }
         }
@@ -150,7 +151,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -167,7 +168,7 @@ namespace BasicApplicationIntegrationTests
                     cmd.command = cb1[1];
                     cmd.data = new List<byte>(cb1.Skip(2));
                     cmd.checksum = new byte[] { 33, 33 };
-                    slave.SendData(0x01, cmd, TXO);
+                    slave.SendData(new NodeTag(0x01), cmd, TXO);
                 }
             }
         }
@@ -179,7 +180,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -197,7 +198,7 @@ namespace BasicApplicationIntegrationTests
                     cmd.parameter = new List<byte>(cb1.Skip(2));
                     cmd.properties1 = 33;
                     cmd.properties2 = 44;
-                    slave.SendData(0x01, cmd, TXO);
+                    slave.SendData(new NodeTag(0x01), cmd, TXO);
                 }
             }
         }

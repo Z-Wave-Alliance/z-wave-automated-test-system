@@ -11,7 +11,7 @@ namespace ZipTransportIntegrationTests
         private static SourcesProfile _sourcesProfile;
         public static SourcesProfile SourcesProfile { get { return _sourcesProfile; } }
 
-        [SetUp]
+        [OneTimeSetUp]
         public void LoadConfig()
         {
             _sourcesProfile = DevicesSourceConfig.LoadIntegrationTestsConfig();

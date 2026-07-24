@@ -16,6 +16,7 @@ using ZWave.Layers.Transport;
 using ZWave.ZipApplication;
 using ZWave.ZipApplication.Devices;
 using ZWave.ZipApplication.Operations;
+using ZWave.Devices;
 
 namespace ZipApplicationIntegrationTests
 {
@@ -33,7 +34,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (Controller ctrl = bal.CreateController())
             {
-                using (Slave slave = bal.CreateSlave())
+                using (EndDevice slave = bal.CreateEndDevice())
                 {
                     using (ZipController zip = zal.CreateZipController())
                     {
@@ -45,7 +46,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                         res = slave.GetVersion();
                         Assert.IsTrue(res.State == ActionStates.Completed);
-                        Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                        Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                         GetIdResult gres = zip.GetId();
                         Assert.AreEqual(ActionStates.Completed, gres.State);
 
@@ -66,7 +67,7 @@ namespace ZipApplicationIntegrationTests
                         ActionToken addToken = zip.AddNodeToNetwork(Modes.NodeAny, TXO, 10000, null);
                         ActionToken learnToken = slave.SetLearnMode(LearnModes.LearnModeClassic, 10000, null);
 
-                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0);
+                        networkKeys[SecurityManagerInfo.GetNetworkKeyIndex(SecuritySchemes.S0, false)] = sm2.SecurityManagerInfo.GetActualNetworkKey(ZWave.Enums.SecuritySchemes.S0, false);
 
                         Assert.IsTrue(addToken.WaitCompletedSignal());
                         Assert.IsTrue(learnToken.WaitCompletedSignal());
@@ -84,7 +85,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (ZipController zip = zal.CreateZipController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
                     slave.Connect(new SerialPortDataSource(COM2, BaudRates.Rate_115200));
@@ -92,7 +93,7 @@ namespace ZipApplicationIntegrationTests
                     slave.SessionClient.AddSubstituteManager(sm2);
                     slave.SessionClient.ExecuteAsync(sm2.CreateSecurityReportTask());
 
-                    GetIpAddressResult ipres = zip.GetIpAddress(0x02);
+                    GetIpAddressResult ipres = zip.GetIpAddress(new NodeTag(0x02));
                     using (ZipDevice zslave = zal.CreateZipDevice())
                     {
                         zslave.Connect(new SocketDataSource(ipres.IpAddress.ToString(), ZIP_UDP_PORT));
@@ -115,7 +116,7 @@ namespace ZipApplicationIntegrationTests
             using (ZipController zip = zal.CreateZipController())
             {
                 zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
-                GetIpAddressResult ipres = zip.GetIpAddress(0x03);
+                GetIpAddressResult ipres = zip.GetIpAddress(new NodeTag(0x03));
                 using (ZipDevice zslave = zal.CreateZipDevice())
                 {
                     zslave.Connect(new SocketDataSource(ipres.IpAddress.ToString(), ZIP_UDP_PORT));

@@ -12,6 +12,7 @@ using ZWave.Enums;
 using ZWave.Layers;
 using ZWave.Layers.Session;
 using ZWave.Layers.Transport;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -25,12 +26,12 @@ namespace BasicApplicationIntegrationTests
         public void SetUp()
         {
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
-            using (Slave slave = al.CreateSlave())
+            using (EndDevice slave = al.CreateEndDevice())
             {
                 slave.Connect(new SerialPortDataSource(COM_DUT, BaudRates.Rate_115200));
                 VersionResult res = slave.GetVersion();
                 Assert.IsTrue(res.State == ActionStates.Completed);
-                Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
             }
         }
 
@@ -38,7 +39,7 @@ namespace BasicApplicationIntegrationTests
         public void LearnMode()
         {
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
-            using (Slave slave = al.CreateSlave())
+            using (EndDevice slave = al.CreateEndDevice())
             {
                 slave.Connect(new SerialPortDataSource(COM_DUT, BaudRates.Rate_115200));
                 slave.ApplicationNodeInformation(true, 0x11, 0x00, new byte[] 
@@ -57,7 +58,7 @@ namespace BasicApplicationIntegrationTests
         public void FirmwareUpdateTask()
         {
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
-            using (Slave slave = al.CreateSlave())
+            using (EndDevice slave = al.CreateEndDevice())
             {
                 slave.Connect(new SerialPortDataSource(COM_DUT, BaudRates.Rate_115200));
 
@@ -97,7 +98,7 @@ namespace BasicApplicationIntegrationTests
                 ExpectDataResult expRes = slave.ExpectData(new COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REQUEST_GET(), TASK_TIMEOUT);
                 Assert.AreEqual(ActionStates.Completed, expRes.State);
 
-                ActionResult sendRes = slave.SendData(expRes.SrcNodeId, updReqReport, TXO);
+                ActionResult sendRes = slave.SendData(new NodeTag(expRes.SrcNode.Id), updReqReport, TXO);
                 Assert.AreEqual(ActionStates.Completed, sendRes.State);
                 #endregion
 
@@ -109,7 +110,7 @@ namespace BasicApplicationIntegrationTests
                     request.numberOfReports = 1;
                     request.properties1.reportNumber1 = (byte)(reportNumber >> 7);
                     request.reportNumber2 = (byte)reportNumber;
-                    RequestDataResult reqRes = slave.RequestData(expRes.SrcNodeId, request, TXO, new COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REPORT(), 20000);
+                    RequestDataResult reqRes = slave.RequestData(new NodeTag(expRes.SrcNode.Id), request, TXO, new COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REPORT(), 20000);
                     if (reqRes.State == ActionStates.Completed)
                     {
                         COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_REPORT reqCmd = reqRes.Command;
@@ -126,7 +127,7 @@ namespace BasicApplicationIntegrationTests
                         break;
                 }
 
-                slave.SendData(expRes.SrcNodeId, new COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_STATUS_REPORT()
+                slave.SendData(new NodeTag(expRes.SrcNode.Id), new COMMAND_CLASS_FIRMWARE_UPDATE_MD_V3.FIRMWARE_UPDATE_MD_STATUS_REPORT()
                 {
                     status = 0xFF,
                     waittime = new byte[] { 0x00, 0x14 }

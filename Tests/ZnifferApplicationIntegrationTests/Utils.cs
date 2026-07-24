@@ -13,8 +13,8 @@ namespace ZnifferApplicationIntegrationTests
 {
     public static class Utils
     {
-        private const string ZWAVE_DEFINITION_FILE = Utils.Tools.ZWAVE_DEFINITION_FILE_NAME;
-        private const string FRAME_DEFINITION_FILE = Utils.Tools.FRAME_DEFINITION_FILE_NAME;
+        private const string ZWAVE_DEFINITION_FILE = global::Utils.Configuration.ZWAVE_DEFINITION_FILE_NAME;
+        private const string FRAME_DEFINITION_FILE = global::Utils.Configuration.FRAME_DEFINITION_FILE_NAME;
 
         public static FrameDefinition FrameDefinition { get; set; }
 

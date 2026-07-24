@@ -29,7 +29,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (Controller ctrl = bal.CreateController())
             {
-                using (Slave slave = bal.CreateSlave())
+                using (EndDevice slave = bal.CreateEndDevice())
                 {
                     using (ZipController zip = zal.CreateZipController())
                     {
@@ -41,7 +41,7 @@ namespace ZipApplicationIntegrationTests
                         Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                         res = slave.GetVersion();
                         Assert.IsTrue(res.State == ActionStates.Completed);
-                        Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                        Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                         GetIdResult gres = zip.GetId();
                         Assert.AreEqual(ActionStates.Completed, gres.State);
 
@@ -66,7 +66,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (Controller ctrl = bal.CreateController())
             {
-                using (Slave slave = bal.CreateSlave())
+                using (EndDevice slave = bal.CreateEndDevice())
                 {
                     using (ZipController zip = zal.CreateZipController())
                     {
@@ -118,7 +118,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (ZipController zip = zal.CreateZipController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     int errors = 0;
                     zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
@@ -141,7 +141,7 @@ namespace ZipApplicationIntegrationTests
                     }
 
                     MemoryGetIdResult memres = slave.MemoryGetId();
-                    Assert.AreEqual(2, memres.NodeId);
+                    Assert.AreEqual(2, memres.Node.Id);
 
                     Assert.AreEqual(0, errors);
                 }
@@ -178,7 +178,7 @@ namespace ZipApplicationIntegrationTests
                     }
 
                     MemoryGetIdResult memres = slave.MemoryGetId();
-                    Assert.AreEqual(2, memres.NodeId);
+                    Assert.AreEqual(2, memres.Node.Id);
 
                     Assert.AreEqual(0, errors);
                 }
@@ -192,7 +192,7 @@ namespace ZipApplicationIntegrationTests
             ZipApplicationLayer zal = new ZipApplicationLayer(new SessionLayer(), new ZipFrameLayer(), new UdpClientTransportLayer());
             using (ZipController zip = zal.CreateZipController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     int errors = 0;
                     zip.Connect(new SocketDataSource(ZIP_ADDR, ZIP_UDP_PORT));
@@ -222,7 +222,7 @@ namespace ZipApplicationIntegrationTests
                         int newNodeId = (i + 2);
                         if (newNodeId > 232)
                             newNodeId -= 231;
-                        Assert.AreEqual(newNodeId, memres.NodeId);
+                        Assert.AreEqual(newNodeId, memres.Node.Id);
 
 
                         addRemoveToken = zip.RemoveNodeFromNetwork(Modes.NodeAny, 10000, null);
@@ -239,7 +239,7 @@ namespace ZipApplicationIntegrationTests
                         }
 
                         memres = slave.MemoryGetId();
-                        Assert.AreEqual(0, memres.NodeId);
+                        Assert.AreEqual(0, memres.Node.Id);
 
 
                         Assert.AreEqual(0, errors);
@@ -286,7 +286,7 @@ namespace ZipApplicationIntegrationTests
                         int newNodeId = i + 2;
                         if (newNodeId > 232)
                             newNodeId -= 231;
-                        Assert.AreEqual(newNodeId, memres.NodeId);
+                        Assert.AreEqual(newNodeId, memres.Node.Id);
 
 
                         addRemoveToken = zip.RemoveNodeFromNetwork(Modes.NodeAny, 10000, null);
@@ -302,7 +302,7 @@ namespace ZipApplicationIntegrationTests
                         }
 
                         memres = slave.MemoryGetId();
-                        Assert.AreEqual(1, memres.NodeId);
+                        Assert.AreEqual(1, memres.Node.Id);
 
 
                         Assert.AreEqual(0, errors);

@@ -18,7 +18,7 @@ namespace ZipApplicationIntegrationTests
     public class ZipTestsBase
     {
         protected string COM1; // Controller
-        protected string COM2; // Slave
+        protected string COM2; // EndDevice
         protected string ZIP_ADDR; // Zip Gateway
         protected int ZIP_UDP_PORT;
         protected ushort ZIP_DTLS_PORT;
@@ -40,7 +40,7 @@ namespace ZipApplicationIntegrationTests
             var staticControllers = devicesConfig.SerialSources.Where(source => source is StaticControllerSource).ToArray();
             Assert.NotNull(staticControllers);
             Assert.GreaterOrEqual(staticControllers.Length, 1);
-            var slaves = devicesConfig.SerialSources.Where(source => source is SlaveSource).ToArray();
+            var slaves = devicesConfig.SerialSources.Where(source => source is EndDeviceSource).ToArray();
             Assert.NotNull(slaves);
             Assert.GreaterOrEqual(slaves.Length, 1);
             COM1 = staticControllers[0].PortAlias;
@@ -72,10 +72,10 @@ namespace ZipApplicationIntegrationTests
             device.Network.ResetAndEnableAndSelfRestore();
             device.GetPRK();
             var ret = new SecurityManager(device.Network, null, device.PRK);
-            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[7], ZWave.Enums.SecuritySchemes.S0);
-            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[0], ZWave.Enums.SecuritySchemes.S2_UNAUTHENTICATED);
-            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[1], ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED);
-            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[2], ZWave.Enums.SecuritySchemes.S2_ACCESS);
+            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[7], ZWave.Enums.SecuritySchemes.S0, false);
+            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[0], ZWave.Enums.SecuritySchemes.S2_UNAUTHENTICATED, false);
+            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[1], ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED, false);
+            ret.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[2], ZWave.Enums.SecuritySchemes.S2_ACCESS, false);
             ret.SecurityManagerInfo.ActivateNetworkKeyS0();
             ret.SecurityManagerInfo.CheckIfSupportSecurityCC = false;
             return ret;

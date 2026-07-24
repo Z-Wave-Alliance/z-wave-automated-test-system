@@ -68,7 +68,7 @@ namespace ZipTransportIntegrationTests
             {
                 _dtlsListener = new DtlsListener();
                 _dtlsListener.DataReceived += OnListenerDataReceived;
-                int errorCode = _dtlsListener.Start(PskKey, PortNo);
+                int errorCode = _dtlsListener.Start(PskKey, ipAddress, PortNo);
                 Assert.AreEqual(0, errorCode);
                 _dtlsClient = new DtlsClient();
 
@@ -440,8 +440,8 @@ namespace ZipTransportIntegrationTests
                 listenerSecond.DataReceived += ListenerSecond_DataReceived;
                 clientSecond = new DtlsClient();
 
-                Assert.AreEqual(0, listenerFirst.Start(PskKey, portFirstNo));
-                Assert.AreEqual(0, listenerSecond.Start(PskKey, portSecondNo));
+                Assert.AreEqual(0, listenerFirst.Start(PskKey, address, portFirstNo));
+                Assert.AreEqual(0, listenerSecond.Start(PskKey, address, portSecondNo));
 
                 Assert.IsTrue(clientFirst.Connect(PskKey, address, portFirstNo));
                 Assert.IsTrue(clientSecond.Connect(PskKey, address, portSecondNo));
@@ -498,7 +498,7 @@ namespace ZipTransportIntegrationTests
 
         [TestCase(AddressFamily.InterNetwork)]
         [TestCase(AddressFamily.InterNetworkV6)]
-        [Ignore]
+        [Ignore("Disabled test.")]
         public void TwoClientsSendFromOneAddress_OneListenersStarted_BothListenersReceivedData(AddressFamily af)
         {
             _dataReceivedEvents = new ManualResetEvent[] { new ManualResetEvent(false), new ManualResetEvent(false) };

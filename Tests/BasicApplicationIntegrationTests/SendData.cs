@@ -15,6 +15,7 @@ using ZWave.BasicApplication.Enums;
 using ZWave.BasicApplication.Operations;
 using ZWave.Layers.Transport;
 using System.Threading;
+using ZWave.Devices;
 
 namespace BasicApplicationIntegrationTests
 {
@@ -31,7 +32,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
@@ -40,7 +41,7 @@ namespace BasicApplicationIntegrationTests
                     Assert.IsTrue(res.Library == Libraries.ControllerStaticLib || res.Library == Libraries.InstallerLib || res.Library == Libraries.ControllerPortableLib || res.Library == Libraries.ControllerBridgeLib);
                     res = slave.GetVersion();
                     Assert.IsTrue(res.State == ActionStates.Completed);
-                    Assert.IsTrue(res.Library == Libraries.SlaveEnhancedLib || res.Library == Libraries.SlaveLib || res.Library == Libraries.SlaveRoutingLib);
+                    Assert.IsTrue(res.Library == Libraries.EndDeviceLegacyLib || res.Library == Libraries.EndDeviceLib || res.Library == Libraries.EndDeviceLegacyRoutingLib);
                     ActionResult ares = ctrl.SetDefault();
                     Assert.IsTrue(ares.State == ActionStates.Completed);
                     ares = slave.SetDefault();
@@ -61,14 +62,14 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                     slave.Connect(new SerialPortDataSource(COM_SLAVE_1, BaudRates.Rate_115200));
                     ActionToken sendToken = null;
                     for (int i = 0; i < POW; i++)
                     {
-                        sendToken = ctrl.SendData(0x02, cmd_get, TXO, null, null);
+                        sendToken = ctrl.SendData(new NodeTag(0x02), cmd_get, TXO, null, null);
                         ActionResult res = sendToken.WaitCompletedSignal();
                         Assert.AreEqual(ActionStates.Completed, res.State);
                     }
@@ -85,7 +86,7 @@ namespace BasicApplicationIntegrationTests
                 ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
                 for (int i = 0; i < POW; i++)
                 {
-                    SendDataResult res = ctrl.SendData(0x03, cmd_get, TXO);
+                    SendDataResult res = ctrl.SendData(new NodeTag(0x03), cmd_get, TXO);
                     Assert.AreEqual(TransmitStatuses.CompleteNoAcknowledge, res.TransmitStatus);
                 }
             }
@@ -97,7 +98,7 @@ namespace BasicApplicationIntegrationTests
             BasicApplicationLayer al = new BasicApplicationLayer(new SessionLayer(), new BasicFrameLayer(), new SerialPortTransportLayer());
             using (Controller ctrl = al.CreateController())
             {
-                using (Slave slave = al.CreateSlave())
+                using (EndDevice slave = al.CreateEndDevice())
                 {
                     ActionResult res;
                     ctrl.Connect(new SerialPortDataSource(COM_CTRL_STATIC_1, BaudRates.Rate_115200));
@@ -107,7 +108,7 @@ namespace BasicApplicationIntegrationTests
                     {
                         for (int i = 0; i < POW; i++)
                         {
-                            res = ctrl.SendData(0x02, cmd_get, TXO);
+                            res = ctrl.SendData(new NodeTag(0x02), cmd_get, TXO);
                             if (res.State != ActionStates.Completed)
                                 Interlocked.Increment(ref errors);
                         }
@@ -116,7 +117,7 @@ namespace BasicApplicationIntegrationTests
                     {
                         for (int i = 0; i < POW; i++)
                         {
-                            res = slave.SendData(0x01, cmd_report, TXO);
+                            res = slave.SendData(new NodeTag(0x01), cmd_report, TXO);
                             if (res.State != ActionStates.Completed)
                                 Interlocked.Increment(ref errors);
                         }

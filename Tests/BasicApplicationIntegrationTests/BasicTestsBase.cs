@@ -44,7 +44,7 @@ namespace BasicApplicationIntegrationTests
             var staticControllers = devicesConfig.SerialSources.Where(source => source is StaticControllerSource).ToArray();
             Assert.NotNull(staticControllers);
             Assert.GreaterOrEqual(staticControllers.Length, 3);
-            var slaves = devicesConfig.SerialSources.Where(source => source is SlaveSource).ToArray();
+            var slaves = devicesConfig.SerialSources.Where(source => source is EndDeviceSource).ToArray();
             Assert.NotNull(slaves);
             Assert.GreaterOrEqual(slaves.Length, 3);
             var bridges = devicesConfig.SerialSources.Where(source => source is BridgeSource).ToArray();
@@ -112,10 +112,10 @@ namespace BasicApplicationIntegrationTests
                 return dskToEnter;
             };
 
-            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[7], ZWave.Enums.SecuritySchemes.S0);
-            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[0], ZWave.Enums.SecuritySchemes.S2_UNAUTHENTICATED);
-            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[1], ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED);
-            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[2], ZWave.Enums.SecuritySchemes.S2_ACCESS);
+            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[7], ZWave.Enums.SecuritySchemes.S0, false);
+            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[0], ZWave.Enums.SecuritySchemes.S2_UNAUTHENTICATED, false);
+            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[1], ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED, false);
+            securityManager.SecurityManagerInfo.SetNetworkKey(NETWORK_KEYS[2], ZWave.Enums.SecuritySchemes.S2_ACCESS, false);
             securityManager.SecurityManagerInfo.ActivateNetworkKeyS0();
             securityManager.SecurityManagerInfo.CheckIfSupportSecurityCC = false;
             device.SessionClient.AddSubstituteManager(securityManager,
