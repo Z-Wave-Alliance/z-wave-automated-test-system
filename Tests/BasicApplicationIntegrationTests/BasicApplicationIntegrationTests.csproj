@@ -43,6 +43,7 @@
     <Compile Include="AddNodeSIS.cs" />
     <Compile Include="AddNodeSISBridgeSlave.cs" />
     <Compile Include="AddNodeTimeoutsSecureS0.cs" />
+    <Compile Include="AssemblyCategory.cs" />
     <Compile Include="ConfigLoader.cs" />
     <Compile Include="LearnModeSecure.cs" />
     <Compile Include="ResponseDataBridge.cs" />

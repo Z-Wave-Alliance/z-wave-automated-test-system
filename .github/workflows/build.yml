@@ -76,6 +76,20 @@ jobs:
           -p:OutputPath=${{env.Artifact_Path}} -p:DebugType=None
           -p:DebugSymbols=false
 
+      # OutputPath is a global property, so every project of the solution writes
+      # into the artifact folder, the test projects included. Their assemblies and
+      # their test-only dependencies are not part of the tool and must not ship.
+      - name: Drop the test binaries from the artifacts
+        run: |
+          $testFiles = @('*Tests.dll', 'nunit.*', 'NUnit3.TestAdapter.*',
+            'testcentric.*', 'Moq.dll', 'Castle.Core.dll',
+            'IntegrationTestsSources.config')
+          Get-ChildItem -Path "${{env.Artifact_Path}}\*" -Include $testFiles -File |
+            ForEach-Object {
+              Write-Host "Dropping $($_.Name)"
+              Remove-Item -Force $_.FullName
+            }
+
       - name: Upload published artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -86,3 +100,77 @@ jobs:
           path: ${{ env.Artifact_Path }}/*
           retention-days: 5
           if-no-files-found: error
+
+  test_zats:
+    runs-on: windows-latest
+    needs: legal-check
+    # Backstop for a wedged checkout, restore or build. The guard against a
+    # hanging test sits on the test step itself.
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      # MSBuild/dotnet do not support relative paths
+      Solution_Path: ${{github.workspace}}\z-wave-automated-test-system\ZatsBuild_netcore.sln
+      # Only ZATS-owned test projects live under this folder; Tools Core unit tests
+      # live under z-wave-tools-core\Tests and are covered by the Tools Core CI.
+      Tests_Dir: ${{github.workspace}}\z-wave-automated-test-system\Tests
+      Results_Path: ${{github.workspace}}\test-results
+    steps:
+      - name: Checkout z-wave-automated-test-system
+        uses: actions/checkout@v4
+        with:
+          path: 'z-wave-automated-test-system'
+          submodules: "recursive"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ${{env.Solution_Path}}
+
+      # Both target frameworks (net10.0 and net48) are built and tested, matching the
+      # Z-Wave Tools Core CI; windows-latest provides the .NET Framework 4.8 tooling.
+      - name: Build (all target frameworks)
+        run: dotnet build ${{env.Solution_Path}} -c Debug --no-restore
+
+      # Run every ZATS-owned netcore test project (auto-discovered under Tests, so new
+      # ZATS test projects are picked up without editing this workflow). Tools Core unit
+      # tests are not under this folder, so they are never run here. Tests that need
+      # real or emulated Z-Wave devices are skipped via the "DevicesNeeded" category,
+      # and tests needing IPv6 on the runner via "RequiresIPv6".
+      - name: Run ZATS unit tests
+        # The ZipTransport tests open real DTLS sockets and wait on them. The
+        # whole sweep takes well under a minute, so this only fires on a hang.
+        timeout-minutes: 15
+        run: |
+          $projects = Get-ChildItem -Path "${{env.Tests_Dir}}" -Recurse -Filter *_netcore.csproj
+          if (-not $projects) { throw "No ZATS test projects found under ${{env.Tests_Dir}}" }
+          $failed = $false
+          foreach ($p in $projects) {
+            Write-Host "::group::dotnet test $($p.Name)"
+            # No -f: every target framework of the project is exercised. The trx file
+            # name is left to the logger so the per-framework runs do not overwrite
+            # each other.
+            dotnet test $p.FullName -c Debug --no-build `
+              --filter "TestCategory!=DevicesNeeded&TestCategory!=RequiresIPv6" `
+              --logger "trx" `
+              --results-directory "${{env.Results_Path}}"
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+            Write-Host "::endgroup::"
+          }
+          if ($failed) { throw "One or more ZATS unit test projects failed." }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zats-test-results
+          path: ${{env.Results_Path}}/*.trx
+          retention-days: 5
+          # Only warn: this step also runs when the build failed before a single
+          # trx was written, and an upload error would then bury the real failure.
+          if-no-files-found: warn

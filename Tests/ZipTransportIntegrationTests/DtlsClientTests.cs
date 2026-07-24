@@ -123,6 +123,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Connect_ServerExists_Ipv6_ReturnsTrue()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -147,6 +148,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Connect_ServerExists_Ipv6_ClientRaisesConnectedEvent()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -183,6 +185,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Connect_ServerExists_Ipv6_ListenerRaisesConnectionCreatedEvent()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -219,6 +222,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Close_ServerExists_Ipv6_ListenerRaisesConnectionClosedEvent()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -258,6 +262,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Close_ServerExists_Ipv6_ClientRaisesClosedEvent()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -296,6 +301,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Send_ServerExists_Ipv6_ListenerReceivedDataAndSenderAddress()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -333,6 +339,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Receive_ServerResponse_Ipv6_ReceiveCorrectData()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -373,6 +380,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [Test]
+        [Category("RequiresIPv6")]
         public void Receive_ServerCloseConnection_Ipv6_ClientRaisesClosedEvent()
         {
             _address = GetFirstLocalIPAddress(AddressFamily.InterNetworkV6).ToString();
@@ -418,7 +426,7 @@ namespace ZipTransportIntegrationTests
         private byte[] _dataOnSecondListener;
         private ManualResetEvent[] _dataReceivedEvents;
         [TestCase(AddressFamily.InterNetwork)]
-        [TestCase(AddressFamily.InterNetworkV6)]
+        [TestCase(AddressFamily.InterNetworkV6, Category = "RequiresIPv6")]
         public void SendFromTwoClients_TwoListenersStarted_ListenerReceivedDataAndSendersAddress(AddressFamily af)
         {
             _dataReceivedEvents = new ManualResetEvent[] { new ManualResetEvent(false), new ManualResetEvent(false) };
@@ -497,7 +505,7 @@ namespace ZipTransportIntegrationTests
         }
 
         [TestCase(AddressFamily.InterNetwork)]
-        [TestCase(AddressFamily.InterNetworkV6)]
+        [TestCase(AddressFamily.InterNetworkV6, Category = "RequiresIPv6")]
         [Ignore("Disabled test.")]
         public void TwoClientsSendFromOneAddress_OneListenersStarted_BothListenersReceivedData(AddressFamily af)
         {

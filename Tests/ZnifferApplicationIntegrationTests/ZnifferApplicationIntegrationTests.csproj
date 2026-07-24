@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CollectData.cs" />
+    <Compile Include="AssemblyCategory.cs" />
     <Compile Include="ConfigLoader.cs" />
     <Compile Include="ExpectData.cs" />
     <Compile Include="Utils.cs" />
