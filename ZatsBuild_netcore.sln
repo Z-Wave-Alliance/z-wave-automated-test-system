@@ -60,6 +60,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Cases", "Test Cases", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Automatic Test", "Automatic Test", "{F154A266-E6D9-4ED9-A3FD-13078B76152B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZatsInteractiveTestConsole_netcore", "AutomaticTest\ZatsInteractiveTestConsole\ZatsInteractiveTestConsole_netcore.csproj", "{26696226-7E46-41FF-A1B9-8C4A4CDB5607}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -334,6 +336,18 @@ Global
 		{8C5D9BC9-0D08-4226-940A-761A2B018E69}.Release|x64.Build.0 = Release|Any CPU
 		{8C5D9BC9-0D08-4226-940A-761A2B018E69}.Release|x86.ActiveCfg = Release|Any CPU
 		{8C5D9BC9-0D08-4226-940A-761A2B018E69}.Release|x86.Build.0 = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|x64.Build.0 = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Debug|x86.Build.0 = Debug|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|x64.ActiveCfg = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|x64.Build.0 = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|x86.ActiveCfg = Release|Any CPU
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -362,6 +376,7 @@ Global
 		{D3362A49-8E24-4A32-AFCC-13580CFC6129} = {F154A266-E6D9-4ED9-A3FD-13078B76152B}
 		{2D5A8E46-C82E-4970-BE70-31D749288CA1} = {F154A266-E6D9-4ED9-A3FD-13078B76152B}
 		{D02762D5-A898-4F71-99C6-1CCD7032D280} = {F154A266-E6D9-4ED9-A3FD-13078B76152B}
+		{26696226-7E46-41FF-A1B9-8C4A4CDB5607} = {F154A266-E6D9-4ED9-A3FD-13078B76152B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BE9A5009-8690-491E-AE2B-3A525F956A08}
