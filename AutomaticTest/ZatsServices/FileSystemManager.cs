@@ -407,26 +407,41 @@ namespace Zats.Services
             return resultFilePath;
         }
 
+        /// <summary>
+        /// Resolves bootloader image and signing/encryption key paths for programming.
+        /// </summary>
+        /// <remarks>
+        /// DefaultBootloaderInfos[0] = OTA + sample_* keys; [1] = OTW + controller_* keys.
+        /// Bootloader kind (OTA/OTW) follows Serial API vs sample app.
+        /// Keys are decoupled: Series1 SAPI (ZGM13/ZG13/RZ13, not EFR32ZG14) must use sample_* keys
+        /// even with an OTW bootloader; ZG14 and Series2 SAPI use controller_* keys.
+        /// </remarks>
         public BootloaderPath GetBootloaderPath(DeviceHostClient deviceHostClient, string[] specificFileNamePattern, params string[] regexFilters)
         {
             BootloaderPath ret = new BootloaderPath();
             if (deviceHostClient.Library.IsTerminalApplication()) return ret;
 
-            bool isSpecialCase = DeviceManager.SpecificChips.Any(x => deviceHostClient.Host.ChipSeries.Contains(x));
+            var chipSeries = deviceHostClient.Host.ChipSeries ?? string.Empty;
+            // Series1 chips that require sample keys with OTW; EFR32ZG14 uses controller keys.
+            var useSampleKeysForSeries1Sapi = DeviceManager.SpecificChips
+                .Where(x => x != "ZG14")
+                .Any(x => chipSeries.Contains(x));
             var isSerialApiControlled = !deviceHostClient.Library.IsSampleApplication();
-            var isSAPI = isSerialApiControlled && !isSpecialCase;
+            var useOtwBootloader = isSerialApiControlled;
+            var useControllerKeys = isSerialApiControlled && !useSampleKeysForSeries1Sapi;
+
             var defaultSearchPattern = string.Empty;
             if (_filePatternDefinition != null && _filePatternDefinition.DefaultBootloaderInfos != null && _filePatternDefinition.DefaultBootloaderInfos.Length > 1)
             {
-                //Set predefined keys from RESOURSES_FOLDER:
-                var idx = isSAPI ? 1 : 0;
-                var keyTokensFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].KeyTokensFileName;
-                var encryptKeyFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].EncryptKeyFileName;
-                var signKeyFileName = _filePatternDefinition.DefaultBootloaderInfos?[idx].SignKeyFileName;
+                var keyIdx = useControllerKeys ? 1 : 0;
+                var patternIdx = useOtwBootloader ? 1 : 0;
+                var keyTokensFileName = _filePatternDefinition.DefaultBootloaderInfos[keyIdx].KeyTokensFileName;
+                var encryptKeyFileName = _filePatternDefinition.DefaultBootloaderInfos[keyIdx].EncryptKeyFileName;
+                var signKeyFileName = _filePatternDefinition.DefaultBootloaderInfos[keyIdx].SignKeyFileName;
 
-                var idxBrd = deviceHostClient.Host.ChipSeries.ToLower().IndexOf("brd");
-                var brdNumber = string.Concat(deviceHostClient.Host.ChipSeries.Skip(idxBrd)); // specify filter for board from chip version.
-                defaultSearchPattern = _filePatternDefinition.DefaultBootloaderInfos?[idx].Pattern.Replace("{brdNumber}", brdNumber);
+                var idxBrd = chipSeries.ToLower().IndexOf("brd");
+                var brdNumber = idxBrd >= 0 ? string.Concat(chipSeries.Skip(idxBrd)) : chipSeries;
+                defaultSearchPattern = _filePatternDefinition.DefaultBootloaderInfos[patternIdx].Pattern.Replace("{brdNumber}", brdNumber);
 
                 var location = _defaultResourcesPath;
                 ret.KeysToken = Path.Combine(location, keyTokensFileName);
@@ -437,27 +452,40 @@ namespace Zats.Services
             var expectedFileNames = specificFileNamePattern ?? new[] { defaultSearchPattern };
             foreach (var item in expectedFileNames)
             {
+                if (string.IsNullOrEmpty(item))
+                    continue;
+
                 var bootloaderFilePath = GetLatestFilePath(item, regexFilters);
                 ret.Bootloader = bootloaderFilePath;
 
-                //try to update keys if exists from detected bootloader path:
+                // Prefer keys colocated with the resolved bootloader when present.
                 if (!string.IsNullOrEmpty(bootloaderFilePath) && File.Exists(bootloaderFilePath))
                 {
-                    var newKeysToken = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.KeysToken));
-                    if (File.Exists(newKeysToken))
-                        ret.KeysToken = newKeysToken;
-                    var newEncKey = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.EncryptKey));
-                    if (File.Exists(newEncKey))
-                        ret.EncryptKey = newEncKey;
-                    var newsignKey = Path.Combine(Path.GetDirectoryName(bootloaderFilePath), Path.GetFileName(ret.SignKey));
-                    if (File.Exists(newsignKey))
-                        ret.SignKey = newsignKey;
-
+                    var bootloaderDir = Path.GetDirectoryName(bootloaderFilePath);
+                    ret.KeysToken = ResolveKeyBesideBootloader(bootloaderDir, ret.KeysToken);
+                    ret.EncryptKey = ResolveKeyBesideBootloader(bootloaderDir, ret.EncryptKey);
+                    ret.SignKey = ResolveKeyBesideBootloader(bootloaderDir, ret.SignKey);
                     break;
                 }
             }
 
             return ret;
+        }
+
+        /// <summary>
+        /// If a key file with the same name exists next to the bootloader, return that path; otherwise keep <paramref name="keyPath"/>.
+        /// </summary>
+        private static string ResolveKeyBesideBootloader(string bootloaderDir, string keyPath)
+        {
+            if (string.IsNullOrEmpty(keyPath) || string.IsNullOrEmpty(bootloaderDir))
+                return keyPath;
+
+            var fileName = Path.GetFileName(keyPath);
+            if (string.IsNullOrEmpty(fileName))
+                return keyPath;
+
+            var candidate = Path.Combine(bootloaderDir, fileName);
+            return File.Exists(candidate) ? candidate : keyPath;
         }
 
         /// <inheritdoc/>

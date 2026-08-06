@@ -147,11 +147,11 @@ SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
     </BinaryPattern>
   </BinaryPatterns>
   <DefaultBootloaderInfos>
-    <DefaultBootloaderInfo Pattern="*bootloader*ota*{brdNumber}*.s37"
+	<DefaultBootloaderInfo Pattern="*ota*{brdNumber}*.s37"
 	      SignKeyFileName="sample_sign.key"
 	      EncryptKeyFileName="sample_encrypt.key"
 	      KeyTokensFileName="sample_sign.key-tokens.txt" />
-    <DefaultBootloaderInfo Pattern="*bootloader*otw*{brdNumber}*.s37"
+	<DefaultBootloaderInfo Pattern="*otw*{brdNumber}*.s37"
           SignKeyFileName="controller_sign.key"
           EncryptKeyFileName="controller_encrypt.key"
           KeyTokensFileName="controller_sign.key-tokens.txt"/>

@@ -28,7 +28,8 @@ namespace Zats.Services
         /// <summary>
         /// Get Bootloader and keys file paths needed for the application flashing to the device.
         /// Default root path to search specified in the IFileSystemManager.BasePath. (Resources folder)
-        /// Default file names in the FilePatternDefinition, where Ota/Otw detects from the Device Host Library.
+        /// Default OTA/OTW pattern follows Serial API vs sample app; keys follow chip policy
+        /// (Series1 SAPI except ZG14 use sample_* even for OTW; ZG14 and Series2 SAPI use controller_*).
         /// </summary>
         /// <param name="deviceHostClient">Device host information.</param>
         /// <param name="specificFileNamePattern">Concrete file name or search pattern for bootloader, to use instead of default value.</param>
