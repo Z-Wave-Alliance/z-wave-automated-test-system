@@ -1890,11 +1890,10 @@ namespace Zats.Services
 
         public bool UserActionRequired(string ActionDescription)
         {
-
             Console.WriteLine($"in_req<<:{ActionDescription}");
             const string respApplied = "in_appl>>";
             bool ret = false;
-            var response = Console.ReadLine();
+            var response = StdinDispatcher.Shared.WaitForLineAsync().GetAwaiter().GetResult();
             if (respApplied == response)
             {
                 ReportService.AddLog("User action applied", LogLevels.Ok);

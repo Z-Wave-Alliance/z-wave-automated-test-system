@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Zats.Services;
 
 namespace ZatsTestConsole
 {
@@ -16,11 +17,7 @@ namespace ZatsTestConsole
             {
                 try
                 {
-                    ConsoleKeyInfo key = Console.ReadKey();
-                    while (key.Key != ConsoleKey.Escape)
-                    {
-                        key = Console.ReadKey();
-                    }
+                    StdinDispatcher.Shared.WaitForCharAsync(c => c == (char)ConsoleKey.Escape).GetAwaiter().GetResult();
                 }
                 catch
                 { }

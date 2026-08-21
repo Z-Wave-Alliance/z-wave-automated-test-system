@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Zats.Services;
 
 namespace ZatsTestConsole
 {
@@ -53,11 +54,7 @@ namespace ZatsTestConsole
             {
                 try
                 {
-                    ConsoleKeyInfo key = Console.ReadKey();
-                    while (key.Key != ConsoleKey.Escape)
-                    {
-                        key = Console.ReadKey();
-                    }
+                    StdinDispatcher.Shared.WaitForCharAsync(c => c == (char)ConsoleKey.Escape).GetAwaiter().GetResult();
                 }
                 catch
                 { }
