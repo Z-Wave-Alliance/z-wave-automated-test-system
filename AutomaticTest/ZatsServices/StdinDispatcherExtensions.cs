@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,7 +36,16 @@ namespace Zats.Services
                 }
             }
 
+            void OnCompleted() => tcs.TrySetException(new EndOfStreamException("stdin reached EOF"));
+
             dispatcher.CharacterReceived += OnChar;
+            dispatcher.Completed += OnCompleted;
+
+            if (dispatcher.IsCompleted)
+            {
+                OnCompleted();
+            }
+
             using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken)))
             {
                 try
@@ -45,6 +55,7 @@ namespace Zats.Services
                 finally
                 {
                     dispatcher.CharacterReceived -= OnChar;
+                    dispatcher.Completed -= OnCompleted;
                 }
             }
         }
@@ -63,15 +74,23 @@ namespace Zats.Services
             {
                 if (c == '\n')
                 {
-                    tcs.TrySetResult(line.ToString().TrimEnd('\r'));
+                    tcs.TrySetResult(line.ToString());
                 }
-                else
+                else if (c != '\r')
                 {
                     line.Append(c);
                 }
             }
 
+            void OnCompleted() => tcs.TrySetResult(null);
+
             dispatcher.CharacterReceived += OnChar;
+            dispatcher.Completed += OnCompleted;
+            if (dispatcher.IsCompleted)
+            {
+                OnCompleted();
+            }
+
             using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken)))
             {
                 try
@@ -81,8 +100,16 @@ namespace Zats.Services
                 finally
                 {
                     dispatcher.CharacterReceived -= OnChar;
+                    dispatcher.Completed -= OnCompleted;
                 }
             }
+        }
+
+        public static ConsoleKey ToConsoleKey(char c)
+        {
+            if (c == '\r' || c == '\n') return ConsoleKey.Enter;
+            if (char.IsLetter(c)) return (ConsoleKey)char.ToUpperInvariant(c);
+            return (ConsoleKey)c;
         }
     }
 }

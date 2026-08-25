@@ -17,11 +17,8 @@ namespace Zats.Services
     /// </summary>
     public interface IStdinDispatcher
     {
-        /// <summary>
-        /// Starts the read loop. Safe to call multiple times - only the first call actually
-        /// starts the loop, subsequent calls are no-ops. Runs until EOF or cancellation.
-        /// </summary>
-        Task RunAsync(CancellationToken cancellationToken);
+        /// <summary>Raised once when stdin reaches EOF; no more characters arrive after this.</summary>
+        event Action Completed;
 
         /// <summary>
         /// Fires once for every character read from stdin while the read loop is active.

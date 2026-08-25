@@ -38,6 +38,8 @@ namespace Zats.Services
 
         public event Action<char> CharacterReceived;
 
+        public event Action Completed;
+
         public bool IsCompleted { get; private set; }
 
         private int runStarted;
@@ -47,7 +49,7 @@ namespace Zats.Services
             _ = RunAsync(CancellationToken.None);
         }
 
-        public Task RunAsync(CancellationToken cancellationToken)
+        private Task RunAsync(CancellationToken cancellationToken)
         {
             if (Interlocked.Exchange(ref runStarted, 1) != 0)
             {
@@ -70,6 +72,7 @@ namespace Zats.Services
                     if (read == 0)
                     {
                         IsCompleted = true;
+                        Completed?.Invoke();
                         return;
                     }
                     for (int i = 0; i < read; i++)
@@ -98,6 +101,7 @@ namespace Zats.Services
                     catch (InvalidOperationException)
                     {
                         IsCompleted = true;
+                        Completed?.Invoke();
                         return;
                     }
                     CharacterReceived?.Invoke(key.KeyChar);

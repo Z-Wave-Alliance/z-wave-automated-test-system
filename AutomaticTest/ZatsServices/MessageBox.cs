@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,9 @@ namespace Zats.Services
 
         public void ShowSkip(Action skipCallback)
         {
+            skipCts?.Cancel();
+            skipCts?.Dispose();
+
             OnSkip = skipCallback;
 
             // Warning: Changing the following string without adapting the LogDataReceived function in CTT class ZatsTestWorker
@@ -48,18 +52,24 @@ namespace Zats.Services
         {
             try
             {
-                await stdin.WaitForCharAsync(c => (ConsoleKey)c == ConsoleKey.S, cancellationToken).ConfigureAwait(false);
+                await stdin.WaitForCharAsync(c => StdinDispatcherExtensions.ToConsoleKey(c) == ConsoleKey.S, cancellationToken).ConfigureAwait(false);
                 OnSkip?.Invoke();
             }
             catch (OperationCanceledException)
             {
                 // Expected when DisableSkip() cancels the wait - not an error.
             }
+            catch (EndOfStreamException)
+            {
+                // Do not skip on EOF
+            }
         }
 
         public void DisableSkip()
         {
             skipCts?.Cancel();
+            skipCts?.Dispose();
+            skipCts = null;
 
             // Written synchronously here (rather than from ListenForSkipAsync's
             // cancellation handler above) so callers can rely on the marker
@@ -139,44 +149,40 @@ namespace Zats.Services
             var keyValue = ConsoleKey.Escape;
             while (true)
             {
-                try
+                keyValue = ReadNextRelevantKey();
+                if (UserInput.Length > 0)
                 {
-                    keyValue = ReadNextRelevantKey();
-                    if (UserInput.Length > 0)
+                    WriteLine(UserInput.ToString());
+                }
+                if (Console.IsInputRedirected)
+                {
+                    switch (keyValue)
                     {
-                        WriteLine(UserInput.ToString());
-                    }
-                    if (Console.IsInputRedirected)
-                    {
-                        switch (keyValue)
-                        {
-                            case ConsoleKey.Escape:
-                                WriteLine("Cancel");
-                                break;
-                            case ConsoleKey.Enter:
-                                WriteLine("OK");
-                                break;
-                            case ConsoleKey.Y:
-                                WriteLine("Yes");
-                                break;
-                            case ConsoleKey.N:
-                                WriteLine("No");
-                                break;
-                            case ConsoleKey.O:
-                                WriteLine("Open");
-                                break;
-                            default:
-                                WriteLine("Unknown User Input");
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        WriteLine(keyValue.ToString());
+                        case ConsoleKey.Escape:
+                            WriteLine("Cancel");
+                            break;
+                        case ConsoleKey.Enter:
+                            WriteLine("OK");
+                            break;
+                        case ConsoleKey.Y:
+                            WriteLine("Yes");
+                            break;
+                        case ConsoleKey.N:
+                            WriteLine("No");
+                            break;
+                        case ConsoleKey.O:
+                            WriteLine("Open");
+                            break;
+                        default:
+                            WriteLine("Unknown User Input");
+                            break;
                     }
                 }
-                catch
-                { }
+                else
+                {
+                    WriteLine(keyValue.ToString());
+                }
+
                 WriteLine("-----------------------------------------------------------------------");
                 if (messageBoxButtons == MessageBoxButtons.OK)
                 {
@@ -227,7 +233,7 @@ namespace Zats.Services
 
             void OnChar(char c)
             {
-                var keyValue = (ConsoleKey)c;
+                var keyValue = StdinDispatcherExtensions.ToConsoleKey(c);
                 if (!Console.IsInputRedirected)
                 {
                     if (keyValue == ConsoleKey.Backspace && UserInput.Length > 0)
@@ -244,8 +250,15 @@ namespace Zats.Services
                     tcs.TrySetResult(keyValue);
                 }
             }
+            void OnCompleted() => tcs.TrySetResult(ConsoleKey.Escape);
 
             stdin.CharacterReceived += OnChar;
+            stdin.Completed += OnCompleted;
+
+            if (stdin.IsCompleted)
+            {
+                OnCompleted();
+            }
             try
             {
                 return tcs.Task.GetAwaiter().GetResult();
@@ -253,6 +266,7 @@ namespace Zats.Services
             finally
             {
                 stdin.CharacterReceived -= OnChar;
+                stdin.Completed -= OnCompleted;
             }
         }
 
