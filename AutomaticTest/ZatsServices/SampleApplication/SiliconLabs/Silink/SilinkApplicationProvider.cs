@@ -127,6 +127,8 @@ namespace Zats.Services.SampleApplication
                             VDCHUART0 = port;
                             break;
                     }
+                    if (VUART0 > 0 && VCOM0 > 0 && ADM_CONSOLE > 0 && VDCHUART0 > 0)
+                        break;
                     continue;
                 }
 
