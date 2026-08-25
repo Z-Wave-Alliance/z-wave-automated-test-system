@@ -96,61 +96,44 @@ namespace Zats.Services.SampleApplication
         /// </summary>
         private bool ParseOutput(StreamReader output)
         {
-            var readline = string.Empty;
-            var maxReadLines = 5;
-            bool isAllowed = false;
-            while (!isAllowed && --maxReadLines > 0)
-            {
-                readline = output.ReadLine();
-                WirteOutputLog(readline);
-                isAllowed = !string.IsNullOrEmpty(readline) &&
-                    readline.Contains("USB Protocol: USBT");
-            }
-            var res = isAllowed;
-
             _address = "localhost";
-            var rgxVUART0 = new Regex(@"Mapping channel VUART0 to port (\d+)");
-            var rgxVCOM0 = new Regex(@"Mapping channel VCOM0 to port (\d+)");
-            var rgxADM_CONSOLE = new Regex(@"Mapping channel ADM_CONSOLE to port (\d+)");
-            var rgxDCH = new Regex(@"Mapping channel DCH to port (\d+)");
-            readline = output.ReadLine();
-            WirteOutputLog(readline);
-            if (rgxVUART0.IsMatch(readline))
+            var mapping = new Regex(@"Mapping channel (\w+) to port (\d+)");
+            var maxReadLines = 20;
+            while (maxReadLines-- > 0)
             {
-                var match = rgxVUART0.Match(readline);
-                VUART0 = int.Parse(match.Groups[1].Value);
-                res &= true;
-            }
-            else res = false;
-            readline = output.ReadLine();
-            WirteOutputLog(readline);
-            if (rgxVCOM0.IsMatch(readline))
-            {
-                var match = rgxVCOM0.Match(readline);
-                VCOM0 = int.Parse(match.Groups[1].Value);
-                res &= true;
-            }
-            else res = false;
-            readline = output.ReadLine();
-            WirteOutputLog(readline);
-            if (rgxADM_CONSOLE.IsMatch(readline))
-            {
-                var match = rgxADM_CONSOLE.Match(readline);
-                ADM_CONSOLE = int.Parse(match.Groups[1].Value);
-                res &= true;
-            }
-            else res = false;
-            readline = output.ReadLine();
-            WirteOutputLog(readline);
-            if (rgxDCH.IsMatch(readline))
-            {
-                var match = rgxDCH.Match(readline);
-                VDCHUART0 = int.Parse(match.Groups[1].Value);
-                res &= true;
-            }
-            else res = false;
+                var readline = output.ReadLine();
+                WirteOutputLog(readline);
+                if (string.IsNullOrEmpty(readline))
+                    continue;
 
-            return res;
+                var match = mapping.Match(readline);
+                if (match.Success)
+                {
+                    var port = int.Parse(match.Groups[2].Value);
+                    switch (match.Groups[1].Value)
+                    {
+                        case "VUART0":
+                            VUART0 = port;
+                            break;
+                        case "VCOM0":
+                            VCOM0 = port;
+                            break;
+                        case "ADM_CONSOLE":
+                            ADM_CONSOLE = port;
+                            break;
+                        case "DCH":
+                        case "DATA_CHANNEL":
+                            VDCHUART0 = port;
+                            break;
+                    }
+                    continue;
+                }
+
+                if (readline.StartsWith("Serial number:"))
+                    break;
+            }
+
+            return VUART0 > 0 && VCOM0 > 0 && ADM_CONSOLE > 0 && VDCHUART0 > 0;
         }
 
         private static void WirteOutputLog(string readline)
