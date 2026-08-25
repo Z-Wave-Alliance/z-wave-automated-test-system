@@ -104,7 +104,7 @@ namespace Zats.Services
                         Completed?.Invoke();
                         return;
                     }
-                    CharacterReceived?.Invoke(key.KeyChar);
+                    CharacterReceived?.Invoke(key.Key == ConsoleKey.Enter ? '\n' : key.KeyChar);
                 }
             }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }

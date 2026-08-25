@@ -67,8 +67,13 @@ namespace Zats.Services
 
         public void DisableSkip()
         {
-            skipCts?.Cancel();
-            skipCts?.Dispose();
+            if (skipCts == null)
+            {
+                return;
+            }
+
+            skipCts.Cancel();
+            skipCts.Dispose();
             skipCts = null;
 
             // Written synchronously here (rather than from ListenForSkipAsync's
@@ -146,10 +151,9 @@ namespace Zats.Services
                 }
             }
             WriteLine(sb.ToString());
-            var keyValue = ConsoleKey.Escape;
             while (true)
             {
-                keyValue = ReadNextRelevantKey();
+                ConsoleKey keyValue = ReadNextRelevantKey();
                 if (UserInput.Length > 0)
                 {
                     WriteLine(UserInput.ToString());
