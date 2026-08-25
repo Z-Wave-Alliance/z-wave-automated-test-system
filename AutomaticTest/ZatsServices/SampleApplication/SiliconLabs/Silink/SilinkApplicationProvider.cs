@@ -97,6 +97,7 @@ namespace Zats.Services.SampleApplication
         private bool ParseOutput(StreamReader output)
         {
             _address = "localhost";
+            VUART0 = VCOM0 = ADM_CONSOLE = VDCHUART0 = 0;
             var mapping = new Regex(@"Mapping channel (\w+) to port (\d+)");
             var maxReadLines = 20;
             while (maxReadLines-- > 0)
