@@ -605,6 +605,7 @@ namespace Zats.Services
             switch (deviceHost.ChipSeries)
             {
                 case "ZGM230_BRD2603A":
+                case "ZGM230_BRD2603C":
                     return "--device ZGM230SB27HGN3";
                 default:
                     return "--device Cortex-M4";

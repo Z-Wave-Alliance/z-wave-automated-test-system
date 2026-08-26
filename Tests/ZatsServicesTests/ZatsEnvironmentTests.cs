@@ -1633,6 +1633,7 @@ namespace ZatsServicesTests
         [TestCase(ChipSeries.ZGM230S_BRD4205A)]
         [TestCase(ChipSeries.ZGM230S_BRD4205B)]
         [TestCase(ChipSeries.ZGM230_BRD2603A)]
+        [TestCase(ChipSeries.ZGM230_BRD2603C)]
         [TestCase(ChipSeries.ZG14_BRD4206A)]
         [TestCase(ChipSeries.ZGM130S_BRD4207A)]
         [TestCase(ChipSeries.ZG14_BRD4208A)]
@@ -1697,6 +1698,7 @@ namespace ZatsServicesTests
         [TestCase(ChipSeries.ZGM230S_BRD4205A)]
         [TestCase(ChipSeries.ZGM230S_BRD4205B)]
         [TestCase(ChipSeries.ZGM230_BRD2603A)]
+        [TestCase(ChipSeries.ZGM230_BRD2603C)]
         [TestCase(ChipSeries.ZG23_BRD4210A)]
         public void SingleBoardControllerZW080x_WithParameter(ChipSeries chipSeries)
         {

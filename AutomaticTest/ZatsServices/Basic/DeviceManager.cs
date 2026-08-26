@@ -44,27 +44,28 @@ namespace Zats.Services
         static public readonly string[] SpecificChips = new[] { "ZGM13", "ZG13", "RZ13", "ZG14" };
 
         private readonly List<ChipSeries> ChipSeriesWithControllerPriority = new List<ChipSeries>
-            {
-                ChipSeries.ZG14_BRD4201A,
-                ChipSeries.ZG14_BRD4206A,
-                ChipSeries.ZG14_BRD4208A,
-                ChipSeries.ZG23_BRD4204A,
-                ChipSeries.ZG23_BRD4204C,
-                ChipSeries.ZG23_BRD4204D,
-                ChipSeries.ZG23_BRD4210A
-            };
+        {
+            ChipSeries.ZG14_BRD4201A,
+            ChipSeries.ZG14_BRD4206A,
+            ChipSeries.ZG14_BRD4208A,
+            ChipSeries.ZG23_BRD4204A,
+            ChipSeries.ZG23_BRD4204C,
+            ChipSeries.ZG23_BRD4204D,
+            ChipSeries.ZG23_BRD4210A
+        };
 
         private readonly List<ChipSeries> ChipSeriesWithSampleAppPriority = new List<ChipSeries>
-             {
-                 ChipSeries.ZG13L_BRD4201C,
-                 ChipSeries.RZ13_BRD4201B,
-                 ChipSeries.ZG13S_BRD4201D,
-                 ChipSeries.ZGM130S_BRD4202A,
-                 ChipSeries.ZGM130S_BRD4207A,
-                 ChipSeries.ZGM230S_BRD4205A,
-                 ChipSeries.ZGM230S_BRD4205B,
-                 ChipSeries.ZGM230_BRD2603A
-             };
+        {
+            ChipSeries.ZG13L_BRD4201C,
+            ChipSeries.RZ13_BRD4201B,
+            ChipSeries.ZG13S_BRD4201D,
+            ChipSeries.ZGM130S_BRD4202A,
+            ChipSeries.ZGM130S_BRD4207A,
+            ChipSeries.ZGM230S_BRD4205A,
+            ChipSeries.ZGM230S_BRD4205B,
+            ChipSeries.ZGM230_BRD2603A,
+            ChipSeries.ZGM230_BRD2603C
+        };
 
         /// <summary>
         /// Executes programmer application CLI command directly on the specified device.
@@ -301,6 +302,7 @@ namespace Zats.Services
             ChipSeries.ZGM230S_BRD4205A,
             ChipSeries.ZGM230S_BRD4205B,
             ChipSeries.ZGM230_BRD2603A,
+            ChipSeries.ZGM230_BRD2603C,
             ChipSeries.xG28_BRD4400A,
             ChipSeries.xG28_BRD4401A,
             ChipSeries.xG28_BRD4400B,
@@ -889,7 +891,7 @@ namespace Zats.Services
                     // Alias of available device must be present.
                     !string.IsNullOrEmpty(availableDev.Host.Alias) &&
                     // Check required alias if specified, otherwise accept any.
-                    (requiredDev.HasAlias == false || 
+                    (requiredDev.HasAlias == false ||
                     availableDev.Host.Alias.Equals(requiredDev.Alias, StringComparison.InvariantCulture)) &&
                     // Check required network state if specified, otherwise accept any.
                     (requiredDev.NetworkState == NodeNetworkState.Undefined || requiredDev.NetworkState == availableDev.Host.NetworkState));
@@ -2009,6 +2011,7 @@ namespace Zats.Services
                     || available == ChipSeries.ZGM230S_BRD4205A.ToString()
                     || available == ChipSeries.ZGM230S_BRD4205B.ToString()
                     || available == ChipSeries.ZGM230_BRD2603A.ToString()
+                    || available == ChipSeries.ZGM230_BRD2603C.ToString()
                     || available == ChipSeries.ZG23_BRD4210A.ToString()
                     || available == ChipSeries.xG28_BRD4400A.ToString()
                     || available == ChipSeries.xG28_BRD4401A.ToString()

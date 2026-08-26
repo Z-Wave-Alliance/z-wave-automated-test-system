@@ -804,6 +804,7 @@ namespace ZatsTestConsole
                 case ChipSeries.ZGM230S_BRD4205A:
                 case ChipSeries.ZGM230S_BRD4205B:
                 case ChipSeries.ZGM230_BRD2603A:
+                case ChipSeries.ZGM230_BRD2603C:
                 case ChipSeries.ZG23_BRD4204A:
                 case ChipSeries.ZG23_BRD4204C:
                 case ChipSeries.ZG23_BRD4204D:
@@ -857,6 +858,7 @@ namespace ZatsTestConsole
                 case ChipSeries.ZGM230S_BRD4205A:
                 case ChipSeries.ZGM230S_BRD4205B:
                 case ChipSeries.ZGM230_BRD2603A:
+                case ChipSeries.ZGM230_BRD2603C:
                 case ChipSeries.ZG23_BRD4204A:
                 case ChipSeries.ZG23_BRD4204C:
                 case ChipSeries.ZG23_BRD4204D:
