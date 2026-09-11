@@ -259,6 +259,12 @@ namespace Zats.Services
                 public ByteValue maximumCredentialHashLength = 0;
             }
             public List<TVG8MAXIMUMCREDENTIALHASHLENGTHPERCREDENTIALTYPE> vg8MaximumCredentialHashLengthPerCredentialType = new List<TVG8MAXIMUMCREDENTIALHASHLENGTHPERCREDENTIALTYPE>();
+            public class TVG9NUMBEROFCREDENTIALSLOTSPERUSER
+            {
+                public const byte numberOfCredentialSlotsPerUserBytesCount = 2;
+                public byte[] numberOfCredentialSlotsPerUser = new byte[numberOfCredentialSlotsPerUserBytesCount];
+            }
+            public List<TVG9NUMBEROFCREDENTIALSLOTSPERUSER> vg9NumberOfCredentialSlotsPerUser = new List<TVG9NUMBEROFCREDENTIALSLOTSPERUSER>();
             public static implicit operator CREDENTIAL_CAPABILITIES_REPORT(byte[] data)
             {
                 CREDENTIAL_CAPABILITIES_REPORT ret = new CREDENTIAL_CAPABILITIES_REPORT();
@@ -324,6 +330,15 @@ namespace Zats.Services
                         TVG8MAXIMUMCREDENTIALHASHLENGTHPERCREDENTIALTYPE tmp = new TVG8MAXIMUMCREDENTIALHASHLENGTHPERCREDENTIALTYPE();
                         tmp.maximumCredentialHashLength = data.Length > index ? (ByteValue)data[index++] : ByteValue.Empty;
                         ret.vg8MaximumCredentialHashLengthPerCredentialType.Add(tmp);
+                    }
+                    ret.vg9NumberOfCredentialSlotsPerUser = new List<TVG9NUMBEROFCREDENTIALSLOTSPERUSER>();
+                    for (int j = 0; j < ret.numberOfSupportedCredentialTypes; j++)
+                    {
+                        TVG9NUMBEROFCREDENTIALSLOTSPERUSER tmp = new TVG9NUMBEROFCREDENTIALSLOTSPERUSER();
+                        tmp.numberOfCredentialSlotsPerUser = (data.Length - index) >= TVG9NUMBEROFCREDENTIALSLOTSPERUSER.numberOfCredentialSlotsPerUserBytesCount ? new byte[TVG9NUMBEROFCREDENTIALSLOTSPERUSER.numberOfCredentialSlotsPerUserBytesCount] : new byte[data.Length - index];
+                        if (data.Length > index) tmp.numberOfCredentialSlotsPerUser[0] = data[index++];
+                        if (data.Length > index) tmp.numberOfCredentialSlotsPerUser[1] = data[index++];
+                        ret.vg9NumberOfCredentialSlotsPerUser.Add(tmp);
                     }
                 }
                 return ret;
@@ -395,6 +410,19 @@ namespace Zats.Services
                     foreach (var item in command.vg8MaximumCredentialHashLengthPerCredentialType)
                     {
                         if (item.maximumCredentialHashLength.HasValue) ret.Add(item.maximumCredentialHashLength);
+                    }
+                }
+                if (command.vg9NumberOfCredentialSlotsPerUser != null)
+                {
+                    foreach (var item in command.vg9NumberOfCredentialSlotsPerUser)
+                    {
+                        if (item.numberOfCredentialSlotsPerUser != null)
+                        {
+                            foreach (var tmp in item.numberOfCredentialSlotsPerUser)
+                            {
+                                ret.Add(tmp);
+                            }
+                        }
                     }
                 }
                 return ret.ToArray();
@@ -1774,7 +1802,7 @@ namespace Zats.Services
                     if (data.Length > index) ret.entryDataLength[0] = data[index++];
                     if (data.Length > index) ret.entryDataLength[1] = data[index++];
                     ret.entryData = new List<byte>();
-                    while (data.Length - 0 > index)
+                    for (int i = 0; i < (ret.entryDataLength[0] << 8) + ret.entryDataLength[1]; i++)
                     {
                         if (data.Length > index) ret.entryData.Add(data[index++]);
                     }
