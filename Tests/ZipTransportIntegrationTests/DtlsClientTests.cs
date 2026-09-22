@@ -91,7 +91,7 @@ namespace ZipTransportIntegrationTests
                 PortNo = portNo,
                 RawData = data
             };
-            _waitForDataEvent.Set();
+            SetWaitEvent();
         }
 
         private void ClientReceiveThread()
@@ -106,11 +106,36 @@ namespace ZipTransportIntegrationTests
             }
         }
 
+        // The DTLS callbacks arrive on the native library's own thread and can still be delivered
+        // after the test has finished and TearDown has disposed the event. An exception thrown on
+        // that thread cannot be caught by the test and takes the whole test host down, so a late
+        // signal is dropped instead.
+        private static void SetEventSafely(ManualResetEvent waitEvent)
+        {
+            if (waitEvent == null)
+            {
+                return;
+            }
+            try
+            {
+                waitEvent.Set();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        private void SetWaitEvent()
+        {
+            SetEventSafely(_waitForDataEvent);
+        }
+
         [SetUp]
         public void SetUp()
         {
             _waitForDataEvent = new ManualResetEvent(false);
-            _clientReceiveThread = new Thread(ClientReceiveThread);
+            // Background: a Receive() that never returns must not keep the test host alive at exit.
+            _clientReceiveThread = new Thread(ClientReceiveThread) { IsBackground = true };
             _listenerReceivedData = null;
         }
 
@@ -158,7 +183,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Connected += (client) =>
                     {
                         isConnected = true;
-                        _waitForDataEvent.Set();
+                        SetWaitEvent();
                     };
                 var result = _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _waitForDataEvent.WaitOne(Timeout);
@@ -176,7 +201,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Connected += (client) =>
                 {
                     isConnected = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 var result = _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _waitForDataEvent.WaitOne(Timeout);
@@ -195,7 +220,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsListener.ClientConnected += (address, port) =>
                     {
                         connectionCreated = true;
-                        _waitForDataEvent.Set();
+                        SetWaitEvent();
                     };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _waitForDataEvent.WaitOne(Timeout);
@@ -213,7 +238,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsListener.ClientConnected += (address, port) =>
                 {
                     connectionCreated = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _waitForDataEvent.WaitOne(Timeout);
@@ -233,7 +258,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsListener.ClientClosed += (address, port) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _dtlsClient.Close();
@@ -252,7 +277,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsListener.ClientClosed += (address, port) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _dtlsClient.Close();
@@ -272,7 +297,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Closed += (client) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _dtlsClient.Close();
@@ -291,7 +316,7 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Closed += (client) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _dtlsClient.Close();
@@ -353,7 +378,7 @@ namespace ZipTransportIntegrationTests
                     _clientReceiveThread.Start();
                     int sent = _dtlsListener.ResponseTo(_dataToReceive, _listenerReceivedData.Address, _listenerReceivedData.PortNo);
                     Assert.AreEqual(_dataToReceive.Length, sent);
-                    _clientReceiveThread.Join();
+                    Assert.IsTrue(_clientReceiveThread.Join(Timeout), "The client did not receive the response in time.");
                     Assert.IsTrue(_receivedData.SequenceEqual(_dataToReceive));
                 }
             }, _address);
@@ -373,7 +398,7 @@ namespace ZipTransportIntegrationTests
                     _clientReceiveThread.Start();
                     int sent = _dtlsListener.ResponseTo(_dataToReceive, _listenerReceivedData.Address, _listenerReceivedData.PortNo);
                     Assert.AreEqual(_dataToReceive.Length, sent);
-                    _clientReceiveThread.Join();
+                    Assert.IsTrue(_clientReceiveThread.Join(Timeout), "The client did not receive the response in time.");
                     Assert.IsTrue(_receivedData.SequenceEqual(_dataToReceive));
                 }
             }, _address);
@@ -390,12 +415,12 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Closed += (client) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _clientReceiveThread.Start();
                 _dtlsListener.Stop();
-                _clientReceiveThread.Join();
+                Assert.IsTrue(_clientReceiveThread.Join(Timeout), "Receive() did not return after the listener stopped.");
                 _waitForDataEvent.WaitOne(Timeout);
                 Assert.IsTrue(connectionClosed);
             }, _address);
@@ -411,12 +436,12 @@ namespace ZipTransportIntegrationTests
                 _dtlsClient.Closed += (client) =>
                 {
                     connectionClosed = true;
-                    _waitForDataEvent.Set();
+                    SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
                 _clientReceiveThread.Start();
                 _dtlsListener.Stop();
-                _clientReceiveThread.Join();
+                Assert.IsTrue(_clientReceiveThread.Join(Timeout), "Receive() did not return after the listener stopped.");
                 _waitForDataEvent.WaitOne(Timeout);
                 Assert.IsTrue(connectionClosed);
             }, _address);
@@ -457,7 +482,7 @@ namespace ZipTransportIntegrationTests
                 Assert.AreEqual(dataFirst.Length, clientFirst.Send(dataFirst));
                 Assert.AreEqual(dataSecond.Length, clientSecond.Send(dataSecond));
 
-                WaitHandle.WaitAll(_dataReceivedEvents);
+                Assert.IsTrue(WaitHandle.WaitAll(_dataReceivedEvents, Timeout), "Not every listener received its data in time.");
 
                 Assert.IsNotNull(_dataOnFirstListener);
                 Assert.IsTrue(_dataOnFirstListener.SequenceEqual(dataFirst));
@@ -484,14 +509,14 @@ namespace ZipTransportIntegrationTests
         {
             _dataOnFirstListener = new byte[arg1.Length];
             Array.Copy(arg1, _dataOnFirstListener, arg1.Length);
-            _dataReceivedEvents[0].Set();
+            SetEventSafely(_dataReceivedEvents?[0]);
         }
 
         void ListenerSecond_DataReceived(byte[] arg1, string arg2, ushort arg3)
         {
             _dataOnSecondListener = new byte[arg1.Length];
             Array.Copy(arg1, _dataOnSecondListener, arg1.Length);
-            _dataReceivedEvents[1].Set();
+            SetEventSafely(_dataReceivedEvents?[1]);
         }
 
         //private ManualResetEvent[] _dataReceivedEvents;

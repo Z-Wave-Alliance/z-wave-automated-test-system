@@ -53,6 +53,7 @@ jobs:
       # live under z-wave-tools-core\Tests and are covered by the Tools Core CI.
       Tests_Dir: ${{github.workspace}}\z-wave-automated-test-system\Tests
       Results_Path: ${{github.workspace}}\test-results-net-framework
+      Dumps_Path: ${{github.workspace}}\crash-dumps-net-framework
       Artifact_Path: ${{github.workspace}}\z-wave-automated-test-system\AutomaticTest\ZatsTestConsole\artifacts
 
     steps:
@@ -90,6 +91,19 @@ jobs:
           -property:Configuration=${{env.Configuration}} -verbosity:minimal
           -p:DebugType=None -p:DebugSymbols=false
 
+      # Windows Error Reporting writes a mini dump (DumpType 1: a few MB, with the
+      # native stack of the faulting thread) of any process that crashes, such as
+      # a test host taken down by a fault in the native DTLS library. Without it
+      # the log only says "Test host process crashed". Uploaded on failure only,
+      # see "Upload Crash Dumps".
+      - name: Enable Crash Dumps
+        run: |
+          New-Item -ItemType Directory -Force "${{env.Dumps_Path}}" | Out-Null
+          $key = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps"
+          New-Item -Path $key -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpFolder -Value "${{env.Dumps_Path}}" -PropertyType ExpandString -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
+
       # One vstest.console.exe call for all assemblies: it runs them one after
       # another, so the DtlsClient tests never have two hosts on the same fixed
       # DTLS port. Tests that need real or emulated Z-Wave devices are skipped via
@@ -120,6 +134,17 @@ jobs:
           # Only warn: this step also runs when the build failed before a single
           # trx was written, and an upload error would then bury the real failure.
           if-no-files-found: warn
+
+      # Skipped on a green run; on a red run without a crash (a plain test
+      # failure) the folder is empty and the step ends quietly.
+      - name: Upload Crash Dumps
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zats-crash-dumps-net-framework
+          path: ${{env.Dumps_Path}}/*.dmp
+          retention-days: 5
+          if-no-files-found: ignore
 
       # The tool ships the applications and their dependencies. Collect them from
       # the projects that are not tests, so no test assembly can reach the
@@ -166,6 +191,7 @@ jobs:
       # live under z-wave-tools-core\Tests and are covered by the Tools Core CI.
       Tests_Dir: ${{github.workspace}}\z-wave-automated-test-system\Tests
       Results_Path: ${{github.workspace}}\test-results-netcore
+      Dumps_Path: ${{github.workspace}}\crash-dumps-netcore
     steps:
       - name: Checkout z-wave-automated-test-system
         uses: actions/checkout@v4
@@ -185,6 +211,15 @@ jobs:
       # Z-Wave Tools Core CI; windows-latest provides the .NET Framework 4.8 tooling.
       - name: Build (all target frameworks)
         run: dotnet build ${{env.Solution_Path}} -c Debug --no-restore
+
+      # See the .NET Framework job for what this is for.
+      - name: Enable Crash Dumps
+        run: |
+          New-Item -ItemType Directory -Force "${{env.Dumps_Path}}" | Out-Null
+          $key = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps"
+          New-Item -Path $key -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpFolder -Value "${{env.Dumps_Path}}" -PropertyType ExpandString -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
 
       # Run every ZATS-owned netcore test project (auto-discovered under Tests, so new
       # ZATS test projects are picked up without editing this workflow). Tools Core unit
@@ -229,3 +264,14 @@ jobs:
           # Only warn: this step also runs when the build failed before a single
           # trx was written, and an upload error would then bury the real failure.
           if-no-files-found: warn
+
+      # Skipped on a green run; on a red run without a crash (a plain test
+      # failure) the folder is empty and the step ends quietly.
+      - name: Upload Crash Dumps
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zats-crash-dumps-netcore
+          path: ${{env.Dumps_Path}}/*.dmp
+          retention-days: 5
+          if-no-files-found: ignore
