@@ -15,5 +15,6 @@ namespace Zats.Services
         void DisableSkip();
         void ShowSkip(Action skipCallback);
         void ShowDutInteraction(string message);
+        void CloseMessageBox();
     }
 }

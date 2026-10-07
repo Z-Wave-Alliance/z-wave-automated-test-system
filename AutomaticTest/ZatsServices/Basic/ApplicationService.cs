@@ -1003,18 +1003,25 @@ namespace Zats.Services
                     Log(Environment.NewLine, LogLevels.Information);
                     DeviceManager.MessageBox.ShowDutInteraction("The DUT is not responding. Wake up the DUT!");
 
-                    ExpectDataResult result = sender.ExpectData(new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION(), 600000); // 10 minutes
-                    BasicResult.ExpectData wakeupNotification = new BasicActionResult.ExpectData(result);
-
-                    Log(Environment.NewLine, LogLevels.Information);
-
-                    if (result.IsStateCompleted)
+                    try
                     {
-                        Log("DUT is awake, continuing Test Case...", LogLevels.Information);
+                        ExpectDataResult result = sender.ExpectData(new COMMAND_CLASS_WAKE_UP_V2.WAKE_UP_NOTIFICATION(), 600000); // 10 minutes
+                        BasicResult.ExpectData wakeupNotification = new BasicActionResult.ExpectData(result);
+
+                        Log(Environment.NewLine, LogLevels.Information);
+
+                        if (result.IsStateCompleted)
+                        {
+                            Log("DUT is awake, continuing Test Case...", LogLevels.Information);
+                        }
+                        else
+                        {
+                            Log("No Wake Up Notification has been received!", LogLevels.Error);
+                        }
                     }
-                    else
+                    finally
                     {
-                        Log("No Wake Up Notification has been received!", LogLevels.Error);
+                        DeviceManager.MessageBox.CloseMessageBox();
                     }
                 }
             }
