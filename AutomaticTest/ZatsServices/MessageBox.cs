@@ -82,7 +82,14 @@ namespace Zats.Services
             // e.g. a "Retry?" prompt shown right after a timeout. Cancellation
             // only schedules that handler to run later, which raced behind
             // such a follow-up box and confused SolidRemoteStation.
-            CloseMessageBox();
+            //
+            // Keep »SKIP:DISABLE« as the established skip wire protocol so older
+            // CTT/SolidRemoteStation clients still dismiss skip prompts. CloseMessageBox()
+            // is only for newly introduced prompts such as Wait-for-DUT.
+            //
+            // Warning: Changing the following string without adapting the LogDataReceived function in CTT class ZatsTestWorker
+            // breaks the confirmation buttons in CTT!
+            WriteLine("»SKIP:DISABLE«");
         }
 
         public void ShowDutInteraction(string message)
