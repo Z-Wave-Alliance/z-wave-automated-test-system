@@ -13,12 +13,10 @@ using ZWave.Xml.FrameHeader;
 using ZWave.ZnifferApplication;
 using ZWave.ZnifferApplication.Devices;
 using ZWave.ZnifferApplication.Enums;
-#if NETCOREAPP
 using ZWave.Layers.Application;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Linq;
-#endif
 
 namespace Zats.Services
 {
@@ -324,76 +322,6 @@ namespace Zats.Services
                 }
 
             }
-            return ret;
-        }
-
-        /// <summary>
-        /// DO WE NEED THIS method as ref = 0
-        /// </summary>
-        /// <param name="rfRegion"></param>
-        /// <param name="lrChannel"></param>
-        /// <param name="excludedPorts"></param>
-        /// <returns></returns>
-        public bool DiscoverAndInit(string rfRegion, LongRangeChannels lrChannel, string[] excludedPorts)
-        {
-            bool ret = false;
-#if NETCOREAPP
-            var portsToCheckList = new List<string>();
-
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-            {
-                portsToCheckList.AddRange(System.IO.Ports.SerialPort.GetPortNames());
-            }
-            else
-            {
-                portsToCheckList.Add("z1"); // basictrans32 library will enumerate all connected devices by itself.
-            }
-
-            portsToCheckList.RemoveAll(var => excludedPorts.Any(port => port == var));
-            var znifferPorts = new ConcurrentBag<string>();
-            Parallel.ForEach(portsToCheckList, port =>
-            {
-                var zniffer = ZnifferApplicationLayer.CreateZniffer();
-                if (zniffer.Connect(new SerialPortDataSource { SourceName = port, BaudRate = BaudRates.Rate_115200 }) == CommunicationStatuses.Done)
-                {
-                    var verRes = zniffer.GetVersion();
-                    if (verRes)
-                    {
-                        znifferPorts.Add(port);
-                    }
-                    zniffer.Dispose();
-                }
-            });
-
-            if (znifferPorts.Count == 0)
-            {
-                Parallel.ForEach(portsToCheckList, port =>
-                {
-                    var zniffer = ZnifferApplicationLayer.CreateZniffer();
-                    if (zniffer.Connect(new SerialPortDataSource { SourceName = port, BaudRate = BaudRates.Rate_230400 }) == CommunicationStatuses.Done)
-                    {
-                        var verRes = zniffer.GetVersion();
-                        if (verRes)
-                        {
-                            znifferPorts.Add(port);
-                        }
-                        zniffer.Dispose();
-                    }
-                });
-            }
-            if (znifferPorts.Count > 0)
-            {
-                string port;
-                znifferPorts.TryTake(out port);
-                ret = InitDevice(port, false, rfRegion, lrChannel);
-            }
-            else
-            {
-                Zniffer = ZnifferApplicationLayer.CreateZniffer();
-                //Zniffer.DataSource = new SerialPortDataSource { SourceName = "Not Found!" };
-                //Port = Zniffer.DataSource.SourceName;
-            }
-#endif
             return ret;
         }
     }
