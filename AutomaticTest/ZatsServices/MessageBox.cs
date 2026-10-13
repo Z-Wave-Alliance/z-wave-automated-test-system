@@ -103,7 +103,7 @@ namespace Zats.Services
         {
             // Warning: Changing the following string without adapting the LogDataReceived function in CTT class ZatsTestWorker
             // breaks closing confirmation UI / remote popups in CTT!
-            WriteLine("»CLOSE:MESSAGEBOX«");
+            WriteLine("»MESSAGEBOX:CLOSE«");
         }
 
         public DialogResult Show(string message, string title, MessageBoxButtons messageBoxButtons, MessageBoxIcon messageBoxIcon = MessageBoxIcon.Asterisk)
