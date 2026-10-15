@@ -37,6 +37,5 @@ Now you should be able to run the tests on your own fork.
 
 ## Legal info
 
-SPDX-FileCopyrightText: Z-Wave-Alliance <https://z-wavealliance.org/>
-
 SPDX-License-Identifier: BSD-3-Clause
+SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>

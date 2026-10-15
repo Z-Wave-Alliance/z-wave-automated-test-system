@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: Z-Wave-Alliance <https://z-wavealliance.org>
+# SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 
 # Generate MultilevelSensorTypes.json from AWG XML registry.
 

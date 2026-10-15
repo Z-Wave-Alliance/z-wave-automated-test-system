@@ -4,7 +4,7 @@
 # -*- coding: utf-8 -*
 #
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: Silicon Laboratories Inc <https://www.silabs.com>
+# SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 # SPDX-License-URL: https://spdx.org/licenses/BSD-3-Clause
 
 project?=z-wave-automated-test-system

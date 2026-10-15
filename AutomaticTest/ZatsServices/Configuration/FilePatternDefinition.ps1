@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+# SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 &("C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\xsd.exe") FilePatternDefinition.xsd /c /l:CS /edb /n:Zats.Services
 
 $content = get-content .\FilePatternDefinition.cs

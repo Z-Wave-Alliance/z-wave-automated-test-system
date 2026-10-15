@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+# SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 # This yaml config file contains the Z-Wave Attribute lists
 # where their state must be polled in a given polling interval [s].
 # It is important that the attributes specified here have a Get Rule

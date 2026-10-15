@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
-# SPDX-FileCopyrightText: Z-Wave Alliance https://z-wavealliance.org
+# SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+# SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 &("C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\xsd.exe") ZatsDefinition.xsd /c /l:CS /edb /n:Zats.Services
 
 $content = get-content .\ZatsDefinition.cs

@@ -2,7 +2,7 @@
 
 <!--
 SPDX-License-Identifier: BSD-3-Clause
-SPDX-FileCopyrightText: Silicon Laboratories Inc. https://www.silabs.com
+SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 -->
 
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ZWave.Programmer.Properties" GeneratedClassName="Settings">
