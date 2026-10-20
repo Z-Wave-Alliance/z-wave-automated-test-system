@@ -37,6 +37,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_Development\**\*.cs" />
     <Compile Include="_SYSTEM\**\*.cs" />
   </ItemGroup>

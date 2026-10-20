@@ -3,6 +3,7 @@
     <AssemblyName>TestCases</AssemblyName>
     <TargetFrameworks>net10.0;net48</TargetFrameworks>
     <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 	<ItemGroup>
 	  <EmbeddedResource Remove="obj\**" />
@@ -12,6 +13,7 @@
     <ProjectReference Include="..\AutomaticTest\ZatsServices\ZatsServices_netcore.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_Development\*.cs" />
     <Compile Include="_SYSTEM\**\*.cs" />
   </ItemGroup>

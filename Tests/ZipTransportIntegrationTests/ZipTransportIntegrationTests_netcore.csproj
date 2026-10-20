@@ -6,7 +6,7 @@
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Remove="Properties\AssemblyInfo.cs" />
+		<Compile Include="..\..\AutomaticTest\ZatsServices\ZatsVersionInfo.cs" Link="Properties\ZatsVersionInfo.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\z-wave-tools-core\Utils\Utils_netcore.csproj" />

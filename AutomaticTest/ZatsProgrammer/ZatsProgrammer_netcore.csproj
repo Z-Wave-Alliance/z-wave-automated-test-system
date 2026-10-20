@@ -8,6 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\z-wave-tools-core\ZWave\ZWave_netcore.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\ZatsServices\ZatsVersionInfo.cs" Link="Properties\ZatsVersionInfo.cs" />
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
     <!-- for .NET (Core) -->
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />

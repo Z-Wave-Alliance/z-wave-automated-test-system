@@ -60,6 +60,9 @@
     <Compile Include="Models\DocumentModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\ZatsServices\ZatsVersionInfo.cs">
+      <Link>Properties\ZatsVersionInfo.cs</Link>
+    </Compile>
     <Compile Include="Properties\Resources.Designer.cs" />
     <Compile Include="Properties\Settings.Designer.cs" />
     <Compile Include="Properties\Settings1.Designer.cs">

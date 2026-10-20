@@ -59,6 +59,9 @@
     <Compile Include="ExpectData.cs" />
     <Compile Include="GetVersion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\..\AutomaticTest\ZatsServices\ZatsVersionInfo.cs">
+      <Link>Properties\ZatsVersionInfo.cs</Link>
+    </Compile>
     <Compile Include="RequestData.cs" />
     <Compile Include="Retransmittion.cs" />
     <Compile Include="AddNodeSecure.cs" />

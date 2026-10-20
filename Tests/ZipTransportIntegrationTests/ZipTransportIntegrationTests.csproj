@@ -40,6 +40,9 @@
     <Compile Include="ConfigLoader.cs" />
     <Compile Include="DtlsClientTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\..\AutomaticTest\ZatsServices\ZatsVersionInfo.cs">
+      <Link>Properties\ZatsVersionInfo.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\z-wave-tools-core\ZipApplication\ZipApplication.csproj">
