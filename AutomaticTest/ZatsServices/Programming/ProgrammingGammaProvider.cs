@@ -624,7 +624,7 @@ namespace Zats.Services
             //commander nvm3 parse .\nvm.s37--key < Key >
 
             //ZAF_Base_Key:
-            const string ZAF_KEY = "0x50000"; // FILE_ID_ZW_VERSION from https://confluence.silabs.com/display/ZWAVE/NVM+usage+with+Z-Wave#NVMusagewithZWave-ZAFkeys
+            const string ZAF_KEY = "0x50000"; // ZAF_FILE_ID_APP_VERSION in the application NVM3 region, see ZAF_file_ids.h in the Z-Wave stack sources
 
             int ret = 0;
             var result = new byte[3];

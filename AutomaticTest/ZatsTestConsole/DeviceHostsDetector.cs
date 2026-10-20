@@ -246,7 +246,10 @@ namespace ZatsTestConsole
 
         private void InitGammaBoards(Tuple<string, string>[] portsJL, IEnumerable<string> testBeds, IEnumerable<string> jlinkIdsToAdd, string znifferName)
         {
-            string[] ipFilter = new[] { "192.168.", "10.160.160" };
+            // Private IPv4 ranges (RFC 1918): 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16.
+            string[] ipFilter = new[] { "10.", "192.168." }
+                .Concat(Enumerable.Range(16, 16).Select(x => $"172.{x}."))
+                .ToArray();
             var discoveredItems = new JlinkDeviceInfo[1]; // Placeholder Array, will be replaced below.
             if (!string.IsNullOrWhiteSpace(_cmdLineSettings.IPFilter))
             {

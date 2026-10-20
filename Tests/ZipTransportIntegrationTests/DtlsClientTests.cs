@@ -612,8 +612,10 @@ namespace ZipTransportIntegrationTests
 
                 var firstClientThread = new Thread(RunClient);
                 var secondClientThread = new Thread(RunClient);
-                firstClientThread.Start(new RunClientData { localAddress = "172.27.22.10", localPortNo = 41230, destAddress = "172.27.22.5", destPortNo = 41230, data = dataFirst });
-                secondClientThread.Start(new RunClientData { localAddress = "172.27.22.10", localPortNo = 41230, destAddress = "172.27.22.5", destPortNo = 41231, data = dataSecond });
+                firstClientThread.Start(new RunClientData
+                    { localAddress = address, localPortNo = 41230, destAddress = address, destPortNo = 41230, data = dataFirst });
+                secondClientThread.Start(new RunClientData
+                    { localAddress = address, localPortNo = 41230, destAddress = address, destPortNo = 41231, data = dataSecond });
                 firstClientThread.Join();
                 secondClientThread.Join();
 

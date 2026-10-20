@@ -187,7 +187,7 @@ namespace ZatsTestConsole
                 ZatsInstruments = new ZatsInstruments();
                 ZatsInstruments.Instruments = new[]
                 {
-                    new ZatsInstrument(){ Type = InstrumentTypes.PsuE364x, SName="192.168.0.198", SType="RawTCP" }
+                    new ZatsInstrument(){ Type = InstrumentTypes.PsuE364x, SName="192.0.2.1", SType="RawTCP" }
                 };
                 if (zatsXmlRoot != null)
                 {

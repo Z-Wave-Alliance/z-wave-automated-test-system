@@ -213,7 +213,7 @@ namespace ZatsTestConsole
         private static string GetEndLink()
         {
             return $"{Environment.NewLine}For more details how to use ZATS and commands examples, please visit:{Environment.NewLine}" +
-           $"https://confluence.silabs.com/pages/viewpage.action?spaceKey=ZWAVE&title=How+To+Run";
+           $"https://github.com/Z-Wave-Alliance/z-wave-automated-test-system";
         }
     }
 
