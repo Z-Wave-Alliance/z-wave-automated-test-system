@@ -24,7 +24,7 @@ jobs:
           debian_packages: reuse yamllint
 
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Legal check
         run: reuse lint
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout z-wave-automated-test-system
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: 'z-wave-automated-test-system'
           submodules: "recursive"
@@ -71,10 +71,10 @@ jobs:
         shell: bash
 
       - name: Add MSBuild.exe to Path
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3.0.0
 
       - name: Add VSTest.Console.exe to Path
-        uses: darenm/Setup-VSTest@v1.2
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 # v1.3
 
       - name: Restore NuGet Packages for Z-Wave Tools Core Solution
         run: |
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zats-test-results-net-framework
           path: ${{env.Results_Path}}/*.trx
@@ -139,7 +139,7 @@ jobs:
       # failure) the folder is empty and the step ends quietly.
       - name: Upload Crash Dumps
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zats-crash-dumps-net-framework
           path: ${{env.Dumps_Path}}/*.dmp
@@ -164,7 +164,7 @@ jobs:
           }
 
       - name: Upload published artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ZatsTestConsole
           # Windows only tool
@@ -194,13 +194,13 @@ jobs:
       Dumps_Path: ${{github.workspace}}\crash-dumps-netcore
     steps:
       - name: Checkout z-wave-automated-test-system
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: 'z-wave-automated-test-system'
           submodules: "recursive"
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.x'
 
@@ -256,7 +256,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zats-test-results-netcore
           path: ${{env.Results_Path}}/*.trx
@@ -269,7 +269,7 @@ jobs:
       # failure) the folder is empty and the step ends quietly.
       - name: Upload Crash Dumps
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zats-crash-dumps-netcore
           path: ${{env.Dumps_Path}}/*.dmp
