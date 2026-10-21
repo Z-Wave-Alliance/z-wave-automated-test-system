@@ -33,6 +33,9 @@ namespace ZipTransportIntegrationTests
         private IDtlsListener _dtlsListener;
         private ManualResetEvent _waitForDataEvent;
         private Thread _clientReceiveThread;
+        // Set from the listener's own callbacks: a client completed the handshake, and that client is gone again.
+        private ManualResetEvent _listenerClientConnected;
+        private ManualResetEvent _listenerClientClosed;
 
         public IPAddress GetFirstLocalIPAddress(AddressFamily addressFamily)
         {
@@ -68,6 +71,8 @@ namespace ZipTransportIntegrationTests
             {
                 _dtlsListener = new DtlsListener();
                 _dtlsListener.DataReceived += OnListenerDataReceived;
+                _dtlsListener.ClientConnected += OnListenerClientConnected;
+                _dtlsListener.ClientClosed += OnListenerClientClosed;
                 int errorCode = _dtlsListener.Start(PskKey, ipAddress, PortNo);
                 Assert.AreEqual(0, errorCode);
                 _dtlsClient = new DtlsClient();
@@ -77,9 +82,55 @@ namespace ZipTransportIntegrationTests
             }
             finally
             {
+                bool clientWasConnected = _dtlsClient.IsConnected;
                 _dtlsClient.Close();
+                WaitUntilListenerReleasedClient(clientWasConnected);
                 _dtlsListener.DataReceived -= OnListenerDataReceived;
+                _dtlsListener.ClientConnected -= OnListenerClientConnected;
+                _dtlsListener.ClientClosed -= OnListenerClientClosed;
                 _dtlsListener.Stop();
+            }
+        }
+
+        // The native listener (ziptrans64.dll) runs one receive thread per DTLS session. That thread
+        // handles the session's packets one after another and, at the end of each handler, retires
+        // the handshake retransmission timer thread once no timeout is pending. DtlsListenerStop joins
+        // the same timer thread. Connect() returns as soon as the client has sent its last handshake
+        // flight, so a Stop() right after it runs while the listener's receive thread is still inside
+        // the handler of that flight; the two threads then join the same std::thread, the loser throws
+        // std::system_error ("no such process") on a native thread, and the whole test host dies with
+        // "Test host process crashed" (vstest.console.exe crash dumps of 2026-10-21). No managed code
+        // can catch that, so a listener is only stopped once its receive thread has demonstrably moved
+        // past the handshake: it delivered a later datagram, or it reported the client's close.
+        private void OnListenerClientConnected(string address, ushort portNo)
+        {
+            SetEventSafely(_listenerClientConnected);
+        }
+
+        private void OnListenerClientClosed(string address, ushort portNo)
+        {
+            SetEventSafely(_listenerClientClosed);
+        }
+
+        // For a test that stops the listener while the client is still connected: a datagram the
+        // listener has delivered proves that its receive thread has completed the handshake handler.
+        private void WaitUntilListenerCompletedHandshake()
+        {
+            Assert.IsTrue(_listenerClientConnected.WaitOne(Timeout), "The listener did not report the connected client in time.");
+            _waitForDataEvent.Reset();
+            Assert.AreEqual(_dataToSend.Length, _dtlsClient.Send(_dataToSend));
+            Assert.IsTrue(_waitForDataEvent.WaitOne(Timeout), "The listener did not deliver the probe datagram in time.");
+            _waitForDataEvent.Reset();
+        }
+
+        // For the common teardown, which closes the client first: the listener reporting that close
+        // means its receive thread has handled a packet that came after the handshake. Not asserted,
+        // a failure of the test itself must not be hidden by its teardown.
+        private void WaitUntilListenerReleasedClient(bool clientWasConnected)
+        {
+            if (_dtlsListener.Listening && (clientWasConnected || _listenerClientConnected.WaitOne(0)))
+            {
+                _listenerClientClosed.WaitOne(Timeout);
             }
         }
 
@@ -134,6 +185,8 @@ namespace ZipTransportIntegrationTests
         public void SetUp()
         {
             _waitForDataEvent = new ManualResetEvent(false);
+            _listenerClientConnected = new ManualResetEvent(false);
+            _listenerClientClosed = new ManualResetEvent(false);
             // Background: a Receive() that never returns must not keep the test host alive at exit.
             _clientReceiveThread = new Thread(ClientReceiveThread) { IsBackground = true };
             _listenerReceivedData = null;
@@ -145,6 +198,10 @@ namespace ZipTransportIntegrationTests
             _clientReceiveThread = null;
             _waitForDataEvent.Close();
             _waitForDataEvent = null;
+            _listenerClientConnected.Close();
+            _listenerClientConnected = null;
+            _listenerClientClosed.Close();
+            _listenerClientClosed = null;
         }
 
         [Test]
@@ -418,6 +475,7 @@ namespace ZipTransportIntegrationTests
                     SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
+                WaitUntilListenerCompletedHandshake();
                 _clientReceiveThread.Start();
                 _dtlsListener.Stop();
                 Assert.IsTrue(_clientReceiveThread.Join(Timeout), "Receive() did not return after the listener stopped.");
@@ -439,6 +497,7 @@ namespace ZipTransportIntegrationTests
                     SetWaitEvent();
                 };
                 _dtlsClient.Connect(PskKey, _address.ToString(), PortNo);
+                WaitUntilListenerCompletedHandshake();
                 _clientReceiveThread.Start();
                 _dtlsListener.Stop();
                 Assert.IsTrue(_clientReceiveThread.Join(Timeout), "Receive() did not return after the listener stopped.");
