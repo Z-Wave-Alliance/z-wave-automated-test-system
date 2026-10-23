@@ -23,11 +23,6 @@
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.20.1" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
-    <!-- for .NET (Core) -->
-    <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <!-- for .NET Framework 4.8 -->
     <Reference Include="System" />

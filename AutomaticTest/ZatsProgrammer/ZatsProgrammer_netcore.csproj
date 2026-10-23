@@ -14,7 +14,6 @@
   <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
     <!-- for .NET (Core) -->
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
-    <PackageReference Include="System.Reflection" Version="4.3.0" />
     <Compile Remove="Utils\WinBased\**" />
     <Compile Remove="ZWave\Layers\TransportLayer\UsbPort.cs" />
   </ItemGroup>
