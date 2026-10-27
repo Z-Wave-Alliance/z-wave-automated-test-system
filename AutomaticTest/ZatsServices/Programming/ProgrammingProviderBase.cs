@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 using System;
-using System.Diagnostics;
+using Utils;
 
 namespace Zats.Services
 {
@@ -9,10 +9,21 @@ namespace Zats.Services
     {
         protected Action<bool, string> _logAction;
         protected string _appPath;
+        protected IExternalToolRunner _toolRunner;
         public ProgrammingProviderBase(string appPath, Action<bool, string> logAction)
+            : this(appPath, logAction, new ExternalToolRunner())
+        {
+        }
+
+        /// <summary>
+        /// Creates a provider that runs the programmer tool through the given runner instead of the local
+        /// process runner, e.g. a fake returning canned tool output in a unit test.
+        /// </summary>
+        public ProgrammingProviderBase(string appPath, Action<bool, string> logAction, IExternalToolRunner toolRunner)
         {
             _logAction = logAction;
             _appPath = appPath;
+            _toolRunner = toolRunner;
         }
 
         private ProgrammingProviderBase()
@@ -34,46 +45,13 @@ namespace Zats.Services
             return ProgrammerAction(args, message, timeoutMs, out string output);
         }
 
+        /// <summary>
+        /// Runs the programmer tool and logs the outcome. Returns the tool exit code, or -1 when the tool could not be
+        /// started or was killed after <paramref name="timeoutMs"/>, see <see cref="IExternalToolRunner.Run"/>.
+        /// </summary>
         protected int ProgrammerAction(string args, string message, int timeoutMs, out string output)
         {
-            output = string.Empty;
-            var process = new Process();
-            process.StartInfo.FileName = _appPath;
-            process.StartInfo.Arguments = args;
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.CreateNoWindow = true;
-            process.Start();
-            var tmp = process.StandardOutput.ReadToEndAsync();
-            var res = process.WaitForExit(timeoutMs);
-            if (!res)
-            {
-                try
-                {
-                    process.Kill();
-                    // Ensure process exits after kill, but do not block indefinitely
-                    if (!process.WaitForExit(5000))
-                    {
-                        LogProgrammerAction(false, $"{message} args:{args} - Process failed to exit after kill.");
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    LogProgrammerAction(false, $"{message} args:{args} - Process termination issue.");
-                }
-            }
-            
-            try
-            {
-                output = tmp.Result;
-            }
-            catch (AggregateException)
-            {
-                LogProgrammerAction(false, $"{message} args:{args} - Read output result");
-            }
-
-            int ret = process.HasExited ? process.ExitCode : -1;
-            process.Close();
+            int ret = _toolRunner.Run(_appPath, args, timeoutMs, out output);
             LogProgrammerAction(ret, $"{message} args:{args}");
             if (ret != 0)
             {

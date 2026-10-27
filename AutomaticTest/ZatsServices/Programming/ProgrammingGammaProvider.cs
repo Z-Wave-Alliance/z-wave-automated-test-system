@@ -2,8 +2,6 @@
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
 // SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -161,7 +159,7 @@ namespace Zats.Services
             ZWaveRegions zwRegion = ZWaveRegions.REGION_UNDEFINED;
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
-            var args = $"tokendump --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ {devicePort} {deviceId}";
+            var args = SimplicityCommanderCli.GetTokenDumpArguments(SimplicityCommanderCli.MFG_ZWAVE_COUNTRY_FREQ_TOKEN, devicePort, deviceId);
             int ret = 0;
             string output = null;
             for (int i = 0; i < 3; i++)
@@ -177,83 +175,45 @@ namespace Zats.Services
                 }
             }
 
-            try
+            byte[] regionBytes = SimplicityCommanderCli.ParseTokenBytes(output, SimplicityCommanderCli.MFG_ZWAVE_COUNTRY_FREQ_TOKEN);
+            if (regionBytes != null && regionBytes.Length == 1)
             {
-                string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                if (lines != null)
+                zwRegion = (ZWaveRegions)regionBytes[0];
+                if (zwRegion != ZWaveRegions.REGION_UNDEFINED && zwRegion != ZWaveRegions.REGION_DEFAULT)
                 {
-                    var zwRegionLine = lines.FirstOrDefault(x => x.StartsWith("MFG_ZWAVE_COUNTRY_FREQ"))?.Replace("MFG_ZWAVE_COUNTRY_FREQ", "").Replace(" ", "").Replace(":", "");
-                    if (zwRegionLine != null && zwRegionLine.StartsWith("0x"))
-                    {
-                        byte zwRegionVal = (int)ZWaveRegions.REGION_UNDEFINED;
-                        if (byte.TryParse(zwRegionLine.Substring(2), NumberStyles.HexNumber, null, out zwRegionVal))
-                        {
-                            zwRegion = (ZWaveRegions)zwRegionVal;
-                            if (zwRegion != ZWaveRegions.REGION_UNDEFINED && zwRegion != ZWaveRegions.REGION_DEFAULT)
-                            {
-                                LogProgrammerAction(true, $"ZWAVE_COUNTRY_FREQ: {zwRegion}");
-                            }
-                        }
-                    }
+                    LogProgrammerAction(true, $"ZWAVE_COUNTRY_FREQ: {zwRegion}");
                 }
-            }
-            catch (Exception ex)
-            {
-                ex.Message._DLOG();
             }
             return zwRegion;
         }
 
         public byte[] GetDsk(DeviceHostClient deviceHostClient)
         {
-            List<byte> dskValue = new List<byte>();
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
-            var args = $"tokendump --tokengroup znet --token MFG_ZW_PUK {devicePort} {deviceId}";
-            int ret = 0;
-            string output = null;
+            var args = SimplicityCommanderCli.GetTokenDumpArguments(SimplicityCommanderCli.MFG_ZW_PUK_TOKEN, devicePort, deviceId);
+            byte[] puk = null;
             for (int i = 0; i < 3; i++)
             {
-                ret = ProgrammerAction(args, "Get DSK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
+                int ret = ProgrammerAction(args, "Get DSK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
                 if (ret != 0)
                 {
                     AwakeDeviceWithTestInterface(deviceHostClient);
+                    continue;
                 }
-                else
+
+                puk = SimplicityCommanderCli.ParseTokenBytes(output, SimplicityCommanderCli.MFG_ZW_PUK_TOKEN);
+                // The PUK is generated at boot time. If the boot takes longer than expected, the token still reads as
+                // erased flash, so give the device 0.5 seconds more to boot and read again.
+                if (!SimplicityCommanderCli.IsErased(puk))
                 {
-                    // Retry if a invalid PUK is found
-                    // PUK's are generated at boot time and if the boot takes
-                    // longer than expected, we'll get a false negative result
-                    if (!output.Contains("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"))
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        // Give device 0.5 seconds more to boot
-                        Thread.Sleep(500);
-                    }
+                    break;
                 }
+                Thread.Sleep(500);
             }
 
-            try
-            {
-                string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                if (lines != null)
-                {
-                    var pukLine = lines.FirstOrDefault(x => x.StartsWith("MFG_ZW_PUK"))?.Replace("MFG_ZW_PUK", "").Replace(" ", "").Replace(":", "");
-                    if (pukLine != null && pukLine.All(x => Uri.IsHexDigit(x)))
-                    {
-                        dskValue.AddRange(pukLine.GetBytes());
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ex.Message._DLOG();
-            }
-            var dsk = dskValue.ToArray();
-            if (dsk != null && dsk.Length >= 16)
+            var dsk = puk ?? new byte[0];
+            if (dsk.Length >= 16)
             {
                 string dskStr = Tools.GetInt32(dsk.Skip(0).Take(2).ToArray()).ToString("00000");
                 dskStr += "-" + Tools.GetInt32(dsk.Skip(2).Take(2).ToArray()).ToString("00000");
@@ -266,41 +226,23 @@ namespace Zats.Services
                 LogProgrammerAction(true, $"PUK: {dsk.GetHex(false)}");
                 LogProgrammerAction(true, $"DSK: {dskStr} {devicePort}");
             }
-            return dskValue.ToArray();
+            return dsk;
         }
 
         public byte[] GetPrk(DeviceHostClient deviceHostClient)
         {
-            List<byte> prkValue = new List<byte>();
             var devicePort = GetHostClientPortWithArg(deviceHostClient);
             var deviceId = GetDeviceIdentifierArgument(deviceHostClient.Host);
-            var args = $"tokendump --tokengroup znet --token MFG_ZW_PRK --token MFG_ZW_PUK {devicePort} {deviceId}";
+            var args = SimplicityCommanderCli.GetTokenDumpArguments(
+                new[] { SimplicityCommanderCli.MFG_ZW_PRK_TOKEN, SimplicityCommanderCli.MFG_ZW_PUK_TOKEN }, devicePort, deviceId);
 
-            int ret = ProgrammerAction(args, "Get PRK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
-            try
+            ProgrammerAction(args, "Get PRK", DEFAULT_PROGRAMMER_TIMEOUT_MS, out string output);
+            var prk = SimplicityCommanderCli.ParseTokenBytes(output, SimplicityCommanderCli.MFG_ZW_PRK_TOKEN) ?? new byte[0];
+            if (prk.Length >= 32)
             {
-                string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-                if (lines != null)
-                {
-                    var prkLine = lines.FirstOrDefault(x => x.StartsWith("MFG_ZW_PRK"))?.Replace("MFG_ZW_PRK", "").Replace(" ", "").Replace(":", "");
-                    var pukLine = lines.FirstOrDefault(x => x.StartsWith("MFG_ZW_PUK"))?.Replace("MFG_ZW_PUK", "").Replace(" ", "").Replace(":", "");
-                    if (prkLine != null && prkLine.All(x => Uri.IsHexDigit(x)))
-                    {
-                        prkValue.AddRange(prkLine.GetBytes());
-                    }
-                }
+                LogProgrammerAction(true, $"PRK: {prk.GetHex(false)}");
             }
-            catch (Exception ex)
-            {
-                ex.Message._DLOG();
-            }
-            var prk = prkValue.ToArray();
-            if (prk != null && prk.Length >= 32)
-            {
-                string prkStr = prkValue.GetHex(false);
-                LogProgrammerAction(true, $"PRK: {prkStr}");
-            }
-            return prkValue.ToArray();
+            return prk;
         }
 
 
@@ -367,12 +309,8 @@ namespace Zats.Services
 
                 if (ret == 0 && File.Exists(bootloaderPaths?.EncryptKey) && File.Exists(bootloaderPaths?.KeysToken))
                 {
-                    var tokenfiles = string.Concat(
-                        $"--tokenfile \"{bootloaderPaths.EncryptKey}\"",
-                        " ",
-                        $"--tokenfile \"{bootloaderPaths.KeysToken}\"");
-
-                    args = string.Format($"flash --tokengroup znet {tokenfiles} {devicePort} {deviceId}");
+                    args = SimplicityCommanderCli.GetTokenFileFlashArguments(
+                        new[] { bootloaderPaths.EncryptKey, bootloaderPaths.KeysToken }, devicePort, deviceId);
                     ret = ProgrammerAction(args, "Program Keys", FLASH_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
@@ -384,7 +322,8 @@ namespace Zats.Services
 
                 if (ret == 0 && region != null)
                 {
-                    args = string.Format($"flash --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ:0x{(byte)region:X2} {devicePort} {deviceId}");
+                    args = SimplicityCommanderCli.GetTokenFlashArguments(
+                        SimplicityCommanderCli.MFG_ZWAVE_COUNTRY_FREQ_TOKEN, (byte)region, devicePort, deviceId);
                     ret = ProgrammerAction(args, $"Set Z-Wave Region {region}=0x{(byte)region:X2}", DEFAULT_PROGRAMMER_TIMEOUT_MS, out output);
                 }
 
@@ -546,17 +485,7 @@ namespace Zats.Services
 
         private string GetHostClientPortWithArg(DeviceHostClient deviceHostClient)
         {
-            string devicePort;
-            if (IPAddress.TryParse(deviceHostClient.Host.SName, out var ipAddress))
-            {
-                devicePort = $"--ip {deviceHostClient.Host.SName}";
-            }
-            else
-            {
-                devicePort = $"--serialno {deviceHostClient.Host.JName}";
-            }
-
-            return devicePort;
+            return SimplicityCommanderCli.GetAdapterArgument(deviceHostClient.Host.SName, deviceHostClient.Host.JName);
         }
 
         private string GetHostManipulatorPortWithArg(DeviceHostClient deviceHostClient)
