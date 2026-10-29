@@ -263,6 +263,8 @@ namespace Zats.Services
             {
                 DeviceManager.DisableSmartStart(deviceNumber);
             }
+            // The NIF of the new inclusion state is written when the operation completes, see DeviceManager.
+            DeviceManager.SetNodeInformationForLearnMode(deviceNumber);
             ActionToken token = device.SetLearnMode(lmode, isNonSecure, timeoutMs,
                 (x) =>
                 {

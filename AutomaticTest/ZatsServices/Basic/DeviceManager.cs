@@ -1129,12 +1129,15 @@ namespace Zats.Services
                     }
                     else if (e.Value is SetLearnModeControllerOperation)
                     {
+                        // The NIF of a Learn Mode listed every Command Class; the new inclusion state decides again.
+                        SetNodeInformationByKeys(actionDevice.Value.SClient as Device);
                         var setLearnModeResult = (SetLearnModeResult)e.Value.Token.Result;
                         if (setLearnModeResult)
                             ConfigurationUpdate(actionDevice.Key);
                     }
                     else if (e.Value is SetLearnModeEndDeviceOperation)
                     {
+                        SetNodeInformationByKeys(actionDevice.Value.SClient as Device);
                         var setLearnModeResult = (SetLearnModeResult)e.Value.Token.Result;
                         if (setLearnModeResult && setLearnModeResult.LearnModeStatus != LearnModeStatuses.None)
                         {
@@ -2234,6 +2237,82 @@ namespace Zats.Services
                     smartStartToken.SetCompletedSignal();
                 }
             }
+        }
+
+        /// <summary>
+        /// Whether the device is set up as an end device (not a controller Generic Device Class) with S2 Access Control enabled.
+        /// </summary>
+        internal bool IsAccessEndDevice(Device device)
+        {
+            byte generic = device.Network.GetNodeInfo().Generic;
+            bool isController = generic == (byte)GenericTypes.GENERIC_CONTROLLER || generic == (byte)GenericTypes.STATIC_CONTROLLER;
+            return !isController && device.Network.IsEnabledS2_ACCESS;
+        }
+
+        /// <summary>
+        /// Sets the NIF inclusion state to <see cref="InclusionStates.NotIncluded"/> and writes the NIF, for a Learn Mode.
+        /// </summary>
+        internal void SetNodeInformationForLearnMode(Alias deviceAlias)
+        {
+            Device device = GetDevice(deviceAlias);
+            device.Network.SetNifInclusionState(InclusionStates.NotIncluded, IsAccessEndDevice(device));
+            WriteNodeInformation(device);
+        }
+
+        /// <summary>
+        /// Sets the NIF inclusion state from the NodeId and keys of the device and writes the NIF.
+        /// </summary>
+        internal void SetNodeInformationByKeys(Device device)
+        {
+            device.Network.SetNifInclusionStateByKeys(IsAccessEndDevice(device));
+            WriteNodeInformation(device);
+        }
+
+        /// <summary>
+        /// Writes the NIF Command Classes of the current inclusion state to the Serial API, and for an End Device Serial API,
+        /// which selects among its lists by its own keys, the NIF without keys and the non-securely and securely supported
+        /// Command Classes. Writes nothing if the NIF is empty.
+        /// </summary>
+        private void WriteNodeInformation(Device device)
+        {
+            NodeInfo nodeInfo = device.Network.GetNodeInfo();
+            byte[] nifCommandClasses = GetAdvertisedCommandClasses(device, device.Network.GetNifCommandClasses());
+            if (nifCommandClasses == null || nifCommandClasses.Length == 0)
+            {
+                return;
+            }
+
+            device.ApplicationNodeInformation(nodeInfo.DeviceOptions, nodeInfo.Generic, nodeInfo.Specific, nifCommandClasses);
+            if (device.IsEndDeviceApi)
+            {
+                device.ApplicationNodeInformationCmdClasses(
+                    GetAdvertisedCommandClasses(device, device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely)),
+                    device.Network.GetNonSecureCommandClasses(),
+                    device.Network.GetSecureCommandClasses());
+            }
+        }
+
+        private readonly ConcurrentDictionary<Device, byte[]> _secureExclusiveCommandClasses = new ConcurrentDictionary<Device, byte[]>();
+
+        /// <summary>
+        /// Sets the securely supported Command Classes the device advertises in no NIF, whatever its inclusion state is.
+        /// </summary>
+        internal void SetSecureExclusiveCommandClasses(Device device, byte[] secureExclusiveCommandClasses)
+        {
+            _secureExclusiveCommandClasses[device] = secureExclusiveCommandClasses ?? new byte[0];
+        }
+
+        /// <summary>
+        /// Returns the given NIF Command Classes without the ones the device advertises in no NIF.
+        /// </summary>
+        internal byte[] GetAdvertisedCommandClasses(Device device, byte[] nifCommandClasses)
+        {
+            if (nifCommandClasses == null || !_secureExclusiveCommandClasses.TryGetValue(device, out byte[] secureExclusiveCommandClasses))
+            {
+                return nifCommandClasses;
+            }
+
+            return nifCommandClasses.Where(x => !secureExclusiveCommandClasses.Contains(x)).ToArray();
         }
 
         internal void DisableSmartStart(Alias deviceAlias)

@@ -845,7 +845,9 @@ namespace Zats.Services
             Device device = DeviceManager.GetDevice(deviceNumber);
             ZWave.Enums.LearnModes lmode = (ZWave.Enums.LearnModes)(byte)mode;
             DeviceManager.DisableSmartStart(deviceNumber);
+            DeviceManager.SetNodeInformationForLearnMode(deviceNumber);
             SetLearnModeResult res = device.SetLearnMode(lmode, isNonSecure, timeoutMs);
+            DeviceManager.SetNodeInformationByKeys(device);
             DeviceManager.EnableSmartStart(deviceNumber);
             if (res.SubstituteStatus != ZWave.Enums.SubstituteStatuses.Done)
             {
@@ -1798,6 +1800,8 @@ namespace Zats.Services
         {
             Device device = DeviceManager.GetDevice(deviceNumber);
             GetSecurityKeysResult res = device.GetSecurityKeys();
+            // The keys read from the chip are the keys of the own node now, so the NIF inclusion state follows them.
+            DeviceManager.SetNodeInformationByKeys(device);
             return new BasicResult.GetSecurityKeys(res);
         }
 

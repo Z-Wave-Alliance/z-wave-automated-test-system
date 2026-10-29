@@ -206,6 +206,7 @@
     <Compile Include="Enums\RunModes.cs" />
     <Compile Include="Enums\ZnifferChannelConfig.cs" />
     <Compile Include="InstrumentMappingAttribute.cs" />
+    <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Enums\ConfigurationModes.cs" />
     <Compile Include="Enums\DcdcModes.cs" />
     <Compile Include="Enums\InclusionStatus.cs" />

@@ -46,7 +46,9 @@
     <Compile Include="ZatsEnvironmentTestsPlusTI.cs" />
     <Compile Include="ZatsEnvironmentTests.cs" />
     <Compile Include="DeviceManagerTest.cs" />
+    <Compile Include="FakeSerialApiTransportLayer.cs" />
     <Compile Include="MappingTests.cs" />
+    <Compile Include="NodeInformationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Dtls1ClientTransportClientTests.cs" />
   </ItemGroup>
