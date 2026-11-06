@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using Zats.Services;
 using ZWave.BasicApplication;
@@ -26,6 +29,9 @@ namespace ZatsServicesTests
 
         private const byte GENERIC_STATIC_CONTROLLER = 0x02;
         private const byte GENERIC_SWITCH_BINARY = 0x10;
+
+        private const byte KEY_S2_AUTHENTICATED = 0x02;
+        private const byte KEY_S2_ACCESS = 0x04;
 
         private static readonly byte[] ALL = { ZWAVEPLUS_INFO, SECURITY_2, VERSION, SWITCH_BINARY };
         private static readonly byte[] NON_SECURE = { ZWAVEPLUS_INFO, SECURITY_2 };
@@ -92,6 +98,39 @@ namespace ZatsServicesTests
             CollectionAssert.AreEqual(SECURE, lists[2]);
         }
 
+        [Test]
+        public void SerialApiStarted_EndDevice_RestoresTheNodeIdBaseTypeAndTheKeysOfTheChip()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS | KEY_S2_AUTHENTICATED);
+            SetCommandClasses(endDevice, GENERIC_SWITCH_BINARY);
+            _deviceManager.ListenForSerialApiStarted(_deviceManager.Devices[_alias], endDevice);
+            _chip.SecurityKeysMask = KEY_S2_AUTHENTICATED;
+            _chip.ClearRequests();
+
+            _chip.SendRequest(endDevice.SessionId, FakeSerialApiTransportLayer.CMD_STARTED, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+
+            Assert.IsTrue(WaitFor(() => _chip.GetRequests(FakeSerialApiTransportLayer.CMD_APPL_NODE_INFORMATION_CMD_CLASSES).Length > 0));
+            Assert.AreEqual(1, _chip.GetRequests(FakeSerialApiTransportLayer.CMD_SETUP).Length);
+            Assert.AreEqual(1, _chip.GetRequests(FakeSerialApiTransportLayer.CMD_SECURITY_SETUP).Length);
+            CollectionAssert.AreEquivalent(new[] { ZWave.Enums.SecuritySchemes.S2_AUTHENTICATED }, endDevice.Network.GetSecuritySchemes());
+        }
+
+        [Test]
+        public void SoftReset_ListeningForSerialApiStarted_RunsNoSecondRestore()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS);
+            DeviceHostClient deviceHostClient = _deviceManager.Devices[_alias];
+            _deviceManager.ListenForSerialApiStarted(deviceHostClient, endDevice);
+            _chip.ClearRequests();
+
+            _deviceManager.SoftReset(deviceHostClient, _alias);
+
+            Thread.Sleep(500);
+            Assert.AreEqual(1, _chip.GetRequests(FakeSerialApiTransportLayer.CMD_SETUP).Length);
+            Assert.IsEmpty(_chip.GetRequests(FakeSerialApiTransportLayer.CMD_MEMORY_GET_ID));
+            Assert.IsNotNull(deviceHostClient.SerialApiStartedToken);
+        }
+
         private Controller AddController(byte nodeId)
         {
             _chip.NodeId = nodeId;
@@ -154,6 +193,22 @@ namespace ZatsServicesTests
             }
 
             return lists.ToArray();
+        }
+
+        private static bool WaitFor(Func<bool> condition)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            while (!condition())
+            {
+                if (stopwatch.ElapsedMilliseconds > 3000)
+                {
+                    return false;
+                }
+
+                Thread.Sleep(20);
+            }
+
+            return true;
         }
     }
 }

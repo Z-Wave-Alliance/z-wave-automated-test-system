@@ -175,6 +175,15 @@ namespace Zats.Services
         internal BasicResult.Void SoftReset(DeviceHostClient deviceHostClient, Alias deviceAlias)
         {
             var device = deviceHostClient.SClient as Device;
+            // The listener for the Serial API Started callback restores the device after a restart it does on its own. This Soft
+            // Reset restores the device itself, so the listener pauses until the device has started again.
+            bool listensForSerialApiStarted = deviceHostClient.SerialApiStartedToken != null;
+            if (listensForSerialApiStarted)
+            {
+                device.Cancel(deviceHostClient.SerialApiStartedToken);
+                deviceHostClient.SerialApiStartedToken = null;
+            }
+
             var startToken = device.Expect(new ByteIndex[] { 0x00, 0x0A }, 4000, null); // UZB needs more time than dev boards
             ActionResult res = device.SoftReset();
             var startRes = startToken.WaitCompletedSignal();
@@ -190,6 +199,12 @@ namespace Zats.Services
             {
                 (deviceHostClient.SClient as Device).SerialApiSetNodeIdBaseType(2);
             }
+
+            if (listensForSerialApiStarted)
+            {
+                ListenForSerialApiStarted(deviceHostClient, device);
+            }
+
             return new BasicActionResult.Void(res);
         }
 
@@ -1899,6 +1914,50 @@ namespace Zats.Services
                 client.GetMaxPayloadSize();
                 client.GetMaxLRPayloadSize();
             }
+            ListenForSerialApiStarted(item, client);
+        }
+
+        /// <summary>
+        /// Listens for the Serial API Started callback of the device and restores what a restart of the Serial API undoes: The 16-bit
+        /// NodeId base type, and for an End Device Serial API the NodeId and keys of the own node and the NIF inclusion state they
+        /// select. Cancels the listener of a previous client of the same host first. Logs a restoring command that fails.
+        /// </summary>
+        internal void ListenForSerialApiStarted(DeviceHostClient item, Device client)
+        {
+            if (item.SerialApiStartedToken != null)
+            {
+                client.Cancel(item.SerialApiStartedToken);
+            }
+
+            item.SerialApiStartedToken = client.Listen(new ByteIndex[] { 0x00, 0x0A }, data =>
+            {
+                // The callback arrives on the session thread, and the restoring commands wait for their responses.
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        Log($"Serial API started at {item.DeviceAlias}, restoring the NodeId base type and the own node", LogLevels.Diagnostic);
+                        if (!IsOptionDisabled(ZWaveSet.NodeIdBase2, item.DeviceAlias))
+                        {
+                            LogFailedCommand(item.DeviceAlias, client.SerialApiSetNodeIdBaseType(2), "Setting the NodeId base type");
+                        }
+
+                        if (client.Library.IsSerialApiEndDevice())
+                        {
+                            // The NIF inclusion state derives from the NodeId and keys this read returns, so no other NIF write comes between.
+                            lock (GetNodeInformationLock(client))
+                            {
+                                LogFailedCommand(item.DeviceAlias, client.MemoryGetId(), "Reading the NodeId and keys");
+                                SetNodeInformationByKeys(client);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Restoring {item.DeviceAlias} after the Serial API start failed: {ex.Message}", LogLevels.Error);
+                    }
+                });
+            });
         }
 
         private List<Tuple<UnknownDevice, DeviceHost, int>> GetCompatibilityByChipSeriesTable(IEnumerable<UnknownDevice> requiredList, IEnumerable<DeviceHost> availableList)
@@ -2249,14 +2308,28 @@ namespace Zats.Services
             return !isController && device.Network.IsEnabledS2_ACCESS;
         }
 
+        private readonly ConcurrentDictionary<Device, object> _nodeInformationLocks = new ConcurrentDictionary<Device, object>();
+
+        /// <summary>
+        /// Returns the lock that serializes the NIF inclusion state changes and NIF writes of the device, which the Learn Mode paths
+        /// and the restore after a Serial API start do from different threads.
+        /// </summary>
+        private object GetNodeInformationLock(Device device)
+        {
+            return _nodeInformationLocks.GetOrAdd(device, _ => new object());
+        }
+
         /// <summary>
         /// Sets the NIF inclusion state to <see cref="InclusionStates.NotIncluded"/> and writes the NIF, for a Learn Mode.
         /// </summary>
         internal void SetNodeInformationForLearnMode(Alias deviceAlias)
         {
             Device device = GetDevice(deviceAlias);
-            device.Network.SetNifInclusionState(InclusionStates.NotIncluded, IsAccessEndDevice(device));
-            WriteNodeInformation(device);
+            lock (GetNodeInformationLock(device))
+            {
+                device.Network.SetNifInclusionState(InclusionStates.NotIncluded, IsAccessEndDevice(device));
+                WriteNodeInformation(device);
+            }
         }
 
         /// <summary>
@@ -2264,14 +2337,17 @@ namespace Zats.Services
         /// </summary>
         internal void SetNodeInformationByKeys(Device device)
         {
-            device.Network.SetNifInclusionStateByKeys(IsAccessEndDevice(device));
-            WriteNodeInformation(device);
+            lock (GetNodeInformationLock(device))
+            {
+                device.Network.SetNifInclusionStateByKeys(IsAccessEndDevice(device));
+                WriteNodeInformation(device);
+            }
         }
 
         /// <summary>
         /// Writes the NIF Command Classes of the current inclusion state to the Serial API, and for an End Device Serial API,
         /// which selects among its lists by its own keys, the NIF without keys and the non-securely and securely supported
-        /// Command Classes. Writes nothing if the NIF is empty.
+        /// Command Classes. Writes nothing if the NIF is empty. Logs a write that fails.
         /// </summary>
         private void WriteNodeInformation(Device device)
         {
@@ -2282,13 +2358,30 @@ namespace Zats.Services
                 return;
             }
 
-            device.ApplicationNodeInformation(nodeInfo.DeviceOptions, nodeInfo.Generic, nodeInfo.Specific, nifCommandClasses);
+            Alias deviceAlias = Devices.FirstOrDefault(d => d.Value.SClient == device).Key;
+            LogFailedCommand(deviceAlias,
+                device.ApplicationNodeInformation(nodeInfo.DeviceOptions, nodeInfo.Generic, nodeInfo.Specific, nifCommandClasses),
+                "Writing the NIF");
             if (device.IsEndDeviceApi)
             {
-                device.ApplicationNodeInformationCmdClasses(
-                    GetAdvertisedCommandClasses(device, device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely)),
-                    device.Network.GetNonSecureCommandClasses(),
-                    device.Network.GetSecureCommandClasses());
+                LogFailedCommand(deviceAlias,
+                    device.ApplicationNodeInformationCmdClasses(
+                        GetAdvertisedCommandClasses(device, device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely)),
+                        device.Network.GetNonSecureCommandClasses(),
+                        device.Network.GetSecureCommandClasses()),
+                    "Writing the Command Class lists");
+            }
+        }
+
+        /// <summary>
+        /// Logs a command of the device that did not complete, with the state of its result. Skips a null result, which a command
+        /// returns on a chip that does not support it.
+        /// </summary>
+        private void LogFailedCommand(Alias deviceAlias, ActionResult result, string action)
+        {
+            if (result != null && !result)
+            {
+                Log($"{action} at {deviceAlias} failed with {result.State}", LogLevels.Error);
             }
         }
 
@@ -2670,6 +2763,10 @@ namespace Zats.Services
         public IApplicationClient ZClient { get; set; }
         public DevKits DevKit { get; set; }
         public ConfigurationItem ConfigurationItem { get; set; }
+        /// <summary>
+        /// The listener for the Serial API Started callback of the Serial API device, null before the device is set up.
+        /// </summary>
+        public ActionToken SerialApiStartedToken { get; set; }
         public DeviceHostClient(DeviceHost deviceHost)
             : this(deviceHost, null, null)
         {
