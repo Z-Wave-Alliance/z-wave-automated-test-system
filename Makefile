@@ -5,6 +5,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 # SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+# SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 # SPDX-License-URL: https://spdx.org/licenses/BSD-3-Clause
 
 project?=z-wave-automated-test-system
@@ -92,7 +93,6 @@ z-wave-blobs:
 	git clone ${z_wave_blobs_url} --branch=${z_wave_blobs_ref} --recursive $@
 
 git/modules/prepare: ${z_wave_tools_core_dir} z-wave-blobs ${z_wave_tools_core_dir}/lib
-	@echo "TODO: https://github.com/Z-Wave-Alliance/OSWG/discussions/55"
 
 sln/prepare: ${z_wave_tools_core_dir}/README.md
 	@echo "TODO: https://github.com/Z-Wave-Alliance/z-wave-automated-test-system/issues/21"
