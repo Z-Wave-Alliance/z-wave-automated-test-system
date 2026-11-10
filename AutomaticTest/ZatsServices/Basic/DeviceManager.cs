@@ -2368,7 +2368,7 @@ namespace Zats.Services
                     device.ApplicationNodeInformationCmdClasses(
                         GetAdvertisedCommandClasses(device, device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely)),
                         device.Network.GetNonSecureCommandClasses(),
-                        device.Network.GetSecureCommandClasses()),
+                        device.Network.GetSupportedSecureCommandClasses()),
                     "Writing the Command Class lists");
             }
         }

@@ -131,6 +131,33 @@ namespace ZatsServicesTests
             Assert.IsNotNull(deviceHostClient.SerialApiStartedToken);
         }
 
+        [Test]
+        public void SetNodeInformationByKeys_AccessEndDeviceGrantedAccess_ThirdListHoldsTheSecurelySupportedCommandClasses()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS | KEY_S2_AUTHENTICATED);
+            SetCommandClasses(endDevice, GENERIC_SWITCH_BINARY);
+
+            _deviceManager.SetNodeInformationByKeys(endDevice);
+
+            byte[][] lists = GetLastCommandClassLists();
+            CollectionAssert.AreEqual(NON_SECURE, lists[0]);
+            CollectionAssert.AreEqual(NON_SECURE, lists[1]);
+            CollectionAssert.AreEqual(SECURE, lists[2]);
+        }
+
+        [Test]
+        public void SetNodeInformationByKeys_AccessEndDeviceGrantedOnlyAuthenticated_ThirdListIsEmpty()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_AUTHENTICATED);
+            SetCommandClasses(endDevice, GENERIC_SWITCH_BINARY);
+
+            _deviceManager.SetNodeInformationByKeys(endDevice);
+
+            byte[][] lists = GetLastCommandClassLists();
+            CollectionAssert.AreEqual(NON_SECURE, lists[1]);
+            Assert.IsEmpty(lists[2]);
+        }
+
         private Controller AddController(byte nodeId)
         {
             _chip.NodeId = nodeId;
