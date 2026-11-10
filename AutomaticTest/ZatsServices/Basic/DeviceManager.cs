@@ -2319,7 +2319,7 @@ namespace Zats.Services
                 device.ApplicationNodeInformationCmdClasses(
                     device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
                     device.Network.GetNonSecureCommandClasses(),
-                    device.Network.GetSecureCommandClasses());
+                    device.Network.GetSupportedSecureCommandClasses());
             }
         }
 

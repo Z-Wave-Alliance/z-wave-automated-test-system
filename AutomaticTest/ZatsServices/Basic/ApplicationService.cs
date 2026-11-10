@@ -373,7 +373,7 @@ namespace Zats.Services
             res = device.ApplicationNodeInformationCmdClasses(
                 device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
                 device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSecureCommandClasses());
+                device.Network.GetSupportedSecureCommandClasses());
 
             AssociationSupportData associationSupportData = (commandClassSupportList.ToList().Find(x => x.CommandClassId == COMMAND_CLASS_ASSOCIATION.ID) as AssociationSupport)?.AssociationSupportData;
 
@@ -1849,7 +1849,7 @@ namespace Zats.Services
             ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
                 device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
                 device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSecureCommandClasses());
+                device.Network.GetSupportedSecureCommandClasses());
 
             return SetApplicationResponse(deviceNumber, Library, FullCc.ToArray(), wakeUpInterval, zwavePlusVersion);
         }
@@ -2006,7 +2006,7 @@ namespace Zats.Services
             ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
                 device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
                 device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSecureCommandClasses());
+                device.Network.GetSupportedSecureCommandClasses());
 
             return SetApplicationQuirkResponse(deviceNumber, library, FullCc.ToArray(), wakeUpInterval, zwavePlusVersion);
 
@@ -2104,7 +2104,7 @@ namespace Zats.Services
             ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
                 device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
                 device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSecureCommandClasses());
+                device.Network.GetSupportedSecureCommandClasses());
         }
 
         public BasicToken.Void[] SetApplicationResponse(Alias deviceNumber, LibTypes Library, byte[] FullCmd)
