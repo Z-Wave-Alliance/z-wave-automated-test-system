@@ -390,8 +390,10 @@ namespace Zats.Services
 
             Device device = DeviceManager.GetDevice(nodeNumber);
             DeviceManager.DisableSmartStart(nodeNumber);
+            DeviceManager.SetNodeInformationForLearnMode(nodeNumber);
             Thread.Sleep(500);
             var learnRes = device.SetLearnMode(ZWave.Enums.LearnModes.LearnModeClassic, false, 30000);
+            DeviceManager.SetNodeInformationByKeys(device);
             DeviceManager.EnableSmartStart(nodeNumber);
             var inclusionRes = (InclusionResult)replaceToken.WaitCompletedSignal();
             ret = new BasicActionResult.IncludeNodeWithLearnMode(inclusionRes, learnRes);
