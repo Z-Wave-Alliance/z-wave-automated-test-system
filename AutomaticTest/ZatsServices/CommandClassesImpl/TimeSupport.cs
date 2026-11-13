@@ -3,7 +3,9 @@
 using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Utils;
+using Zats.Services.CommandClassesImpl;
 using ZWave;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Operations;
@@ -75,7 +77,11 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_TIME_V3.TIME_REPORT.ID && isHandlingAllowed)
                     {
                         // CC:008A.03.09.12.001 accept TIME_REPORT for time synchronization
-                        HandleTimeReport(command);
+                        // V3+: only accept reports received with EDE's highest security scheme
+                        if (Version < 3 || scheme == Network.GetHighestSecurityScheme())
+                        {
+                            HandleTimeReport(command);
+                        }
                     }
                     else if (command[1] == COMMAND_CLASS_TIME_V3.DATE_SET.ID && isHandlingAllowed)
                     {
@@ -84,7 +90,11 @@ namespace Zats.Services
                     else if (command[1] == COMMAND_CLASS_TIME_V3.DATE_REPORT.ID && isHandlingAllowed)
                     {
                         // according to CC:008A.03.09.12.001 accept TIME_REPORT for time synchronization (but not in the spec, yet)
-                        HandleDateReport(command);
+                        // V3+: only accept reports received with EDE's highest security scheme
+                        if (Version < 3 || scheme == Network.GetHighestSecurityScheme())
+                        {
+                            HandleDateReport(command);
+                        }
                     }
                     else if (command[1] == COMMAND_CLASS_TIME_V3.TIME_OFFSET_SET.ID && isHandlingAllowed)
                     {
@@ -218,42 +228,97 @@ namespace Zats.Services
         {
             if (data is TimeSupportData newData)
             {
-                bool timeChanged = false;
-                bool dateChanged = false;
+                SupportData.DestinationNodeId = newData.DestinationNodeId;
+                SupportData.ForceNonSecure = newData.ForceNonSecure;
 
-                if (SupportData.InternalOffset != newData.InternalOffset)
+                if (newData.TriggerTimeGet)
                 {
-                    if (SupportData.DeviceDateTime.Hour != newData.DeviceDateTime.Hour ||
-                        SupportData.DeviceDateTime.Minute != newData.DeviceDateTime.Minute ||
-                        SupportData.DeviceDateTime.Second != newData.DeviceDateTime.Second)
+                    // UI-Button 'Trigger Time Get', ignore other newData members for this click
+                    SendTimeGet(SupportData.DestinationNodeId, SupportData.ForceNonSecure);
+                }
+                else
+                {
+                    bool timeChanged = false;
+                    bool dateChanged = false;
+
+                    if (SupportData.InternalOffset != newData.InternalOffset)
                     {
-                        timeChanged = true;
+                        if (SupportData.DeviceDateTime.Hour != newData.DeviceDateTime.Hour ||
+                            SupportData.DeviceDateTime.Minute != newData.DeviceDateTime.Minute ||
+                            SupportData.DeviceDateTime.Second != newData.DeviceDateTime.Second)
+                        {
+                            timeChanged = true;
+                        }
+                        if (SupportData.DeviceDateTime.Year != newData.DeviceDateTime.Year ||
+                            SupportData.DeviceDateTime.Month != newData.DeviceDateTime.Month ||
+                            SupportData.DeviceDateTime.Day != newData.DeviceDateTime.Day)
+                        {
+                            dateChanged = true;
+                        }
                     }
-                    if (SupportData.DeviceDateTime.Year != newData.DeviceDateTime.Year ||
-                        SupportData.DeviceDateTime.Month != newData.DeviceDateTime.Month ||
-                        SupportData.DeviceDateTime.Day != newData.DeviceDateTime.Day)
+
+                    SupportData.TimeSource = newData.TimeSource;
+                    SupportData.RtcFailure = newData.RtcFailure;
+                    SupportData.InternalOffset = newData.InternalOffset;
+
+                    if (timeChanged)
                     {
-                        dateChanged = true;
+                        SendUnsolicitedReport((COMMAND_CLASS_TIME_V3.TIME_REPORT)SupportData, NodeTag.Empty);
+                    }
+
+                    if (dateChanged)
+                    {
+                        SendUnsolicitedReport((COMMAND_CLASS_TIME_V3.DATE_REPORT)SupportData, NodeTag.Empty);
                     }
                 }
 
-                SupportData.TimeSource = newData.TimeSource;
-                SupportData.RtcFailure = newData.RtcFailure;
-                SupportData.InternalOffset = newData.InternalOffset;
+                // safety mechanism: make sure that trigger flag is still false
+                SupportData.TriggerTimeGet = false;
 
                 SupportDelegates?.DeviceDataUpdate?.Invoke(this);
-
-                if (timeChanged)
-                {
-                    SendUnsolicitedReport((COMMAND_CLASS_TIME_V3.TIME_REPORT)SupportData, NodeTag.Empty);
-                }
-
-                if (dateChanged)
-                {
-                    SendUnsolicitedReport((COMMAND_CLASS_TIME_V3.DATE_REPORT)SupportData, NodeTag.Empty);
-                }
-
             }
+        }
+
+        private void SendTimeGet(ushort destinationNodeId, bool forceNonSecure)
+        {
+            // Do not send if device is not included
+            if (_network.NodeTag == NodeTag.Empty || ReportDevice == null)
+            {
+                return;
+            }
+
+            ZWave.Enums.SecuritySchemes scheme = forceNonSecure
+                ? ZWave.Enums.SecuritySchemes.NONE
+                : ReportDevice.Network.GetHighestSecurityScheme();
+
+            byte[] command = new COMMAND_CLASS_TIME_V3.TIME_GET();
+            NodeTag destinationNodeTag = new NodeTag(destinationNodeId);
+
+            CommandClassSupportUtils.ReportAddLog(SupportData.LogLevel,
+                        "{0} CC @ {1}: TIME_GET to NodeId {2} (scheme {3}) prepared",
+                        CommandClassShortName, EndPointName, destinationNodeId, scheme);
+
+            if (EndPoint == 0)
+            {
+                ReportDevice.SendDataEx(destinationNodeTag, command, TxOptions, scheme, null);
+            }
+            else
+            {
+                var multichannelEncap = new COMMAND_CLASS_MULTI_CHANNEL_V4.MULTI_CHANNEL_CMD_ENCAP()
+                {
+                    commandClass = command[0],
+                    command = command[1],
+                    parameter = command.Skip(2).ToArray(),
+                };
+                multichannelEncap.properties1.sourceEndPoint = EndPoint;
+                multichannelEncap.properties2.destinationEndPoint = 0;
+
+                ReportDevice.SendDataEx(destinationNodeTag, multichannelEncap, TxOptions, scheme, null);
+            }
+
+            CommandClassSupportUtils.ReportAddLog(SupportData.LogLevel,
+                        "{0} CC @ {1}: TIME_GET to NodeId {2} (triggered) sent",
+                        CommandClassShortName, EndPointName, destinationNodeId);
         }
 
         public override void StartEmulation()
@@ -294,6 +359,18 @@ namespace Zats.Services
 
         [CustomDataParameter(1, "RTC Failure", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.Config | EditType.Edit)]
         public bool RtcFailure { get; set; } = false;
+
+
+        [ParameterSeparator(1, "Sync Time")]
+        [CustomDataParameter(1, "Destination Node ID", CommandClassesImpl.UiControl.TextBox, CommandClassesImpl.InputType.Int_0_4095, EditType.View | EditType.Edit)]
+        public ushort DestinationNodeId { get; set; } = 1;
+
+        [CustomDataParameter(1, "Force sending non-securely", CommandClassesImpl.UiControl.CheckBox, CommandClassesImpl.InputType.Boolean, EditType.View | EditType.Edit)]
+        public bool ForceNonSecure { get; set; } = false;
+
+        [CustomDataParameterEventTrigger]
+        [CustomDataParameter(1, "Trigger Time Get", CommandClassesImpl.UiControl.Button, CommandClassesImpl.InputType.Boolean, EditType.View | EditType.Edit)]
+        public bool TriggerTimeGet { get; set; } = false;
 
 
         public static implicit operator COMMAND_CLASS_TIME_V3.TIME_REPORT(TimeSupportData data)
