@@ -361,19 +361,8 @@ namespace Zats.Services
             beforeInclusionCCs = GetDistinctOrderedCCIds(beforeInclusionCCs);
             secureCCs = GetDistinctOrderedCCIds(secureCCs);
 
-            // Tools Core derives the NIF and the non-securely and securely supported Command Classes from the Command Classes,
-            // the securely supported ones and the inclusion state. The End Device Serial API selects among its lists by its own
-            // keys, so it gets the NIF without keys as its first list; a controller sends the first list in every state, so the
-            // Learn Mode paths keep it current, see DeviceManager.WriteNodeInformation.
-            device.Network.SetApplicationNodeInformation((ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, beforeInclusionCCs.ToArray());
-            device.Network.SetSecureCommandClasses(secureCCs.ToArray());
-            device.Network.SetNifInclusionStateByKeys(DeviceManager.IsAccessEndDevice(device));
-            ActionResult res = device.ApplicationNodeInformation(
-                (ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, device.Network.GetNifCommandClasses());
-            res = device.ApplicationNodeInformationCmdClasses(
-                device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
-                device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSupportedSecureCommandClasses());
+            DeviceManager.SetNodeInformation(
+                device, (ZWave.Enums.DeviceOptions)deviceOptions, genericDeviceClass, specificDeviceClass, beforeInclusionCCs.ToArray(), secureCCs.ToArray());
 
             AssociationSupportData associationSupportData = (commandClassSupportList.ToList().Find(x => x.CommandClassId == COMMAND_CLASS_ASSOCIATION.ID) as AssociationSupport)?.AssociationSupportData;
 
@@ -1842,14 +1831,7 @@ namespace Zats.Services
 
             Device device = DeviceManager.GetDevice(deviceNumber);
 
-            device.Network.SetApplicationNodeInformation(devOpt, (byte)generic, specific, FullCc.ToArray());
-            device.Network.SetSecureCommandClasses(SecuredClasses.ToArray());
-            device.Network.SetNifInclusionStateByKeys(DeviceManager.IsAccessEndDevice(device));
-            ActionResult AppNodeInfo = device.ApplicationNodeInformation(devOpt, (byte)generic, specific, device.Network.GetNifCommandClasses());
-            ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
-                device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
-                device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSupportedSecureCommandClasses());
+            DeviceManager.SetNodeInformation(device, devOpt, (byte)generic, specific, FullCc.ToArray(), SecuredClasses.ToArray());
 
             return SetApplicationResponse(deviceNumber, Library, FullCc.ToArray(), wakeUpInterval, zwavePlusVersion);
         }
@@ -1999,14 +1981,7 @@ namespace Zats.Services
 
             Device device = DeviceManager.GetDevice(deviceNumber);
 
-            device.Network.SetApplicationNodeInformation(devOpt, generic, specific, FullCc.ToArray());
-            device.Network.SetSecureCommandClasses(securedClasses.ToArray());
-            device.Network.SetNifInclusionStateByKeys(DeviceManager.IsAccessEndDevice(device));
-            ActionResult appNodeInfo = device.ApplicationNodeInformation(devOpt, generic, specific, device.Network.GetNifCommandClasses());
-            ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
-                device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
-                device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSupportedSecureCommandClasses());
+            DeviceManager.SetNodeInformation(device, devOpt, generic, specific, FullCc.ToArray(), securedClasses.ToArray());
 
             return SetApplicationQuirkResponse(deviceNumber, library, FullCc.ToArray(), wakeUpInterval, zwavePlusVersion);
 
@@ -2097,14 +2072,7 @@ namespace Zats.Services
 
             Device device = DeviceManager.GetDevice(deviceNumber);
 
-            device.Network.SetApplicationNodeInformation(devOpt, generic, specific, FullCc.ToArray());
-            device.Network.SetSecureCommandClasses(SecuredClasses.ToArray());
-            device.Network.SetNifInclusionStateByKeys(DeviceManager.IsAccessEndDevice(device));
-            ActionResult AppNodeInfo = device.ApplicationNodeInformation(devOpt, generic, specific, device.Network.GetNifCommandClasses());
-            ActionResult AppNodeInfoCmd = device.ApplicationNodeInformationCmdClasses(
-                device.Network.GetNifCommandClasses(InclusionStates.IncludedNonSecurely),
-                device.Network.GetNonSecureCommandClasses(),
-                device.Network.GetSupportedSecureCommandClasses());
+            DeviceManager.SetNodeInformation(device, devOpt, generic, specific, FullCc.ToArray(), SecuredClasses.ToArray());
         }
 
         public BasicToken.Void[] SetApplicationResponse(Alias deviceNumber, LibTypes Library, byte[] FullCmd)
