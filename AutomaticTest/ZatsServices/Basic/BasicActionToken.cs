@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 using System.Collections.Generic;
 using ZWave;
 using ZWave.BasicApplication.Operations;
 using ZWave.BasicApplication.Tasks;
 using System.Linq;
+using System.Threading;
 using Utils.Threading;
 using Utils;
 
@@ -169,14 +171,44 @@ namespace Zats.Services
 
         public class SetLearnMode : BasicToken.SetLearnMode
         {
+            private const int NODE_INFORMATION_TIMEOUT_MS = 10000;
+
+            private readonly ManualResetEventSlim _nodeInformationWritten;
+            private readonly Action _nodeInformationTimedOut;
+
             public SetLearnMode(ActionToken token)
             {
                 Token = token;
             }
 
+            /// <param name="nodeInformationWritten">
+            /// Set once the NIF of the new inclusion state is written, which happens after the operation signals its completion.
+            /// </param>
+            /// <param name="nodeInformationTimedOut">Called when the NIF is not written in time.</param>
+            public SetLearnMode(ActionToken token, ManualResetEventSlim nodeInformationWritten, Action nodeInformationTimedOut)
+            {
+                Token = token;
+                _nodeInformationWritten = nodeInformationWritten;
+                _nodeInformationTimedOut = nodeInformationTimedOut;
+            }
+
             public override BasicResult.SetLearnMode WaitCompletedSignal()
             {
-                return new BasicActionResult.SetLearnMode((SetLearnModeResult)Token.WaitCompletedSignal());
+                ActionResult result = Token.WaitCompletedSignal();
+                WaitNodeInformationWritten();
+                return new BasicActionResult.SetLearnMode((SetLearnModeResult)result);
+            }
+
+            /// <summary>
+            /// Waits until the NIF of the new inclusion state is written, for at most <see cref="NODE_INFORMATION_TIMEOUT_MS"/>.
+            /// Returns at once for a Learn Mode that writes none. Reports a NIF that is not written in time.
+            /// </summary>
+            internal void WaitNodeInformationWritten()
+            {
+                if (_nodeInformationWritten != null && !_nodeInformationWritten.Wait(NODE_INFORMATION_TIMEOUT_MS))
+                {
+                    _nodeInformationTimedOut?.Invoke();
+                }
             }
         }
 

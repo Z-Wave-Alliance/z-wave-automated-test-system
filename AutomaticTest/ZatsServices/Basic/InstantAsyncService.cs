@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
+using System;
+using System.Threading;
 using ZWave;
 using TransmitOptions = Zats.Services.TransmitOptions;
 using ZWave.BasicApplication.Devices;
@@ -92,15 +95,34 @@ namespace Zats.Services
             Device device = DeviceManager.GetDevice(deviceNumber);
             ZWave.Enums.LearnModes lmode = (ZWave.Enums.LearnModes)(byte)mode;
             ActionToken token = null;
+            DeviceManager.SetNodeInformationForLearnMode(deviceNumber);
+            ManualResetEventSlim nodeInformationWritten = new ManualResetEventSlim(false);
+            Action<IActionItem> completedCallback = (x) =>
+            {
+                try
+                {
+                    // The End Device operation started here does not read the NodeId and keys of an End Device Serial API.
+                    DeviceManager.CompleteLearnMode(deviceNumber, device, true, false);
+                }
+                finally
+                {
+                    nodeInformationWritten.Set();
+                }
+            };
             if (device is EndDevice)
             {
-                token = device.ExecuteAsync(new SetLearnModeEndDeviceOperation(device.Network, lmode, device.SetAssignStatusSignal, timeoutMs) { IsExclusive = false }, null);
+                token = device.ExecuteAsync(
+                    new SetLearnModeEndDeviceOperation(device.Network, lmode, device.SetAssignStatusSignal, timeoutMs) { IsExclusive = false },
+                    completedCallback);
             }
             else
             {
-                token = device.ExecuteAsync(new SetLearnModeControllerOperation(device.Network, lmode, device.SetNodeStatusSignal, timeoutMs) { IsExclusive = false }, null);
+                token = device.ExecuteAsync(
+                    new SetLearnModeControllerOperation(device.Network, lmode, device.SetNodeStatusSignal, timeoutMs) { IsExclusive = false },
+                    completedCallback);
             }
-            return new BasicActionToken.SetLearnMode(token);
+            return new BasicActionToken.SetLearnMode(
+                token, nodeInformationWritten, () => Log($"The NIF of {deviceNumber} was not written in time after the Learn Mode", LogLevels.Error));
         }
 
         public BasicToken.Void SetSleepMode(Alias deviceNumber, SleepModes mode, byte intEnable)

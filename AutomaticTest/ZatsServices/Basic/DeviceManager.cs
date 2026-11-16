@@ -1144,15 +1144,12 @@ namespace Zats.Services
                     }
                     else if (e.Value is SetLearnModeControllerOperation)
                     {
-                        // The NIF of a Learn Mode listed every Command Class; the new inclusion state decides again.
-                        SetNodeInformationByKeys(actionDevice.Value.SClient as Device);
                         var setLearnModeResult = (SetLearnModeResult)e.Value.Token.Result;
                         if (setLearnModeResult)
                             ConfigurationUpdate(actionDevice.Key);
                     }
                     else if (e.Value is SetLearnModeEndDeviceOperation)
                     {
-                        SetNodeInformationByKeys(actionDevice.Value.SClient as Device);
                         var setLearnModeResult = (SetLearnModeResult)e.Value.Token.Result;
                         if (setLearnModeResult && setLearnModeResult.LearnModeStatus != LearnModeStatuses.None)
                         {
@@ -1944,12 +1941,7 @@ namespace Zats.Services
 
                         if (client.Library.IsSerialApiEndDevice())
                         {
-                            // The NIF inclusion state derives from the NodeId and keys this read returns, so no other NIF write comes between.
-                            lock (GetNodeInformationLock(client))
-                            {
-                                LogFailedCommand(item.DeviceAlias, client.MemoryGetId(), "Reading the NodeId and keys");
-                                SetNodeInformationByKeys(client);
-                            }
+                            SetNodeInformationByKeys(client, true);
                         }
                     }
                     catch (Exception ex)
@@ -2338,15 +2330,59 @@ namespace Zats.Services
         /// <summary>
         /// Sets the NIF inclusion state from the NodeId and keys of the device and writes the NIF.
         /// </summary>
-        internal void SetNodeInformationByKeys(Device device)
+        /// <param name="readOwnNode">
+        /// Whether to read the NodeId and keys of an End Device Serial API from the chip first, which holds them. The read and the
+        /// NIF write share the lock of the device, so no other NIF write comes between.
+        /// </param>
+        internal void SetNodeInformationByKeys(Device device, bool readOwnNode = false)
         {
             lock (GetNodeInformationLock(device))
             {
+                if (readOwnNode && device.Library.IsSerialApiEndDevice())
+                {
+                    Alias deviceAlias = Devices.FirstOrDefault(d => d.Value.SClient == device).Key;
+                    LogFailedCommand(deviceAlias, device.MemoryGetId(), "Reading the NodeId and keys");
+                }
+
                 device.Network.SetNifInclusionStateByKeys(IsAccessEndDevice(device));
                 if (HasNifCommandClasses(device))
                 {
                     WriteNodeInformation(device);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Sets the NIF inclusion state from the NodeId and keys of the device after a Learn Mode, writes the NIF and enables
+        /// SmartStart again if asked. Logs an exception of either step instead of throwing it.
+        /// </summary>
+        /// <param name="readOwnNode">
+        /// Whether to read the NodeId and keys of an End Device Serial API from the chip first, for a Learn Mode operation that
+        /// does not read them itself.
+        /// </param>
+        internal void CompleteLearnMode(Alias deviceAlias, Device device, bool readOwnNode, bool enableSmartStart)
+        {
+            try
+            {
+                SetNodeInformationByKeys(device, readOwnNode);
+            }
+            catch (Exception ex)
+            {
+                Log($"Writing the NIF of {deviceAlias} after the Learn Mode failed: {ex.Message}", LogLevels.Error);
+            }
+
+            if (!enableSmartStart)
+            {
+                return;
+            }
+
+            try
+            {
+                EnableSmartStart(deviceAlias);
+            }
+            catch (Exception ex)
+            {
+                Log($"Enabling SmartStart at {deviceAlias} after the Learn Mode failed: {ex.Message}", LogLevels.Error);
             }
         }
 

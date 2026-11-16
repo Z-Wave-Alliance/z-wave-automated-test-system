@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: Silicon Laboratories Inc. <https://www.silabs.com>
+// SPDX-FileCopyrightText: Z-Wave Alliance <https://z-wavealliance.org>
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -263,26 +264,50 @@ namespace Zats.Services
             {
                 DeviceManager.DisableSmartStart(deviceNumber);
             }
-            // The NIF of the new inclusion state is written when the operation completes, see DeviceManager.
             DeviceManager.SetNodeInformationForLearnMode(deviceNumber);
+            ManualResetEventSlim nodeInformationWritten = new ManualResetEventSlim(false);
             ActionToken token = device.SetLearnMode(lmode, isNonSecure, timeoutMs,
                 (x) =>
                 {
-                    DeviceManager.EnableSmartStart(deviceNumber);
+                    try
+                    {
+                        // The NIF of a Learn Mode listed every Command Class; the NodeId and keys decide again, in every end
+                        // state of the operation.
+                        DeviceManager.CompleteLearnMode(deviceNumber, device, false, true);
+                    }
+                    finally
+                    {
+                        nodeInformationWritten.Set();
+                    }
                 });
-            return new BasicActionToken.SetLearnMode(token);
+            return new BasicActionToken.SetLearnMode(token, nodeInformationWritten, () => LogNodeInformationTimeout(deviceNumber));
         }
 
         public BasicToken.SetLearnMode WaitForLearnMode(Alias deviceNumber, int timeoutMs)
         {
             Device device = DeviceManager.GetDevice(deviceNumber);
 
+            DeviceManager.SetNodeInformationForLearnMode(deviceNumber);
+            ManualResetEventSlim nodeInformationWritten = new ManualResetEventSlim(false);
             ActionToken token = device.WaitForLearnMode(timeoutMs,
                 (x) =>
                 {
-                    DeviceManager.EnableSmartStart(deviceNumber);
+                    try
+                    {
+                        // The operation does not read the NodeId and keys of an End Device Serial API.
+                        DeviceManager.CompleteLearnMode(deviceNumber, device, true, true);
+                    }
+                    finally
+                    {
+                        nodeInformationWritten.Set();
+                    }
                 });
-            return new BasicActionToken.SetLearnMode(token);
+            return new BasicActionToken.SetLearnMode(token, nodeInformationWritten, () => LogNodeInformationTimeout(deviceNumber));
+        }
+
+        private void LogNodeInformationTimeout(Alias deviceNumber)
+        {
+            Log($"The NIF of {deviceNumber} was not written in time after the Learn Mode", LogLevels.Error);
         }
 
         /// <summary>
@@ -319,7 +344,9 @@ namespace Zats.Services
         /// <returns></returns>
         public bool WaitCompletedSignal(_ActionToken token)
         {
-            return token.Token.WaitCompletedSignal().IsStateCompleted;
+            bool isCompleted = token.Token.WaitCompletedSignal().IsStateCompleted;
+            (token as BasicActionToken.SetLearnMode)?.WaitNodeInformationWritten();
+            return isCompleted;
         }
 
         /// <summary>

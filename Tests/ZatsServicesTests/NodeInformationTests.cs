@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using NUnit.Framework;
+using Utils.UI.Enums;
 using Zats.Services;
 using ZWave.BasicApplication;
 using ZWave.BasicApplication.Devices;
@@ -39,6 +40,7 @@ namespace ZatsServicesTests
 
         private FakeSerialApiTransportLayer _chip;
         private DeviceManager _deviceManager;
+        private List<string> _errors;
         private Alias _alias;
 
         [SetUp]
@@ -47,6 +49,17 @@ namespace ZatsServicesTests
             _chip = new FakeSerialApiTransportLayer();
             _deviceManager = new DeviceManager(true, null, null, null, null);
             _deviceManager.BasicApplicationLayer = new BasicApplicationLayer(_deviceManager.SessionLayer, new BasicFrameLayer(), _chip);
+            _errors = new List<string>();
+            _deviceManager.OnLog += (text, suffix, logLevel) =>
+            {
+                if (logLevel == LogLevels.Error)
+                {
+                    lock (_errors)
+                    {
+                        _errors.Add(text);
+                    }
+                }
+            };
             _alias = new Alias(1);
         }
 
@@ -177,6 +190,46 @@ namespace ZatsServicesTests
             byte[][] lists = GetLastCommandClassLists();
             CollectionAssert.AreEqual(withoutSecureExclusive, lists[0]);
             CollectionAssert.AreEqual(SECURE, lists[2]);
+        }
+
+        [Test]
+        public void AsyncSetLearnMode_ConfigurationModeNone_NifOfTheKeysIsWrittenWhenTheTokenReturns()
+        {
+            Controller controller = AddController(nodeId: 1);
+            _deviceManager.SetNodeInformation(controller, DeviceOptions.Listening, GENERIC_STATIC_CONTROLLER, 0x01, ALL, SECURE);
+            var asyncService = new AsyncService(_deviceManager);
+
+            BasicToken.SetLearnMode token = asyncService.SetLearnMode(_alias, Zats.Services.LearnModes.LearnModeClassic, 300);
+            byte[] nifOfLearnMode = GetLastNif();
+            token.WaitCompletedSignal();
+
+            CollectionAssert.AreEqual(ALL, nifOfLearnMode);
+            CollectionAssert.AreEqual(NON_SECURE, GetLastNif());
+        }
+
+        [Test]
+        public void AsyncWaitForLearnMode_EndDevice_NifFollowsTheKeysOfTheChip()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS | KEY_S2_AUTHENTICATED);
+            _deviceManager.SetNodeInformation(endDevice, DeviceOptions.Listening, GENERIC_SWITCH_BINARY, 0x01, ALL, SECURE);
+            var asyncService = new AsyncService(_deviceManager);
+            _chip.SecurityKeysMask = KEY_S2_AUTHENTICATED;
+
+            BasicToken.SetLearnMode token = asyncService.WaitForLearnMode(_alias, 300);
+            token.WaitCompletedSignal();
+
+            Assert.IsEmpty(GetLastCommandClassLists()[2]);
+        }
+
+        [Test]
+        public void CompleteLearnMode_NifWriteThrows_LogsTheExceptionAndReturns()
+        {
+            Assert.DoesNotThrow(() => _deviceManager.CompleteLearnMode(_alias, null, false, true));
+
+            lock (_errors)
+            {
+                Assert.AreEqual(1, _errors.Count);
+            }
         }
 
         private Controller AddController(byte nodeId)
