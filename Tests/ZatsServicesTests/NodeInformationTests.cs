@@ -82,23 +82,6 @@ namespace ZatsServicesTests
         }
 
         [Test]
-        public void SetNodeInformationByKeys_SecureExclusiveCommandClass_IsSecurelySupportedAndInNoNif()
-        {
-            EndDevice endDevice = AddEndDevice(nodeId: 0, securityKeysMask: 0);
-            endDevice.Network.IsEnabledS2_ACCESS = false;
-            SetCommandClasses(endDevice, GENERIC_SWITCH_BINARY);
-            _deviceManager.SetSecureExclusiveCommandClasses(endDevice, new[] { SWITCH_BINARY });
-
-            _deviceManager.SetNodeInformationByKeys(endDevice);
-
-            byte[] withoutSecureExclusive = { ZWAVEPLUS_INFO, SECURITY_2, VERSION };
-            CollectionAssert.AreEqual(withoutSecureExclusive, GetLastNif());
-            byte[][] lists = GetLastCommandClassLists();
-            CollectionAssert.AreEqual(withoutSecureExclusive, lists[0]);
-            CollectionAssert.AreEqual(SECURE, lists[2]);
-        }
-
-        [Test]
         public void SerialApiStarted_EndDevice_RestoresTheNodeIdBaseTypeAndTheKeysOfTheChip()
         {
             EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS | KEY_S2_AUTHENTICATED);
@@ -156,6 +139,44 @@ namespace ZatsServicesTests
             byte[][] lists = GetLastCommandClassLists();
             CollectionAssert.AreEqual(NON_SECURE, lists[1]);
             Assert.IsEmpty(lists[2]);
+        }
+
+        [Test]
+        public void SetNodeInformation_Controller_GetsTheNifAndNoCommandClassLists()
+        {
+            Controller controller = AddController(nodeId: 1);
+
+            _deviceManager.SetNodeInformation(controller, DeviceOptions.Listening, GENERIC_STATIC_CONTROLLER, 0x01, ALL, SECURE);
+
+            CollectionAssert.AreEqual(NON_SECURE, GetLastNif());
+            Assert.IsEmpty(_chip.GetRequests(FakeSerialApiTransportLayer.CMD_APPL_NODE_INFORMATION_CMD_CLASSES));
+        }
+
+        [Test]
+        public void SetNodeInformation_EndDevice_GetsTheNifAndTheCommandClassLists()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 5, securityKeysMask: KEY_S2_ACCESS);
+
+            _deviceManager.SetNodeInformation(endDevice, DeviceOptions.Listening, GENERIC_SWITCH_BINARY, 0x01, ALL, SECURE);
+
+            CollectionAssert.AreEqual(NON_SECURE, GetLastNif());
+            CollectionAssert.AreEqual(SECURE, GetLastCommandClassLists()[2]);
+        }
+
+        [Test]
+        public void SetNodeInformation_SecureExclusiveCommandClass_IsSecurelySupportedAndInNoNif()
+        {
+            EndDevice endDevice = AddEndDevice(nodeId: 0, securityKeysMask: 0);
+            endDevice.Network.IsEnabledS2_ACCESS = false;
+
+            _deviceManager.SetNodeInformation(
+                endDevice, DeviceOptions.Listening, GENERIC_SWITCH_BINARY, 0x01, ALL, SECURE, new[] { SWITCH_BINARY });
+
+            byte[] withoutSecureExclusive = { ZWAVEPLUS_INFO, SECURITY_2, VERSION };
+            CollectionAssert.AreEqual(withoutSecureExclusive, GetLastNif());
+            byte[][] lists = GetLastCommandClassLists();
+            CollectionAssert.AreEqual(withoutSecureExclusive, lists[0]);
+            CollectionAssert.AreEqual(SECURE, lists[2]);
         }
 
         private Controller AddController(byte nodeId)
