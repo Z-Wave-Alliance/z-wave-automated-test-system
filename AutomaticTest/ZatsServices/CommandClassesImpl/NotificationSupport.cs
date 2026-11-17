@@ -823,7 +823,7 @@ namespace Zats.Services
         UnderHeatDetectedWithLocation = 0x05,
         [Description("0x06 Underheat detected")]
         UnderHeatDetected = 0x06,
-        [Description("0x03 Rapid temperature rise (location detected)")]
+        [Description("0x03 Rapid temperature rise (location provided)")]
         RapidTemperatureRiseWithLocation = 0x03,
         [Description("0x04 Rapid temperature rise")]
         RapidTemperatureRise = 0x04,
@@ -837,7 +837,7 @@ namespace Zats.Services
         AlarmSilenced = 0x09,
         [Description("0x08 Replacement required, End-of-life")]
         ReplacementRequiredEndOfLife = 0x08,
-        [Description("0x0A Mainenance required, dust in device")]
+        [Description("0x0A Maintenance required, dust in device")]
         MaintenanceRequiredDustInDevice = 0x0A,
         [Description("0x0B Maintenance required, planned periodic inspection")]
         MaintenanceRequiredPlannedPeriodicInspection = 0x0B,
@@ -865,7 +865,7 @@ namespace Zats.Services
         WaterFlowAlarm = 0x06,
         [Description("0x07 Water pressure alarm")]
         WaterPressureAlarm = 0x07,
-        [Description("0x08 Water temperatur alarm")]
+        [Description("0x08 Water temperature alarm")]
         WaterTemperatureAlarm = 0x08,
         [Description("0x09 Water level alarm")]
         WaterLevelAlarm = 0x09,
@@ -977,9 +977,9 @@ namespace Zats.Services
         BarrierPerformingInitializationProcess = 0x40,
         [Description("0x41 Barrier operation force has been exceeded")]
         BarrierOperationForceHasBeenExceeded = 0x41,
-        [Description("0x42 Barrier motor has exceed manufacturers operational time limit")]
+        [Description("0x42 Barrier motor has exceeded manufacturers operational time limit")]
         BarrierMotorHasExceededManufacturersOperationalTimeLimit = 0x42,
-        [Description("0x43 Barrier operation has exceed physical mechanical limits")]
+        [Description("0x43 Barrier operation has exceeded physical mechanical limits")]
         BarrierOperationHasExceededPhysicalMechanicalLimits = 0x43,
         [Description("0x44 Barrier unable to perform requested operation due to UL requirements")]
         BarrierUnableToPerformRequestedOperationDueToULRequirements = 0x44,
@@ -1067,7 +1067,7 @@ namespace Zats.Services
         BatteryIsFullyCharged = 0x0D,
         [Description("0x0E Charge battery soon")]
         ChargeBatterySoon = 0x0E,
-        [Description("0x01 Charge battery now")]
+        [Description("0x0F Charge battery now")]
         ChargeBatteryNow = 0x0F,
         [Description("0x10 Backup battery is low")]
         BackupBatteryIsLow = 0x10,
@@ -1097,7 +1097,7 @@ namespace Zats.Services
         SystemSoftwareFailure_CodeProvided = 0x04,
         [Description("0x05 Heartbeat")]
         Heartbeat = 0x05,
-        [Description("0x09 Tampering, product cover removed")]
+        [Description("0x06 Tampering, product cover removed")]
         Tampering_ProductCoverRemoved = 0x06,
         [Description("0x07 Emergency shutoff")]
         EmergencyShutoff = 0x07,
@@ -1123,7 +1123,7 @@ namespace Zats.Services
         ContactMedicalService = 0x03,
         [Description("0x04 Panic alert")]
         PanicAlert = 0x04,
-        [Description("0xFE Uunknown event")]
+        [Description("0xFE Unknown event")]
         UnknownEvent = 0xFE
     }
 
@@ -1167,7 +1167,7 @@ namespace Zats.Services
         Spinning = 0x10,
         [Description("0x12 Drying")]
         Drying = 0x12,
-        [Description("0x05 Failure to set target temperture")]
+        [Description("0x05 Failure to set target temperature")]
         FailureToSetTargetTemperature = 0x05,
         [Description("0x07 Water supply failure")]
         WaterSupplyFailure = 0x07,
@@ -1213,7 +1213,7 @@ namespace Zats.Services
         SleepApneaDetected = 0x07,
         [Description("0x08 Sleep stage 0 detected")]
         SleepStage0Detected_Dreaming_REM = 0x08,
-        [Description("0x09 Sleep state 1 detetced")]
+        [Description("0x09 Sleep stage 1 detected")]
         SleepStage1Detected_LightSleep_nonREM1 = 0x09,
         [Description("0x0A Sleep stage 2 detected")]
         SleepStage2Detected_MediumSleep_nonREM2 = 0x0A,
@@ -1243,7 +1243,7 @@ namespace Zats.Services
         ValveOperation = 0x01,
         [Description("0x02 Main valve operation")]
         MainValveOperation = 0x02,
-        [Description("0x03 Valve short circiut")]
+        [Description("0x03 Valve short circuit")]
         ValveShortCircuit = 0x03,
         [Description("0x04 Main valve short circuit")]
         MainValveShortCircuit = 0x04,
@@ -1261,7 +1261,7 @@ namespace Zats.Services
     {
         [Description("0x00 Idle")]
         StateIdle = 0x00,
-        [Description("0x01 rain alarm")]
+        [Description("0x01 Rain alarm")]
         RainAlarm = 0x01,
         [Description("0x02 Moisture alarm")]
         MoistureAlarm = 0x02,
@@ -1342,7 +1342,9 @@ namespace Zats.Services
         [Description("0x01 Light detected")]
         LightDetected = 0x01,
         [Description("0x02 Light color transition detected")]
-        LightColorTransitionDetected = 0x02
+        LightColorTransitionDetected = 0x02,
+        [Description("0xFE Unknown event")]
+        UnknownEvent = 0xFE
     }
 
     public enum NotificationWaterQualityMonitoringEvents : byte
@@ -1359,15 +1361,15 @@ namespace Zats.Services
         ChlorineEmpty = 0x04,
         [Description("0x05 Acidity (pH) empty")]
         Acidity_pH_Empty = 0x05,
-        [Description("0x06 Waterflow measureing station shortage detected")]
+        [Description("0x06 Waterflow measuring station shortage detected")]
         WaterflowMeasuringStationShortageDetected = 0x06,
         [Description("0x07 Waterflow clear water shortage detected")]
         WaterflowClearWaterShortageDetected = 0x07,
-        [Description("0x08 Desinfection system error detected")]
+        [Description("0x08 Disinfection system error detected")]
         DisinfectionSystemErrorDetected = 0x08,
         [Description("0x09 Filter cleaning ongoing")]
         FilterCleaningOngoing = 0x09,
-        [Description("0x0A heating operation ongoing")]
+        [Description("0x0A Heating operation ongoing")]
         HeatingOperationOngoing = 0x0A,
         [Description("0x0B Filter pump operation ongoing")]
         FilterPumpOperationOngoing = 0x0B,
@@ -1382,7 +1384,9 @@ namespace Zats.Services
         [Description("0x10 Water tank is full")]
         WaterTankIsFull = 0x10,
         [Description("0x11 Collective disorder")]
-        CollectiveDisorder = 0x11
+        CollectiveDisorder = 0x11,
+        [Description("0xFE Unknown event")]
+        UnknownEvent = 0xFE
     }
 
     public enum NotificationHomeMonitoringEvents : byte
@@ -1392,7 +1396,9 @@ namespace Zats.Services
         [Description("0x01 Home occupied (location provided)")]
         HomeOccupiedWithLocation = 0x01,
         [Description("0x02 Home occupied")]
-        HomeOccupied = 0x02
+        HomeOccupied = 0x02,
+        [Description("0xFE Unknown event")]
+        UnknownEvent = 0xFE
     }
     #endregion // Notification<Type>Events enums
 }
