@@ -749,7 +749,7 @@ namespace Zats.Services
         SmokeDetectedWithLocation = 0x01,
         [Description("0x02 Smoke detected")]
         SmokeDetected = 0x02,
-        [Description("0x03 Smoke alarm test")]
+        [Description("0x03 Smoke alarm test [DEPRECATED]")]
         SmokeAlarmTest = 0x03,
         [Description("0x06 Alarm silenced")]
         AlarmSilenced = 0x06,
@@ -761,6 +761,8 @@ namespace Zats.Services
         MaintenanceRequiredPlannedPeriodicInspection = 0x07,
         [Description("0x08 Maintenance required, dust in device")]
         MaintenanceRequiredDustInDevice = 0x08,
+        [Description("0x09 Smoke alarm self-test")]
+        SmokeAlarmSelfTest = 0x09,
         [Description("0xFE Unknown event")]
         UnknownEvent = 0xFE
     }
@@ -773,8 +775,8 @@ namespace Zats.Services
         CarbonMonoxideDetectedWithLocation = 0x01,
         [Description("0x02 Carbon monoxide detected")]
         CarbonMonoxideDetected = 0x02,
-        [Description("0x03 Carbon monoxide test")]
-        CarbonMonoxideTest = 0x03,
+        [Description("0x03 Carbon monoxide self-test")]
+        CarbonMonoxideSelfTest = 0x03,
         [Description("0x04 Replacement required")]
         ReplacementRequired = 0x04,
         [Description("0x05 Replacement required End-of-life")]
@@ -795,8 +797,8 @@ namespace Zats.Services
         CarbonDioxideDetectedWithLocation = 0x01,
         [Description("0x02 Carbon dioxide detected")]
         CarbonDioxideDetected = 0x02,
-        [Description("0x03 Carbon dioxide test")]
-        CarbonDioxideTest = 0x03,
+        [Description("0x03 Carbon dioxide self-test")]
+        CarbonDioxideSelfTest = 0x03,
         [Description("0x04 Replacement required")]
         ReplacementRequired = 0x04,
         [Description("0x05 Replacement required, End-of-life")]
@@ -829,7 +831,7 @@ namespace Zats.Services
         RapidTemperatureFallWithLocation = 0x0C,
         [Description("0x0D Rapid temperature fall")]
         RapidTemperatureFall = 0x0D,
-        [Description("0x07 Heat alarm test")]
+        [Description("0x07 Heat alarm test [DEPRECATED]")]
         HeatAlarmTest = 0x07,
         [Description("0x09 Alarm silenced")]
         AlarmSilenced = 0x09,
@@ -839,6 +841,8 @@ namespace Zats.Services
         MaintenanceRequiredDustInDevice = 0x0A,
         [Description("0x0B Maintenance required, planned periodic inspection")]
         MaintenanceRequiredPlannedPeriodicInspection = 0x0B,
+        [Description("0x0E Heat alarm self-test")]
+        HeatAlarmSelfTest = 0x0E,
         [Description("0xFE Unknown event")]
         UnknownEvent = 0xFE
     }
@@ -937,13 +941,13 @@ namespace Zats.Services
         CredentialLockCloseOperation = 0x23,
         [Description("0x24 Credential unlock open operation")]
         CredentialUnlockOpenOperation = 0x24,
-        // 0x25 ... 0x2E have been obsoleted.
-        //[Description("0x25 All users deleted [OBSOLETE]")]
-        //AllUsersDeleted = 0x25,
-        //[Description("0x26 Multiple credentials deleted [OBSOLETE]")]
-        //MultipleCredentialsDeleted = 0x26,
-        //[Description("0x27 User added [OBSOLETE]")]
-        //UserAdded = 0x27,
+        [Description("0x25 Aliro Access Granted")]
+        AliroAccessGranted = 0x25,
+        [Description("0x26 Aliro Step-Up")]
+        AliroStepUp = 0x26,
+        [Description("0x27 Aliro Transaction Failed")]
+        AliroTransactionFailed = 0x27,
+        // 0x28 ... 0x2E have been obsoleted.
         //[Description("0x28 User modified [OBSOLETE]")]
         //UserModified = 0x28,
         //[Description("0x29 User deleted [OBSOLETE]")]
@@ -1297,10 +1301,12 @@ namespace Zats.Services
         ToxicGasDetectedWithLocation = 0x03,
         [Description("0x04 Toxic gas detected")]
         ToxicGasDetected = 0x04,
-        [Description("0x05 Gas alarm test")]
+        [Description("0x05 Gas alarm test [DEPRECATED]")]
         GasAlarmTest = 0x05,
         [Description("0x06 Replacement required")]
         ReplacementRequired = 0x06,
+        [Description("0x07 Gas alarm self-test")]
+        GasAlarmSelfTest = 0x07,
         [Description("0xFE Unknown event")]
         UnknownEvent = 0xFE
     }
