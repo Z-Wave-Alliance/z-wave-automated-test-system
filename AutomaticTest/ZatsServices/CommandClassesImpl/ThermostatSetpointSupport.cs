@@ -356,7 +356,7 @@ namespace Zats.Services
         public byte CurrentValuePrecision { get; set; } = 0;
 
         [CustomDataParameter(1, "Scale", CommandClassesImpl.UiControl.ListComboBox, CommandClassesImpl.InputType.Enum, EditType.Config, ItemsSource = typeof(ThermostatSetpointScales))]
-        public ThermostatSetpointScales CurrentValueScale { get; set; } = ThermostatSetpointScales.Celcius;
+        public ThermostatSetpointScales CurrentValueScale { get; set; } = ThermostatSetpointScales.Celsius;
 
 
         // V3+ Capabilities Report
@@ -500,8 +500,8 @@ namespace Zats.Services
 
     public enum ThermostatSetpointScales : byte
     {
-        [Description("0x01 Celcius")]
-        Celcius = 0x00,
+        [Description("0x00 Celsius")]
+        Celsius = 0x00,
         [Description("0x01 Fahrenheit")]
         Fahrenheit = 0x01
     }

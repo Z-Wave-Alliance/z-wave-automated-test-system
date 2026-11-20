@@ -617,7 +617,7 @@ namespace Zats.Services
             var multilevelSensorSupportData = new MultilevelSensorSupportData(new List<MultilevelSensorType>()
             {
                 new MultilevelSensorType("Air temperature", 0x01, new List<MultilevelSensorScale>() {
-                    new MultilevelSensorScale("Celcius (C)", 0x00 ) { Precision = 2, Value = 20.14 },
+                    new MultilevelSensorScale("Celsius (C)", 0x00 ) { Precision = 2, Value = 20.14 },
                     new MultilevelSensorScale("Fahrenheit (F)", 0x01) { Precision = 2, Value = 68.25 },
                     new MultilevelSensorScale("Reserved (Unknown) scale", 0x02) { Precision = 2, Value = 88.88 },
                 }),
